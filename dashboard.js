@@ -27,6 +27,7 @@ const toggle = document.getElementById("toggleSidebar");
 
 toggle.addEventListener("click", () => {
     sidebar.classList.toggle("collapsed");
+    document.getElementById("accountSection")?.classList.remove("open");
 });
 
 /* ==========================
@@ -106,7 +107,7 @@ renderAccount();
    VIEW ROUTING
 ========================== */
 
-const navLinks = document.querySelectorAll("nav a[data-view]");
+const navLinks = document.querySelectorAll("[data-view]");
 const views = document.querySelectorAll(".view");
 const topbarTitle = document.getElementById("topbarTitle");
 const topbarSub = document.getElementById("topbarSub");
@@ -117,7 +118,7 @@ function goToView(viewName){
     if (target) target.classList.add("active");
 
     navLinks.forEach(item => item.classList.remove("active"));
-    const link = document.querySelector(`nav a[data-view="${viewName}"]`);
+    const link = document.querySelector(`[data-view="${viewName}"]`);
     if (link){
         link.classList.add("active");
         topbarTitle.textContent = link.dataset.title;
@@ -142,27 +143,49 @@ document.querySelectorAll("[data-goto]").forEach(el => {
 });
 
 /* ==========================
+   SETTINGS — VISUAL-ONLY PICKERS
+========================== */
+
+document.querySelectorAll(".theme-options").forEach(group => {
+    group.querySelectorAll(".theme-card").forEach(card => {
+        card.addEventListener("click", () => {
+            group.querySelectorAll(".theme-card").forEach(c => c.classList.remove("active"));
+            card.classList.add("active");
+        });
+    });
+});
+
+document.querySelectorAll(".accent-swatches").forEach(group => {
+    group.querySelectorAll(".swatch").forEach(swatch => {
+        swatch.addEventListener("click", () => {
+            group.querySelectorAll(".swatch").forEach(s => s.classList.remove("active"));
+            swatch.classList.add("active");
+        });
+    });
+});
+
+/* ==========================
    MOCK DATA — Quezon City barangays
 ========================== */
 
 const barangays = [
-    { name: "Payatas",              temp: 41.2, canopy: 12, severity: "critical", driver: "Open dump heat retention",     trend: 2.4 },
-    { name: "Batasan Hills",        temp: 38.9, canopy: 16, severity: "high",     driver: "Dense low-rise residential",   trend: 1.6 },
-    { name: "Cubao (Commercial)",   temp: 38.1, canopy: 9,  severity: "high",     driver: "Impervious commercial surface",trend: 1.1 },
-    { name: "Novaliches Proper",    temp: 36.4, canopy: 21, severity: "moderate", driver: "Recent canopy loss",           trend: 0.8 },
-    { name: "Fairview",             temp: 35.8, canopy: 24, severity: "moderate", driver: "Expanding subdivision",        trend: 0.6 },
-    { name: "Commonwealth",         temp: 37.6, canopy: 18, severity: "high",     driver: "Traffic corridor heat",        trend: 1.3 },
-    { name: "Diliman",              temp: 33.1, canopy: 38, severity: "moderate", driver: "Institutional grounds edge",   trend: 0.2 },
-    { name: "Project 6",            temp: 36.9, canopy: 19, severity: "moderate", driver: "Mixed residential density",    trend: 0.9 },
-    { name: "Bagong Silangan",      temp: 37.9, canopy: 15, severity: "high",     driver: "Informal settlement density",  trend: 1.4 },
-    { name: "Holy Spirit",          temp: 35.2, canopy: 22, severity: "moderate", driver: "Rooftop heat absorption",      trend: 0.5 },
-    { name: "Tandang Sora",         temp: 34.4, canopy: 27, severity: "moderate", driver: "Low canopy along main road",   trend: 0.3 },
-    { name: "UP Campus",            temp: 30.6, canopy: 52, severity: "moderate", driver: "Baseline — high canopy zone",  trend: -0.4 },
-    { name: "Kamuning",             temp: 37.1, canopy: 14, severity: "high",     driver: "Dense commercial strip",       trend: 1.0 },
-    { name: "San Bartolome",        temp: 36.1, canopy: 20, severity: "moderate", driver: "Riverside informal housing",   trend: 0.7 },
-    { name: "Sauyo",                temp: 34.9, canopy: 26, severity: "moderate", driver: "Light industrial edge",        trend: 0.4 },
-    { name: "Pasong Tamo",          temp: 39.4, canopy: 11, severity: "critical", driver: "Warehouse / logistics zone",   trend: 1.9 },
-    { name: "Talipapa",             temp: 38.6, canopy: 13, severity: "critical", driver: "Market district, low shade",   trend: 1.7 },
+    { name: "Payatas",              temp: 41.2, canopy: 12, severity: "critical", driver: "Open dump heat retention",     trend: 2.4,  area: 180, canopyChange: -4.1, priority: true  },
+    { name: "Batasan Hills",        temp: 38.9, canopy: 16, severity: "high",     driver: "Dense low-rise residential",   trend: 1.6,  area: 210, canopyChange: -2.8, priority: true  },
+    { name: "Cubao (Commercial)",   temp: 38.1, canopy: 9,  severity: "high",     driver: "Impervious commercial surface",trend: 1.1,  area: 40,  canopyChange: -1.2, priority: true  },
+    { name: "Novaliches Proper",    temp: 36.4, canopy: 21, severity: "moderate", driver: "Recent canopy loss",           trend: 0.8,  area: 260, canopyChange: -3.3, priority: true  },
+    { name: "Fairview",             temp: 35.8, canopy: 24, severity: "moderate", driver: "Expanding subdivision",        trend: 0.6,  area: 640, canopyChange: -0.9, priority: false },
+    { name: "Commonwealth",         temp: 37.6, canopy: 18, severity: "high",     driver: "Traffic corridor heat",        trend: 1.3,  area: 520, canopyChange: -2.0, priority: true  },
+    { name: "Diliman",              temp: 33.1, canopy: 38, severity: "moderate", driver: "Institutional grounds edge",   trend: 0.2,  area: 410, canopyChange: 0.3,  priority: false },
+    { name: "Project 6",            temp: 36.9, canopy: 19, severity: "moderate", driver: "Mixed residential density",    trend: 0.9,  area: 150, canopyChange: -1.1, priority: false },
+    { name: "Bagong Silangan",      temp: 37.9, canopy: 15, severity: "high",     driver: "Informal settlement density",  trend: 1.4,  area: 190, canopyChange: -3.4, priority: true  },
+    { name: "Holy Spirit",          temp: 35.2, canopy: 22, severity: "moderate", driver: "Rooftop heat absorption",      trend: 0.5,  area: 230, canopyChange: -0.7, priority: false },
+    { name: "Tandang Sora",         temp: 34.4, canopy: 27, severity: "moderate", driver: "Low canopy along main road",   trend: 0.3,  area: 380, canopyChange: 0.2,  priority: false },
+    { name: "UP Campus",            temp: 30.6, canopy: 52, severity: "moderate", driver: "Baseline — high canopy zone",  trend: -0.4, area: 490, canopyChange: 1.1,  priority: false },
+    { name: "Kamuning",             temp: 37.1, canopy: 14, severity: "high",     driver: "Dense commercial strip",       trend: 1.0,  area: 60,  canopyChange: -1.8, priority: true  },
+    { name: "San Bartolome",        temp: 36.1, canopy: 20, severity: "moderate", driver: "Riverside informal housing",   trend: 0.7,  area: 240, canopyChange: -1.0, priority: false },
+    { name: "Sauyo",                temp: 34.9, canopy: 26, severity: "moderate", driver: "Light industrial edge",        trend: 0.4,  area: 300, canopyChange: -0.4, priority: false },
+    { name: "Pasong Tamo",          temp: 39.4, canopy: 11, severity: "critical", driver: "Warehouse / logistics zone",   trend: 1.9,  area: 95,  canopyChange: -3.9, priority: true  },
+    { name: "Talipapa",             temp: 38.6, canopy: 13, severity: "critical", driver: "Market district, low shade",   trend: 1.7,  area: 70,  canopyChange: -3.1, priority: true  },
 ];
 
 /* ==========================
@@ -379,6 +402,87 @@ function buildCanopyCharts(){
                 y: { ticks: { color: th.text }, grid: { color: th.grid } },
             }
         }
+    });
+
+    const landCoverEl = document.getElementById("landCoverChart");
+    if (landCoverEl){
+        chartInstances.landCover = new Chart(landCoverEl, {
+            type: "doughnut",
+            data: {
+                labels: ["Tree Canopy", "Impervious Surface", "Open / Green Space", "Water Bodies", "Bare / Under Construction"],
+                datasets: [{
+                    data: [28.4, 31.2, 21.0, 5.4, 14.0],
+                    backgroundColor: [th.green, th.red, "#5aa9ff", "#2f6f9e", th.orange],
+                    borderColor: "#0d0d0d",
+                    borderWidth: 3,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "62%",
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: { color: th.text, boxWidth: 10, font: { size: 10.5 }, padding: 12 }
+                    }
+                }
+            }
+        });
+    }
+
+    buildPriorityZonesList();
+    buildCanopyTable();
+}
+
+function buildPriorityZonesList(){
+    const list = document.getElementById("priorityZonesList");
+    if (!list || list.dataset.built) return;
+    list.dataset.built = "true";
+
+    const zones = barangays.filter(b => b.priority).sort((a, b) => a.canopy - b.canopy);
+
+    zones.forEach(b => {
+        const row = document.createElement("div");
+        row.className = "mini-hotspot";
+        row.innerHTML = `
+            <div class="mh-info">
+                <span class="severity-dot ${b.severity}"></span>
+                <div>
+                    <strong>${b.name}</strong>
+                    <small>${b.driver}</small>
+                </div>
+            </div>
+            <span class="mh-temp ${b.severity}">${b.canopy}% canopy</span>
+        `;
+        list.appendChild(row);
+    });
+}
+
+function buildCanopyTable(){
+    const tbody = document.querySelector("#canopyTable tbody");
+    if (!tbody || tbody.dataset.built) return;
+    tbody.dataset.built = "true";
+
+    const sorted = [...barangays].sort((a, b) => a.canopy - b.canopy);
+
+    sorted.forEach(b => {
+        const tr = document.createElement("tr");
+        const improving = b.canopyChange >= 0;
+        const status = b.priority ? "critical" : improving ? "moderate" : "high";
+        const statusLabel = b.priority ? "Priority" : improving ? "Improving" : "Stable";
+
+        tr.innerHTML = `
+            <td><strong>${b.name}</strong></td>
+            <td>${b.canopy}%</td>
+            <td>${b.area.toLocaleString()} ha</td>
+            <td><span class="trend-cell ${improving ? "down" : "up"}">
+                <i class="fa-solid fa-arrow-trend-${improving ? "up" : "down"}"></i>
+                ${improving ? "+" : ""}${b.canopyChange.toFixed(1)}%
+            </span></td>
+            <td><span class="badge ${status}">${statusLabel}</span></td>
+        `;
+        tbody.appendChild(tr);
     });
 }
 

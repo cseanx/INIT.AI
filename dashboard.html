@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>INIT.AI | Home</title>
+    <title>INIT.AI Dashboard</title>
 
     <link rel="stylesheet" href="dashboard.css">
 
@@ -86,7 +86,7 @@
 
         <div class="sidebar-bottom">
 
-           <a href="#" data-title="Settings">
+           <a href="#" data-view="settings" data-title="Settings" data-sub="Manage your profile, notifications, and preferences">
                 <i class="fa-solid fa-gear"></i>
                 <span>Settings</span>
                 <div class="notification-dot"></div>
@@ -100,10 +100,10 @@
             <div class="account-section" id="accountSection">
 
                 <button type="button" class="account-trigger" id="accountTrigger">
-                    <div class="account-avatar" id="accountAvatar">SN</div>
+                    <div class="account-avatar" id="accountAvatar">JD</div>
                     <div class="account-info">
-                        <strong id="accountName">Sean Astin Navarro</strong>
-                        <span id="accountRole">Admin</span>
+                        <strong id="accountName">Juan Dela Cruz</strong>
+                        <span id="accountRole">LGU Administrator</span>
                     </div>
                     <i class="fa-solid fa-chevron-up account-chevron"></i>
                 </button>
@@ -183,13 +183,21 @@
                 <div class="hero-right">
 
                     <div class="thermal-card">
-                        <div class="thermal-visual" id="heroThermal"></div>
+                        <div class="thermal-visual" id="heroThermal">
+                            <div class="sat-tile-grid">
+                                <img src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/16/30056/54814" alt="">
+                                <img src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/16/30056/54815" alt="">
+                                <img src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/16/30057/54814" alt="">
+                                <img src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/16/30057/54815" alt="">
+                            </div>
+                            <div class="thermal-overlay"></div>
+                        </div>
                         <div class="live-status">
                             <span class="live-dot"></span>
                             LIVE SATELLITE
                         </div>
                         <div class="temperature">41.2°C</div>
-                        <div class="thermal-caption">Payatas thermal composite — updated 4h ago</div>
+                        <div class="thermal-caption">Payatas, Quezon City · Imagery © Esri, Maxar, Earthstar Geographics</div>
                     </div>
 
                 </div>
@@ -405,7 +413,7 @@
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-icon red"><i class="fa-solid fa-tree-deciduous"></i></div>
+                    <div class="stat-icon red"><i class="fa-solid fa-seedling"></i></div>
                     <div class="stat-body">
                         <span class="stat-value">9</span>
                         <span class="stat-label">Priority Replanting Zones</span>
@@ -442,9 +450,51 @@
                     <div class="chart-wrap">
                         <canvas id="canopyLineChart"></canvas>
                     </div>
-                    <p class="panel-footnote">City-wide average canopy coverage, 2021–2026</p>
+                    <p class="panel-footnote highlight" id="canopyTrendCaption">Overall Canopy Change: -2.8% since 2021</p>
                 </div>
 
+            </section>
+
+            <section class="panel-grid">
+
+                <div class="glass-panel">
+                    <div class="panel-head">
+                        <h3>Land Cover Composition</h3>
+                    </div>
+                    <div class="chart-wrap small">
+                        <canvas id="landCoverChart"></canvas>
+                    </div>
+                    <p class="panel-footnote">City-wide, 2026 satellite classification</p>
+                </div>
+
+                <div class="glass-panel wide">
+                    <div class="panel-head">
+                        <h3>Priority Replanting Zones</h3>
+                        <span class="panel-badge">Ranked by urgency</span>
+                    </div>
+                    <div class="priority-zone-list" id="priorityZonesList"></div>
+                </div>
+
+            </section>
+
+            <section class="glass-panel">
+                <div class="panel-head">
+                    <h3>Canopy Detail by Barangay</h3>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table" id="canopyTable">
+                        <thead>
+                            <tr>
+                                <th>Barangay</th>
+                                <th>Canopy %</th>
+                                <th>Canopy Area</th>
+                                <th>5-Yr Change</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </section>
 
         </div>
@@ -549,6 +599,267 @@
                         </thead>
                         <tbody></tbody>
                     </table>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- ========================= -->
+        <!-- VIEW: SETTINGS -->
+        <!-- ========================= -->
+        <div class="view" id="view-settings">
+
+            <section class="glass-panel">
+                <div class="panel-head">
+                    <h3>Profile</h3>
+                </div>
+
+                <div class="settings-form-grid">
+
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" value="Juan Dela Cruz" placeholder="Full name">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" value="juan.delacruz@quezoncity.gov.ph" placeholder="Email address">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Organization / LGU</label>
+                        <input type="text" value="Quezon City Local Government" placeholder="Organization / LGU">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select>
+                            <option>Planner</option>
+                            <option selected>Admin</option>
+                            <option>Analyst</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="settings-actions">
+                    <button class="primary-btn small" type="button"><i class="fa-solid fa-check"></i> Save Changes</button>
+                </div>
+            </section>
+
+            <section class="glass-panel">
+                <div class="panel-head">
+                    <h3>Notifications</h3>
+                </div>
+
+                <div class="toggle-list">
+
+                    <div class="toggle-row">
+                        <div>
+                            <strong>Email Notifications</strong>
+                            <span>Get platform updates and digests sent to your inbox</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-row">
+                        <div>
+                            <strong>SMS Notifications</strong>
+                            <span>Receive critical alerts as text messages</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-row">
+                        <div>
+                            <strong>Heat Alert Notifications</strong>
+                            <span>Get notified when a monitored barangay crosses a critical threshold</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-row">
+                        <div>
+                            <strong>Weekly Reports</strong>
+                            <span>Receive a summary report every Monday morning</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-row">
+                        <div>
+                            <strong>System Announcements</strong>
+                            <span>Product updates, maintenance windows, and platform news</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                </div>
+            </section>
+
+            <section class="glass-panel">
+                <div class="panel-head">
+                    <h3>Appearance</h3>
+                </div>
+
+                <div class="appearance-block">
+                    <span class="settings-subhead">Theme</span>
+                    <div class="theme-options">
+
+                        <button class="theme-card active" type="button">
+                            <i class="fa-solid fa-display"></i>
+                            System Default
+                            <span class="theme-tag">Default</span>
+                        </button>
+
+                        <button class="theme-card" type="button">
+                            <i class="fa-solid fa-moon"></i>
+                            Dark Mode
+                        </button>
+
+                        <button class="theme-card" type="button">
+                            <i class="fa-solid fa-sun"></i>
+                            Light Mode
+                        </button>
+
+                    </div>
+                </div>
+
+                <div class="appearance-block">
+                    <span class="settings-subhead">Accent Color</span>
+                    <div class="accent-swatches">
+                        <button class="swatch active" type="button" style="background:linear-gradient(135deg,#ff8c42,#ff2d55)" title="Sunset (default)"></button>
+                        <button class="swatch" type="button" style="background:linear-gradient(135deg,#5aa9ff,#2f6f9e)" title="Ocean"></button>
+                        <button class="swatch" type="button" style="background:linear-gradient(135deg,#00ff84,#2f6f4e)" title="Canopy"></button>
+                        <button class="swatch" type="button" style="background:linear-gradient(135deg,#ffd23f,#ff8c42)" title="Amber"></button>
+                        <button class="swatch" type="button" style="background:linear-gradient(135deg,#c792ea,#5aa9ff)" title="Violet"></button>
+                    </div>
+                </div>
+
+                <div class="appearance-block no-border">
+                    <div class="toggle-row">
+                        <div>
+                            <strong>Sidebar Collapse</strong>
+                            <span>Start every session with the sidebar collapsed to icons</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <section class="glass-panel">
+                <div class="panel-head">
+                    <h3>Security</h3>
+                </div>
+
+                <div class="security-list">
+
+                    <button class="security-row" type="button">
+                        <div class="security-row-left">
+                            <i class="fa-solid fa-key"></i>
+                            <div>
+                                <strong>Change Password</strong>
+                                <span>Update the password used to sign in</span>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+
+                    <button class="security-row" type="button">
+                        <div class="security-row-left">
+                            <i class="fa-solid fa-envelope"></i>
+                            <div>
+                                <strong>Change Email</strong>
+                                <span>Update your registered email address</span>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+
+                    <div class="security-row disabled">
+                        <div class="security-row-left">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <div>
+                                <strong>Two-Factor Authentication</strong>
+                                <span>Add an extra layer of login security</span>
+                            </div>
+                        </div>
+                        <span class="soon-badge">Coming Soon</span>
+                    </div>
+
+                </div>
+
+                <div class="sessions-block">
+                    <span class="settings-subhead">Active Sessions</span>
+
+                    <div class="session-item">
+                        <div class="session-icon"><i class="fa-solid fa-desktop"></i></div>
+                        <div class="session-info">
+                            <strong>Chrome on Windows <span class="this-device">This device</span></strong>
+                            <span>Quezon City, PH · Active now</span>
+                        </div>
+                    </div>
+
+                    <div class="session-item">
+                        <div class="session-icon"><i class="fa-solid fa-mobile-screen"></i></div>
+                        <div class="session-info">
+                            <strong>INIT.AI Mobile</strong>
+                            <span>Quezon City, PH · Last active 2h ago</span>
+                        </div>
+                        <button class="dl-btn" type="button" title="Sign out this session">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+
+                    <div class="session-item">
+                        <div class="session-icon"><i class="fa-solid fa-laptop"></i></div>
+                        <div class="session-info">
+                            <strong>Safari on macOS</strong>
+                            <span>Manila, PH · Last active 3d ago</span>
+                        </div>
+                        <button class="dl-btn" type="button" title="Sign out this session">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+
+                </div>
+            </section>
+
+            <section class="glass-panel about-card">
+                <div class="about-top">
+                    <div class="logo-circle about-logo"><img src="assets/images/logo.svg" alt="INIT.AI logo"></div>
+                    <div>
+                        <h3>About INIT.AI</h3>
+                        <p>Urban Intelligence Platform for climate-smart LGU decision making.</p>
+                    </div>
+                </div>
+                <div class="about-meta">
+                    <div>
+                        <span>Version</span>
+                        <strong>v0.1 Prototype</strong>
+                    </div>
+                    <div>
+                        <span>Developed by</span>
+                        <strong>RA!N SYSTEMS</strong>
+                    </div>
                 </div>
             </section>
 
