@@ -17,6 +17,9 @@
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+
 </head>
 
 <body>
@@ -27,102 +30,71 @@
     <!-- Sidebar -->
     <!-- ========================= -->
 
-    <!-- ========================= -->
-<!-- Sidebar -->
-<!-- ========================= -->
+    <aside class="sidebar" id="sidebar">
 
-<aside class="sidebar" id="sidebar">
+        <div class="sidebar-top">
 
-    <div class="sidebar-top">
+            <button id="toggleSidebar" class="toggle-btn">
+                <i class="fa-solid fa-bars"></i>
+            </button>
 
-        <button id="toggleSidebar" class="toggle-btn">
-
-            <i class="fa-solid fa-bars"></i>
-
-        </button>
-
-        <div class="logo">
-
-            <div class="logo-circle">
-
-                <i class="fa-solid fa-microchip"></i>
-
-            </div>
-
-            <div class="logo-text">
-
-                <h2>INIT.AI</h2>
-                <span>Urban Intelligence</span>
-
+            <div class="logo">
+                <div class="logo-circle">
+                    <i class="fa-solid fa-microchip"></i>
+                </div>
+                <div class="logo-text">
+                    <h2>INIT.AI</h2>
+                    <span>Urban Intelligence</span>
+                </div>
             </div>
 
         </div>
 
-    </div>
+        <nav>
 
-    <nav>
+            <a href="#" data-view="dashboard" data-title="Dashboard" data-sub="Welcome back to INIT.AI" class="active">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
 
-        <a href="#" data-title="Dashboard" class="active">
+            <a href="#" data-view="heatmap" data-title="Heat Map" data-sub="Live surface temperature across monitored barangays">
+                <i class="fa-solid fa-earth-americas"></i>
+                <span>Heat Map</span>
+            </a>
 
-            <i class="fa-solid fa-chart-line"></i>
+            <a href="#" data-view="hotspots" data-title="Hotspots" data-sub="AI-detected urban heat islands requiring attention">
+                <i class="fa-solid fa-location-dot"></i>
+                <span>Hotspots</span>
+            </a>
 
-            <span>Dashboard</span>
+            <a href="#" data-view="canopy" data-title="Canopy Analysis" data-sub="Tree cover and green space assessment">
+                <i class="fa-solid fa-tree"></i>
+                <span>Canopy Analysis</span>
+            </a>
 
-        </a>
+            <a href="#" data-view="mitigation" data-title="Mitigation" data-sub="Recommended interventions and projected impact">
+                <i class="fa-solid fa-seedling"></i>
+                <span>Mitigation</span>
+            </a>
 
-        <a href="#" data-title="Heat Map">
+            <a href="#" data-view="reports" data-title="Reports" data-sub="Generated intelligence briefs for stakeholders">
+                <i class="fa-solid fa-file-lines"></i>
+                <span>Reports</span>
+            </a>
 
-            <i class="fa-solid fa-earth-americas"></i>
+        </nav>
 
-            <span>Heat Map</span>
+        <div class="sidebar-bottom">
 
-        </a>
+           <a href="#" data-title="Settings">
+                <i class="fa-solid fa-gear"></i>
+                <span>Settings</span>
+                <div class="notification-dot"></div>
+            </a>
 
-        <a href="#" data-title="Hotspots">
+        </div>
 
-            <i class="fa-solid fa-location-dot"></i>
-
-            <span>Hotspots</span>
-
-        </a>
-
-        <a href="#" data-title="Canopy Analysis">
-
-            <i class="fa-solid fa-tree"></i>
-
-            <span>Canopy Analysis</span>
-
-        </a>
-
-        <a href="#" data-title="Mitigation">
-
-            <i class="fa-solid fa-seedling"></i>
-
-            <span>Mitigation</span>
-
-        </a>
-
-        <a href="#" data-title="Reports">
-
-            <i class="fa-solid fa-file-lines"></i>
-
-            <span>Reports</span>
-
-        </a>
-
-    </nav>
-
-    <div class="sidebar-bottom">
-
-       <a href="#"data-title="Settings" >
-            <i class="fa-solid fa-gear"></i>
-            <span>Settings</span>
-            <div class="notification-dot"></div>
-        </a>
-
-    </div>
-
-</aside>
+    </aside>
 
     <!-- ========================= -->
     <!-- Main -->
@@ -135,106 +107,427 @@
         <header class="topbar">
 
             <div>
-
-                <h1>Dashboard</h1>
-
-                <p>Welcome back to INIT.AI</p>
-
+                <h1 id="topbarTitle">Dashboard</h1>
+                <p id="topbarSub">Welcome back to INIT.AI</p>
             </div>
 
             <div class="topbar-right">
 
                 <div class="search">
-
                     <i class="fa-solid fa-magnifying-glass"></i>
-
-                    <input
-                        type="text"
-                        placeholder="Search..."
-                    >
-
+                    <input type="text" placeholder="Search barangay, report...">
                 </div>
 
                 <div class="status">
-
                     <span class="status-dot"></span>
-
                     SYSTEM ONLINE
-
                 </div>
 
-                <div class="clock">
-
-                    00:00
-
-                </div>
+                <div class="clock">00:00</div>
 
             </div>
 
         </header>
 
-        <!-- Hero goes here -->
-         <section class="hero-panel">
+        <!-- ========================= -->
+        <!-- VIEW: DASHBOARD -->
+        <!-- ========================= -->
+        <div class="view active" id="view-dashboard">
 
-    <div class="hero-left">
+            <section class="hero-panel">
 
-        <span class="hero-badge">
-            AI Climate Intelligence
-        </span>
+                <div class="hero-left">
 
-        <h1>
-            Monitor.<br>
-            Analyze.<br>
-            Mitigate.
-        </h1>
+                    <span class="hero-badge">AI Climate Intelligence</span>
 
-        <p>
-            Analyze urban heat islands using satellite imagery,
-            AI-assisted hotspot detection, and canopy assessment
-            to support climate-smart decision making.
-        </p>
+                    <h1>Monitor.<br>Analyze.<br>Mitigate.</h1>
 
-        <div class="hero-actions">
+                    <p>
+                        Analyze urban heat islands using satellite imagery,
+                        AI-assisted hotspot detection, and canopy assessment
+                        to support climate-smart decision making.
+                    </p>
 
-            <button class="primary-btn">
-                Launch Analysis
-            </button>
+                    <div class="hero-actions">
+                        <button class="primary-btn" data-goto="heatmap">Launch Analysis</button>
+                        <button class="secondary-btn" data-goto="heatmap">Open Heat Map</button>
+                    </div>
 
-            <button class="secondary-btn">
-                Open Heat Map
-            </button>
+                </div>
+
+                <div class="hero-right">
+
+                    <div class="thermal-card">
+                        <div class="thermal-visual" id="heroThermal"></div>
+                        <div class="live-status">
+                            <span class="live-dot"></span>
+                            LIVE SATELLITE
+                        </div>
+                        <div class="temperature">41.2°C</div>
+                        <div class="thermal-caption">Payatas thermal composite — updated 4h ago</div>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <section class="stat-grid">
+
+                <div class="stat-card">
+                    <div class="stat-icon red"><i class="fa-solid fa-temperature-high"></i></div>
+                    <div class="stat-body">
+                        <span class="stat-value">34.6<small>°C</small></span>
+                        <span class="stat-label">Avg. Surface Temp</span>
+                    </div>
+                    <span class="stat-trend up"><i class="fa-solid fa-arrow-trend-up"></i> 2.1° vs last month</span>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon orange"><i class="fa-solid fa-fire"></i></div>
+                    <div class="stat-body">
+                        <span class="stat-value">17</span>
+                        <span class="stat-label">Active Hotspots</span>
+                    </div>
+                    <span class="stat-trend up"><i class="fa-solid fa-arrow-trend-up"></i> 3 new this week</span>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="fa-solid fa-tree"></i></div>
+                    <div class="stat-body">
+                        <span class="stat-value">28.4<small>%</small></span>
+                        <span class="stat-label">Canopy Coverage</span>
+                    </div>
+                    <span class="stat-trend down"><i class="fa-solid fa-arrow-trend-down"></i> 1.4% vs 2024</span>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i class="fa-solid fa-map-location-dot"></i></div>
+                    <div class="stat-body">
+                        <span class="stat-value">142</span>
+                        <span class="stat-label">Barangays Monitored</span>
+                    </div>
+                    <span class="stat-trend neutral"><i class="fa-solid fa-satellite"></i> Updated 4h ago</span>
+                </div>
+
+            </section>
+
+            <section class="panel-grid">
+
+                <div class="glass-panel wide">
+                    <div class="panel-head">
+                        <h3>Priority Hotspots</h3>
+                        <a href="#" class="panel-link" data-goto="hotspots">View all <i class="fa-solid fa-arrow-right"></i></a>
+                    </div>
+                    <div class="mini-hotspot-list">
+
+                        <div class="mini-hotspot">
+                            <div class="mh-info">
+                                <span class="severity-dot critical"></span>
+                                <div>
+                                    <strong>Payatas</strong>
+                                    <small>Landfill-adjacent informal settlement</small>
+                                </div>
+                            </div>
+                            <span class="mh-temp critical">41.2°C</span>
+                        </div>
+
+                        <div class="mini-hotspot">
+                            <div class="mh-info">
+                                <span class="severity-dot high"></span>
+                                <div>
+                                    <strong>Batasan Hills</strong>
+                                    <small>Dense residential, low canopy</small>
+                                </div>
+                            </div>
+                            <span class="mh-temp high">38.9°C</span>
+                        </div>
+
+                        <div class="mini-hotspot">
+                            <div class="mh-info">
+                                <span class="severity-dot high"></span>
+                                <div>
+                                    <strong>Cubao Commercial District</strong>
+                                    <small>Impervious surface, no tree cover</small>
+                                </div>
+                            </div>
+                            <span class="mh-temp high">38.1°C</span>
+                        </div>
+
+                        <div class="mini-hotspot">
+                            <div class="mh-info">
+                                <span class="severity-dot moderate"></span>
+                                <div>
+                                    <strong>Novaliches Proper</strong>
+                                    <small>Mixed-use, canopy loss detected</small>
+                                </div>
+                            </div>
+                            <span class="mh-temp moderate">36.4°C</span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="glass-panel">
+                    <div class="panel-head">
+                        <h3>Canopy vs Heat</h3>
+                    </div>
+                    <div class="chart-wrap small">
+                        <canvas id="dashMiniChart"></canvas>
+                    </div>
+                    <p class="panel-footnote">Inverse correlation across all monitored barangays</p>
+                </div>
+
+            </section>
 
         </div>
 
-    </div>
+        <!-- ========================= -->
+        <!-- VIEW: HEAT MAP -->
+        <!-- ========================= -->
+        <div class="view" id="view-heatmap">
 
-    <div class="hero-right">
+            <section class="glass-panel">
 
-        <div class="thermal-card">
+                <div class="panel-head">
+                    <h3>Quezon City — Surface Temperature</h3>
+                    <div class="panel-controls">
+                        <select id="cityFilter">
+                            <option>Quezon City</option>
+                            <option>Manila</option>
+                            <option>Pasig</option>
+                            <option>Caloocan</option>
+                        </select>
+                        <button class="chip-btn active">Day</button>
+                        <button class="chip-btn">Night</button>
+                    </div>
+                </div>
 
-            <img
-                src="assets/images/thermal-map.png"
-                alt="Thermal Map">
+                <div class="heatmap-layout">
 
-            <div class="live-status">
+                    <div class="heatmap-grid" id="heatmapGrid"></div>
 
-                <span class="live-dot"></span>
+                    <div class="heatmap-legend">
+                        <span class="legend-title">Surface Temp</span>
+                        <div class="legend-scale"></div>
+                        <div class="legend-labels">
+                            <span>28°C</span>
+                            <span>34°C</span>
+                            <span>41°C+</span>
+                        </div>
+                        <p class="legend-note">
+                            Tap a cell to inspect a barangay grid segment. Data derived from
+                            Landsat 9 thermal band composites, refreshed every 4 hours.
+                        </p>
+                    </div>
 
-                LIVE SATELLITE
+                </div>
 
-            </div>
-
-            <div class="temperature">
-
-                41.2°C
-
-            </div>
+            </section>
 
         </div>
 
-    </div>
+        <!-- ========================= -->
+        <!-- VIEW: HOTSPOTS -->
+        <!-- ========================= -->
+        <div class="view" id="view-hotspots">
 
-</section>
+            <section class="glass-panel">
+
+                <div class="panel-head">
+                    <h3>Detected Hotspots</h3>
+                    <div class="panel-controls">
+                        <button class="chip-btn active">All (17)</button>
+                        <button class="chip-btn">Critical (4)</button>
+                        <button class="chip-btn">High (7)</button>
+                        <button class="chip-btn">Moderate (6)</button>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="data-table" id="hotspotsTable">
+                        <thead>
+                            <tr>
+                                <th>Barangay</th>
+                                <th>Peak Temp</th>
+                                <th>Severity</th>
+                                <th>Trend (7d)</th>
+                                <th>Primary Driver</th>
+                                <th>Last Updated</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+            </section>
+
+        </div>
+
+        <!-- ========================= -->
+        <!-- VIEW: CANOPY ANALYSIS -->
+        <!-- ========================= -->
+        <div class="view" id="view-canopy">
+
+            <section class="stat-grid">
+
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="fa-solid fa-leaf"></i></div>
+                    <div class="stat-body">
+                        <span class="stat-value">6,214<small> ha</small></span>
+                        <span class="stat-label">Total Canopy Area</span>
+                    </div>
+                    <span class="stat-trend down"><i class="fa-solid fa-arrow-trend-down"></i> -1.4% (5yr)</span>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon red"><i class="fa-solid fa-tree-deciduous"></i></div>
+                    <div class="stat-body">
+                        <span class="stat-value">9</span>
+                        <span class="stat-label">Priority Replanting Zones</span>
+                    </div>
+                    <span class="stat-trend neutral"><i class="fa-solid fa-map-pin"></i> Flagged by AI model</span>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i class="fa-solid fa-droplet"></i></div>
+                    <div class="stat-body">
+                        <span class="stat-value">31.2<small>%</small></span>
+                        <span class="stat-label">Impervious Surface</span>
+                    </div>
+                    <span class="stat-trend up"><i class="fa-solid fa-arrow-trend-up"></i> +0.8% vs 2024</span>
+                </div>
+
+            </section>
+
+            <section class="panel-grid">
+
+                <div class="glass-panel wide">
+                    <div class="panel-head">
+                        <h3>Canopy Coverage by Barangay</h3>
+                    </div>
+                    <div class="chart-wrap">
+                        <canvas id="canopyBarChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-panel">
+                    <div class="panel-head">
+                        <h3>5-Year Canopy Trend</h3>
+                    </div>
+                    <div class="chart-wrap">
+                        <canvas id="canopyLineChart"></canvas>
+                    </div>
+                    <p class="panel-footnote">City-wide average canopy coverage, 2021–2026</p>
+                </div>
+
+            </section>
+
+        </div>
+
+        <!-- ========================= -->
+        <!-- VIEW: MITIGATION -->
+        <!-- ========================= -->
+        <div class="view" id="view-mitigation">
+
+            <section class="glass-panel">
+                <div class="panel-head">
+                    <h3>Recommended Interventions</h3>
+                    <span class="panel-badge">AI-ranked by projected impact</span>
+                </div>
+
+                <div class="mitigation-grid">
+
+                    <div class="mitigation-card">
+                        <div class="mc-top">
+                            <div class="mc-icon"><i class="fa-solid fa-tree"></i></div>
+                            <span class="status-badge proposed">Proposed</span>
+                        </div>
+                        <h4>Urban Tree Planting</h4>
+                        <p>Fast-canopy native species along arterial roads in Payatas and Batasan Hills.</p>
+                        <div class="mc-stats">
+                            <div><span>-2.1°C</span><small>Projected local drop</small></div>
+                            <div><span>4,800</span><small>Trees needed</small></div>
+                        </div>
+                        <div class="mc-bar"><div style="width:65%"></div></div>
+                    </div>
+
+                    <div class="mitigation-card">
+                        <div class="mc-top">
+                            <div class="mc-icon"><i class="fa-solid fa-house-chimney"></i></div>
+                            <span class="status-badge progress">In Progress</span>
+                        </div>
+                        <h4>Cool / Reflective Roofing</h4>
+                        <p>Retrofit high-density residential rooftops in Cubao with reflective coating.</p>
+                        <div class="mc-stats">
+                            <div><span>-1.4°C</span><small>Projected local drop</small></div>
+                            <div><span>1,200</span><small>Rooftops targeted</small></div>
+                        </div>
+                        <div class="mc-bar"><div style="width:40%"></div></div>
+                    </div>
+
+                    <div class="mitigation-card">
+                        <div class="mc-top">
+                            <div class="mc-icon"><i class="fa-solid fa-road"></i></div>
+                            <span class="status-badge proposed">Proposed</span>
+                        </div>
+                        <h4>Green Corridors &amp; Pocket Parks</h4>
+                        <p>Convert underused lots along Commonwealth Ave into shaded pocket parks.</p>
+                        <div class="mc-stats">
+                            <div><span>-1.8°C</span><small>Projected local drop</small></div>
+                            <div><span>12</span><small>Sites identified</small></div>
+                        </div>
+                        <div class="mc-bar"><div style="width:22%"></div></div>
+                    </div>
+
+                    <div class="mitigation-card">
+                        <div class="mc-top">
+                            <div class="mc-icon"><i class="fa-solid fa-water"></i></div>
+                            <span class="status-badge planned">Planned</span>
+                        </div>
+                        <h4>Permeable Pavements</h4>
+                        <p>Replace impervious pavement in Novaliches Proper flood-heat overlap zones.</p>
+                        <div class="mc-stats">
+                            <div><span>-0.9°C</span><small>Projected local drop</small></div>
+                            <div><span>3.2<small>km</small></span><small>Road length</small></div>
+                        </div>
+                        <div class="mc-bar"><div style="width:8%"></div></div>
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+
+        <!-- ========================= -->
+        <!-- VIEW: REPORTS -->
+        <!-- ========================= -->
+        <div class="view" id="view-reports">
+
+            <section class="glass-panel">
+                <div class="panel-head">
+                    <h3>Generated Reports</h3>
+                    <button class="primary-btn small"><i class="fa-solid fa-plus"></i> New Report</button>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="data-table" id="reportsTable">
+                        <thead>
+                            <tr>
+                                <th>Report</th>
+                                <th>Type</th>
+                                <th>Coverage Area</th>
+                                <th>Date Generated</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
 
     </main>
 
