@@ -708,6 +708,26 @@ font-weight:600;
     text-align:center;
 }
 
+.panel-footnote.highlight{
+    color:#ff5577;
+    font-weight:600;
+}
+
+.chart-fallback{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:100%;
+    gap:10px;
+    color:#777;
+    font-size:13px;
+    text-align:center;
+}
+
+.chart-fallback i{
+    color:#ff5577;
+}
+
 .panel-controls{
     display:flex;
     align-items:center;
@@ -1952,4 +1972,96 @@ font-weight:600;
 @media (max-width:1200px){
     .settings-form-grid{ grid-template-columns:1fr; }
     .theme-options{ grid-template-columns:1fr; }
+}
+
+/* ==========================
+   PRIORITY REPLANTING ZONES
+========================== */
+
+.priority-zone-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
+.priority-zone-item{
+    display:flex;
+    align-items:flex-start;
+    gap:14px;
+    padding:16px;
+    border-radius:16px;
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.06);
+    transition:.25s;
+}
+
+.priority-zone-item:hover{
+    background:rgba(255,255,255,.06);
+}
+
+.pz-dot{
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    margin-top:5px;
+    flex-shrink:0;
+}
+
+.pz-dot.critical{ background:#ff2d55; box-shadow:0 0 10px #ff2d55; }
+.pz-dot.high{ background:#ff8c42; box-shadow:0 0 10px #ff8c42; }
+.pz-dot.medium{ background:#ffd23f; box-shadow:0 0 10px #ffd23f; }
+.pz-dot.moderate{ background:#00ff84; box-shadow:0 0 10px #00ff84; }
+
+.pz-body{
+    flex:1;
+    min-width:0;
+}
+
+.pz-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:4px;
+}
+
+.pz-top strong{
+    font-size:14.5px;
+    font-weight:600;
+}
+
+.pz-badge{
+    font-size:11px;
+    font-weight:600;
+    padding:4px 11px;
+    border-radius:999px;
+    flex-shrink:0;
+}
+
+.pz-badge.critical{ background:rgba(255,45,85,.15); color:#ff5577; }
+.pz-badge.high{ background:rgba(255,140,66,.15); color:#ff8c42; }
+.pz-badge.medium{ background:rgba(255,210,63,.15); color:#ffd23f; }
+.pz-badge.moderate{ background:rgba(0,255,132,.15); color:#00ff84; }
+
+.pz-cover{
+    display:block;
+    font-size:12.5px;
+    color:#999;
+    margin-bottom:10px;
+}
+
+.pz-tags{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+}
+
+.mini-tag{
+    font-size:10.5px;
+    font-weight:500;
+    padding:4px 10px;
+    border-radius:999px;
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.08);
+    color:#aaa;
 }
