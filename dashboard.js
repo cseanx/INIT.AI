@@ -1,12 +1,18 @@
 /* ==========================
-   CLOCK
+   CLOCK & DATE
 ========================== */
 
-const clock = document.querySelector(".clock");
+const clock = document.getElementById("clockDisplay");
+const dateDisplay = document.getElementById("dateDisplay");
 
 function updateClock(){
     const now = new Date();
-    clock.innerHTML = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    clock.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const yyyy = now.getFullYear();
+    dateDisplay.textContent = `${mm}/${dd}/${yyyy}`;
 }
 
 updateClock();
@@ -22,6 +28,79 @@ const toggle = document.getElementById("toggleSidebar");
 toggle.addEventListener("click", () => {
     sidebar.classList.toggle("collapsed");
 });
+
+/* ==========================
+   ACCOUNT SWITCHER
+========================== */
+
+const accounts = [
+    { name: "Juan Dela Cruz", role: "LGU Administrator", initials: "JD" },
+    { name: "Maria Santos",   role: "Climate Analyst",    initials: "MS" },
+    { name: "Ramon Reyes",    role: "Field Coordinator",  initials: "RR" },
+];
+
+let currentAccountIndex = 0;
+
+const accountSection = document.getElementById("accountSection");
+const accountTrigger = document.getElementById("accountTrigger");
+const accountMenu = accountSection.querySelector(".account-menu");
+const accountName = document.getElementById("accountName");
+const accountRole = document.getElementById("accountRole");
+const accountAvatar = document.getElementById("accountAvatar");
+const switchAccountBtn = document.getElementById("switchAccountBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+
+function renderAccount(){
+    const acc = accounts[currentAccountIndex];
+    accountName.textContent = acc.name;
+    accountRole.textContent = acc.role;
+    accountAvatar.textContent = acc.initials;
+}
+
+function positionAccountMenu(){
+    const rect = accountTrigger.getBoundingClientRect();
+    const menuWidth = Math.max(rect.width, 210);
+    accountMenu.style.width = `${menuWidth}px`;
+    accountMenu.style.bottom = `${window.innerHeight - rect.top + 8}px`;
+
+    // Flip to the right of the trigger when the sidebar is collapsed
+    // (icon-only rail), otherwise align to the trigger's own width.
+    if (sidebar.classList.contains("collapsed")){
+        accountMenu.style.left = `${rect.right + 12}px`;
+        accountMenu.style.bottom = `${window.innerHeight - rect.bottom}px`;
+    } else {
+        accountMenu.style.left = `${rect.left}px`;
+    }
+}
+
+accountTrigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const opening = !accountSection.classList.contains("open");
+    if (opening) positionAccountMenu();
+    accountSection.classList.toggle("open", opening);
+});
+
+document.addEventListener("click", (e) => {
+    if (!accountSection.contains(e.target)){
+        accountSection.classList.remove("open");
+    }
+});
+
+window.addEventListener("resize", () => {
+    accountSection.classList.remove("open");
+});
+
+switchAccountBtn.addEventListener("click", () => {
+    currentAccountIndex = (currentAccountIndex + 1) % accounts.length;
+    renderAccount();
+    accountSection.classList.remove("open");
+});
+
+logoutBtn.addEventListener("click", () => {
+    window.location.href = "index.html";
+});
+
+renderAccount();
 
 /* ==========================
    VIEW ROUTING

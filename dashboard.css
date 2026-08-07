@@ -153,6 +153,10 @@ height:100vh;
 
     width:82px;
 
+    padding-left:12px;
+
+    padding-right:12px;
+
 }
 
 .sidebar-top{
@@ -170,6 +174,12 @@ height:100vh;
     margin-top:auto;
 
     padding-top:20px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:10px;
 
 }
 
@@ -215,14 +225,6 @@ height:100vh;
 
     height:48px;
 
-    border-radius:16px;
-
-    background:linear-gradient(
-        135deg,
-        #ff8c42,
-        #ff2d55
-    );
-
     display:flex;
 
     justify-content:center;
@@ -230,6 +232,18 @@ height:100vh;
     align-items:center;
 
     flex-shrink:0;
+
+}
+
+.logo-circle img{
+
+    width:100%;
+
+    height:100%;
+
+    object-fit:contain;
+
+    filter:drop-shadow(0 0 14px rgba(255,45,85,.35));
 
 }
 
@@ -299,7 +313,7 @@ nav a span,
 }
 
 .sidebar.collapsed nav a span,
-.sidebar.collapsed .sidebar-bottom span{
+.sidebar.collapsed .sidebar-bottom span:not(.status-dot){
 
     opacity:0;
 
@@ -335,11 +349,15 @@ nav a.active{
 
     justify-content:center;
 
+    gap:0;
+
 }
 
 .sidebar.collapsed .logo{
 
     justify-content:center;
+
+    gap:0;
 
 }
 
@@ -451,17 +469,25 @@ gap:25px;
 
 }
 
-.status{
+.datetime{
 
 display:flex;
 
-align-items:center;
+flex-direction:column;
 
-gap:10px;
+align-items:flex-end;
 
-font-size:14px;
+gap:4px;
 
-color:#ccc;
+}
+
+.date{
+
+font-size:12px;
+
+color:#888;
+
+letter-spacing:.02em;
 
 }
 
@@ -1268,4 +1294,189 @@ font-weight:600;
     font-size:11px;
     color:#ccc;
     text-shadow:0 2px 8px rgba(0,0,0,.6);
+}
+
+/* ==========================
+   SIDEBAR STATUS
+========================== */
+
+.sidebar-status{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border-radius:14px;
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.06);
+    font-size:12px;
+    color:#ccc;
+    letter-spacing:.03em;
+}
+
+.sidebar.collapsed .sidebar-status{
+    justify-content:center;
+    padding:10px;
+    gap:0;
+}
+
+.notification-dot{
+    position:absolute;
+    top:10px;
+    right:14px;
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ff2d55;
+    box-shadow:0 0 8px rgba(255,45,85,.6);
+}
+
+.sidebar.collapsed .notification-dot{
+    top:8px;
+    right:8px;
+}
+
+/* ==========================
+   ACCOUNT SWITCHER
+========================== */
+
+.account-section{
+    position:relative;
+}
+
+.account-trigger{
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:9px;
+    border-radius:16px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);
+    cursor:pointer;
+    color:#fff;
+    font-family:inherit;
+    transition:.25s;
+}
+
+.account-trigger:hover{
+    background:rgba(255,255,255,.08);
+}
+
+.account-avatar{
+    width:36px;
+    height:36px;
+    border-radius:12px;
+    background:linear-gradient(135deg,#ff8c42,#ff2d55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12.5px;
+    font-weight:700;
+    flex-shrink:0;
+}
+
+.account-info{
+    flex:1;
+    min-width:0;
+    text-align:left;
+}
+
+.account-info strong{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.account-info span{
+    display:block;
+    font-size:11px;
+    color:#888;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.account-chevron{
+    font-size:11px;
+    color:#888;
+    flex-shrink:0;
+    transition:.25s ease;
+}
+
+.account-section.open .account-chevron{
+    transform:rotate(180deg);
+}
+
+.account-menu{
+    position:fixed;
+    background:#101010;
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:14px;
+    padding:6px;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    opacity:0;
+    visibility:hidden;
+    transform:translateY(6px);
+    transition:.2s ease;
+    box-shadow:0 16px 40px rgba(0,0,0,.55);
+    z-index:999;
+}
+
+.account-section.open .account-menu{
+    opacity:1;
+    visibility:visible;
+    transform:translateY(0);
+}
+
+.account-menu-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border-radius:10px;
+    background:none;
+    border:none;
+    color:#ddd;
+    font-size:13px;
+    font-family:inherit;
+    cursor:pointer;
+    text-align:left;
+    transition:.2s;
+}
+
+.account-menu-item i{
+    width:16px;
+    text-align:center;
+    font-size:13px;
+}
+
+.account-menu-item:hover{
+    background:rgba(255,255,255,.06);
+    color:#fff;
+}
+
+.account-menu-item.danger{
+    color:#ff5577;
+}
+
+.account-menu-item.danger:hover{
+    background:rgba(255,45,85,.12);
+}
+
+/* Collapsed sidebar variants */
+
+.sidebar.collapsed .account-info,
+.sidebar.collapsed .account-chevron{
+    display:none;
+}
+
+.sidebar.collapsed .account-trigger{
+    justify-content:center;
+    padding:6px;
+    gap:0;
 }

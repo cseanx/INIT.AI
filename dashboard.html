@@ -40,7 +40,7 @@
 
             <div class="logo">
                 <div class="logo-circle">
-                    <i class="fa-solid fa-microchip"></i>
+                    <img src="assets/images/logo.svg" alt="INIT.AI logo">
                 </div>
                 <div class="logo-text">
                     <h2>INIT.AI</h2>
@@ -92,6 +92,33 @@
                 <div class="notification-dot"></div>
             </a>
 
+            <div class="sidebar-status">
+                <span class="status-dot"></span>
+                <span>SYSTEM ONLINE</span>
+            </div>
+
+            <div class="account-section" id="accountSection">
+
+                <button type="button" class="account-trigger" id="accountTrigger">
+                    <div class="account-avatar" id="accountAvatar">SN</div>
+                    <div class="account-info">
+                        <strong id="accountName">Sean Astin Navarro</strong>
+                        <span id="accountRole">Admin</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-up account-chevron"></i>
+                </button>
+
+                <div class="account-menu">
+                    <button type="button" class="account-menu-item" id="switchAccountBtn">
+                        <i class="fa-solid fa-arrows-rotate"></i> Switch Account
+                    </button>
+                    <button type="button" class="account-menu-item danger" id="logoutBtn">
+                        <i class="fa-solid fa-right-from-bracket"></i> Log Out
+                    </button>
+                </div>
+
+            </div>
+
         </div>
 
     </aside>
@@ -118,12 +145,10 @@
                     <input type="text" placeholder="Search barangay, report...">
                 </div>
 
-                <div class="status">
-                    <span class="status-dot"></span>
-                    SYSTEM ONLINE
+                <div class="datetime">
+                    <span class="date" id="dateDisplay">08/07/2026</span>
+                    <span class="clock" id="clockDisplay">00:00</span>
                 </div>
-
-                <div class="clock">00:00</div>
 
             </div>
 
