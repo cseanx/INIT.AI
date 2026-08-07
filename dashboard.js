@@ -314,18 +314,41 @@ function chartTheme(){
         text: "#888",
         red: "#ff2d55",
         orange: "#ff8c42",
+        yellow: "#ffd23f",
         green: "#00ff84",
+        blue: "#5aa9ff",
     };
+}
+
+// Wraps a Chart.js constructor call so a missing/broken library (e.g. the
+// CDN failing to load) can't silently abort everything that runs after it.
+function safeChart(id, config){
+    const el = document.getElementById(id);
+    if (!el) return null;
+
+    if (typeof Chart === "undefined"){
+        const wrap = el.closest(".chart-wrap");
+        if (wrap) wrap.innerHTML = `<div class="chart-fallback"><i class="fa-solid fa-triangle-exclamation"></i> Chart library failed to load</div>`;
+        return null;
+    }
+
+    try {
+        return new Chart(el, config);
+    } catch (err){
+        console.error(`Chart "${id}" failed to render:`, err);
+        const wrap = el.closest(".chart-wrap");
+        if (wrap) wrap.innerHTML = `<div class="chart-fallback"><i class="fa-solid fa-triangle-exclamation"></i> Couldn't render this chart</div>`;
+        return null;
+    }
 }
 
 function buildDashboardChart(){
     if (chartsBuilt.dashboard) return;
-    const el = document.getElementById("dashMiniChart");
-    if (!el) return;
+    if (!document.getElementById("dashMiniChart")) return;
     chartsBuilt.dashboard = true;
     const th = chartTheme();
 
-    chartInstances.dash = new Chart(el, {
+    chartInstances.dash = safeChart("dashMiniChart", {
         type: "scatter",
         data: {
             datasets: [{
@@ -347,92 +370,131 @@ function buildDashboardChart(){
     });
 }
 
+/* ==========================
+   CANOPY VIEW — MOCK DATA
+========================== */
+
+const canopyBarData = [
+    { name: "Diliman",       value: 42 },
+    { name: "Batasan Hills", value: 35 },
+    { name: "Fairview",      value: 33 },
+    { name: "Novaliches",    value: 28 },
+    { name: "Payatas",       value: 18 },
+    { name: "Cubao",         value: 14 },
+];
+
+const canopyTrend = {
+    labels: ["2021", "2022", "2023", "2024", "2025", "2026"],
+    values: [34, 33, 32, 31.6, 31.4, 31.2],
+};
+
+const landCoverBreakdown = [
+    { label: "Built-up",     value: 52, color: "#ff2d55" },
+    { label: "Vegetation",   value: 31, color: "#00ff84" },
+    { label: "Bare Soil",    value: 10, color: "#ffd23f" },
+    { label: "Water Bodies", value: 7,  color: "#5aa9ff" },
+];
+
+const priorityZones = [
+    { name: "Payatas",       cover: 12, priority: "Critical", tags: ["Needs Trees", "High Heat"] },
+    { name: "Cubao",         cover: 15, priority: "High",     tags: ["Needs Trees", "Residential"] },
+    { name: "Batasan Hills", cover: 22, priority: "Medium",   tags: ["School Zone", "Residential"] },
+    { name: "Fairview",      cover: 29, priority: "Moderate", tags: ["Residential"] },
+];
+
+const priorityStyles = {
+    Critical: { key: "critical", color: "#ff2d55" },
+    High:     { key: "high",     color: "#ff8c42" },
+    Medium:   { key: "medium",   color: "#ffd23f" },
+    Moderate: { key: "moderate", color: "#00ff84" },
+};
+
 function buildCanopyCharts(){
     if (chartsBuilt.canopy) return;
-    const barEl = document.getElementById("canopyBarChart");
-    const lineEl = document.getElementById("canopyLineChart");
-    if (!barEl || !lineEl) return;
+    if (!document.getElementById("canopyBarChart")) return;
     chartsBuilt.canopy = true;
     const th = chartTheme();
 
-    const sorted = [...barangays].sort((a, b) => b.canopy - a.canopy);
-
-    chartInstances.canopyBar = new Chart(barEl, {
+    chartInstances.canopyBar = safeChart("canopyBarChart", {
         type: "bar",
         data: {
-            labels: sorted.map(b => b.name),
+            labels: canopyBarData.map(d => d.name),
             datasets: [{
                 label: "Canopy %",
-                data: sorted.map(b => b.canopy),
-                backgroundColor: sorted.map(b => b.canopy < 18 ? th.red : b.canopy < 28 ? th.orange : th.green),
+                data: canopyBarData.map(d => d.value),
+                backgroundColor: canopyBarData.map(d => d.value < 18 ? th.red : d.value < 30 ? th.orange : th.green),
                 borderRadius: 6,
+                barThickness: 20,
             }]
         },
         options: {
+            indexAxis: "y",
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.x}% canopy cover` } }
+            },
             scales: {
-                x: { ticks: { color: th.text, maxRotation: 60, minRotation: 60, font: { size: 10 } }, grid: { display: false } },
-                y: { ticks: { color: th.text }, grid: { color: th.grid } },
+                x: { min: 0, max: 50, ticks: { color: th.text, callback: (v) => `${v}%` }, grid: { color: th.grid } },
+                y: { ticks: { color: "#ddd", font: { size: 12.5 } }, grid: { display: false } },
             }
         }
     });
 
-    chartInstances.canopyLine = new Chart(lineEl, {
+    chartInstances.canopyLine = safeChart("canopyLineChart", {
         type: "line",
         data: {
-            labels: ["2021", "2022", "2023", "2024", "2025", "2026"],
+            labels: canopyTrend.labels,
             datasets: [{
                 label: "Canopy %",
-                data: [31.2, 30.6, 29.9, 29.8, 29.0, 28.4],
+                data: canopyTrend.values,
                 borderColor: th.red,
                 backgroundColor: "rgba(255,45,85,.12)",
                 fill: true,
                 tension: .35,
                 pointRadius: 3,
+                pointBackgroundColor: th.red,
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y}% canopy` } }
+            },
             scales: {
                 x: { ticks: { color: th.text }, grid: { display: false } },
-                y: { ticks: { color: th.text }, grid: { color: th.grid } },
+                y: { ticks: { color: th.text, callback: (v) => `${v}%` }, grid: { color: th.grid } },
             }
         }
     });
 
-    const landCoverEl = document.getElementById("landCoverChart");
-    if (landCoverEl){
-        chartInstances.landCover = new Chart(landCoverEl, {
-            type: "doughnut",
-            data: {
-                labels: ["Tree Canopy", "Impervious Surface", "Open / Green Space", "Water Bodies", "Bare / Under Construction"],
-                datasets: [{
-                    data: [28.4, 31.2, 21.0, 5.4, 14.0],
-                    backgroundColor: [th.green, th.red, "#5aa9ff", "#2f6f9e", th.orange],
-                    borderColor: "#0d0d0d",
-                    borderWidth: 3,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: "62%",
-                plugins: {
-                    legend: {
-                        position: "bottom",
-                        labels: { color: th.text, boxWidth: 10, font: { size: 10.5 }, padding: 12 }
-                    }
-                }
+    chartInstances.landCover = safeChart("landCoverChart", {
+        type: "doughnut",
+        data: {
+            labels: landCoverBreakdown.map(d => d.label),
+            datasets: [{
+                data: landCoverBreakdown.map(d => d.value),
+                backgroundColor: landCoverBreakdown.map(d => d.color),
+                borderColor: "#0d0d0d",
+                borderWidth: 3,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "62%",
+            plugins: {
+                legend: {
+                    position: "bottom",
+                    labels: { color: th.text, boxWidth: 10, font: { size: 10.5 }, padding: 12 }
+                },
+                tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed}%` } }
             }
-        });
-    }
-
-    buildPriorityZonesList();
-    buildCanopyTable();
+        }
+    });
 }
 
 function buildPriorityZonesList(){
@@ -440,20 +502,22 @@ function buildPriorityZonesList(){
     if (!list || list.dataset.built) return;
     list.dataset.built = "true";
 
-    const zones = barangays.filter(b => b.priority).sort((a, b) => a.canopy - b.canopy);
-
-    zones.forEach(b => {
+    priorityZones.forEach(zone => {
+        const style = priorityStyles[zone.priority];
         const row = document.createElement("div");
-        row.className = "mini-hotspot";
+        row.className = "priority-zone-item";
         row.innerHTML = `
-            <div class="mh-info">
-                <span class="severity-dot ${b.severity}"></span>
-                <div>
-                    <strong>${b.name}</strong>
-                    <small>${b.driver}</small>
+            <span class="pz-dot ${style.key}"></span>
+            <div class="pz-body">
+                <div class="pz-top">
+                    <strong>${zone.name}</strong>
+                    <span class="pz-badge ${style.key}">${zone.priority}</span>
+                </div>
+                <span class="pz-cover">Tree Cover: ${zone.cover}%</span>
+                <div class="pz-tags">
+                    ${zone.tags.map(tag => `<span class="mini-tag">${tag}</span>`).join("")}
                 </div>
             </div>
-            <span class="mh-temp ${b.severity}">${b.canopy}% canopy</span>
         `;
         list.appendChild(row);
     });
@@ -488,7 +552,11 @@ function buildCanopyTable(){
 
 function renderChartsFor(viewName){
     if (viewName === "dashboard") buildDashboardChart();
-    if (viewName === "canopy") buildCanopyCharts();
+    if (viewName === "canopy"){
+        buildCanopyCharts();
+        buildPriorityZonesList();
+        buildCanopyTable();
+    }
     if (viewName === "heatmap") buildHeatmapGrid();
     if (viewName === "hotspots") buildHotspotsTable();
     if (viewName === "reports") buildReportsTable();
