@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>INIT.AI Dashboard</title>
+
+    <link rel="stylesheet" href="dashboard.css">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+</head>
+
+<body>
+
+<div class="dashboard">
+
+    <!-- ========================= -->
+    <!-- Sidebar -->
+    <!-- ========================= -->
+
+    <!-- ========================= -->
+<!-- Sidebar -->
+<!-- ========================= -->
+
+<aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-top">
+
+        <button id="toggleSidebar" class="toggle-btn">
+
+            <i class="fa-solid fa-bars"></i>
+
+        </button>
+
+        <div class="logo">
+
+            <div class="logo-circle">
+
+                <i class="fa-solid fa-microchip"></i>
+
+            </div>
+
+            <div class="logo-text">
+
+                <h2>INIT.AI</h2>
+                <span>Urban Intelligence</span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <nav>
+
+        <a href="#" data-title="Dashboard" class="active">
+
+            <i class="fa-solid fa-chart-line"></i>
+
+            <span>Dashboard</span>
+
+        </a>
+
+        <a href="#" data-title="Heat Map">
+
+            <i class="fa-solid fa-earth-americas"></i>
+
+            <span>Heat Map</span>
+
+        </a>
+
+        <a href="#" data-title="Hotspots">
+
+            <i class="fa-solid fa-location-dot"></i>
+
+            <span>Hotspots</span>
+
+        </a>
+
+        <a href="#" data-title="Canopy Analysis">
+
+            <i class="fa-solid fa-tree"></i>
+
+            <span>Canopy Analysis</span>
+
+        </a>
+
+        <a href="#" data-title="Mitigation">
+
+            <i class="fa-solid fa-seedling"></i>
+
+            <span>Mitigation</span>
+
+        </a>
+
+        <a href="#" data-title="Reports">
+
+            <i class="fa-solid fa-file-lines"></i>
+
+            <span>Reports</span>
+
+        </a>
+
+    </nav>
+
+    <div class="sidebar-bottom">
+
+       <a href="#"data-title="Settings" >
+            <i class="fa-solid fa-gear"></i>
+            <span>Settings</span>
+            <div class="notification-dot"></div>
+        </a>
+
+    </div>
+
+</aside>
+
+    <!-- ========================= -->
+    <!-- Main -->
+    <!-- ========================= -->
+
+    <main class="main-content">
+
+        <!-- Topbar -->
+
+        <header class="topbar">
+
+            <div>
+
+                <h1>Dashboard</h1>
+
+                <p>Welcome back to INIT.AI</p>
+
+            </div>
+
+            <div class="topbar-right">
+
+                <div class="search">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        placeholder="Search..."
+                    >
+
+                </div>
+
+                <div class="status">
+
+                    <span class="status-dot"></span>
+
+                    SYSTEM ONLINE
+
+                </div>
+
+                <div class="clock">
+
+                    00:00
+
+                </div>
+
+            </div>
+
+        </header>
+
+        <!-- Hero goes here -->
+         <section class="hero-panel">
+
+    <div class="hero-left">
+
+        <span class="hero-badge">
+            AI Climate Intelligence
+        </span>
+
+        <h1>
+            Monitor.<br>
+            Analyze.<br>
+            Mitigate.
+        </h1>
+
+        <p>
+            Analyze urban heat islands using satellite imagery,
+            AI-assisted hotspot detection, and canopy assessment
+            to support climate-smart decision making.
+        </p>
+
+        <div class="hero-actions">
+
+            <button class="primary-btn">
+                Launch Analysis
+            </button>
+
+            <button class="secondary-btn">
+                Open Heat Map
+            </button>
+
+        </div>
+
+    </div>
+
+    <div class="hero-right">
+
+        <div class="thermal-card">
+
+            <img
+                src="assets/images/thermal-map.png"
+                alt="Thermal Map">
+
+            <div class="live-status">
+
+                <span class="live-dot"></span>
+
+                LIVE SATELLITE
+
+            </div>
+
+            <div class="temperature">
+
+                41.2°C
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+    </main>
+
+</div>
+
+<script src="dashboard.js"></script>
+
+</body>
+</html>
