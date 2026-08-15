@@ -2,10 +2,14 @@ import { useMemo } from 'react';
 import { api } from '../services/api';
 import { useApiData } from '../hooks/useApiData';
 import { tempToColor } from '../utils/tempToColor';
-import HeatLegend from '../components/heatmap/HeatLegend';
+import Page from '../components/layout/Page';
+import PanelHead from '../components/common/PanelHead';
 import Card from '../components/common/Card';
+import HeatLegend from '../components/heatmap/HeatLegend';
 
 const CELL_COUNT = 40;
+const CHIP_CLASSES =
+    'cursor-pointer rounded-full border border-white/10 bg-white/[.04] px-4 py-[9px] text-[13px] text-[#aaa] transition duration-200 hover:bg-white/8 hover:text-white';
 
 function buildCells(readings: { barangay: string; temperature: number }[]) {
     return Array.from({ length: CELL_COUNT }, (_, i) => {
@@ -24,28 +28,26 @@ export default function HeatMap() {
     );
 
     return (
-        <div className="animate-view-in">
+        <Page>
             <Card>
-                <div className="panel-head mb-5 flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="text-lg font-semibold">Quezon City — Surface Temperature</h3>
-                    <div className="flex flex-wrap items-center gap-[10px]">
-                        <select
-                            id="cityFilter"
-                            className="rounded-xl border border-white/10 bg-white/5 p-[10px_14px] text-white outline-none"
-                        >
-                            <option>Quezon City</option>
-                            <option>Manila</option>
-                            <option>Pasig</option>
-                            <option>Caloocan</option>
-                        </select>
-                        <button className="chip-btn active cursor-pointer rounded-full border border-white/10 bg-white/[.04] px-4 py-[9px] text-[13px] text-[#aaa] transition duration-200 hover:bg-white/8 hover:text-white">
-                            Day
-                        </button>
-                        <button className="chip-btn cursor-pointer rounded-full border border-white/10 bg-white/[.04] px-4 py-[9px] text-[13px] text-[#aaa] transition duration-200 hover:bg-white/8 hover:text-white">
-                            Night
-                        </button>
-                    </div>
-                </div>
+                <PanelHead
+                    title="Quezon City — Surface Temperature"
+                    actions={
+                        <div className="flex flex-wrap items-center gap-[10px]">
+                            <select
+                                id="cityFilter"
+                                className="rounded-xl border border-white/10 bg-white/5 p-[10px_14px] text-white outline-none"
+                            >
+                                <option>Quezon City</option>
+                                <option>Manila</option>
+                                <option>Pasig</option>
+                                <option>Caloocan</option>
+                            </select>
+                            <button className={`chip-btn active ${CHIP_CLASSES}`}>Day</button>
+                            <button className={`chip-btn ${CHIP_CLASSES}`}>Night</button>
+                        </div>
+                    }
+                />
 
                 <div className="grid grid-cols-[1fr_260px] gap-6 max-[1200px]:grid-cols-1">
                     <div className="grid aspect-[8/5] grid-cols-8 gap-[6px]" id="heatmapGrid">
@@ -66,6 +68,6 @@ export default function HeatMap() {
                     <HeatLegend />
                 </div>
             </Card>
-        </div>
+        </Page>
     );
 }

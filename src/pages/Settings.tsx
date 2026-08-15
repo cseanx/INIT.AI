@@ -1,5 +1,7 @@
+import Page from '../components/layout/Page';
+import PanelHead from '../components/common/PanelHead';
 import Card from '../components/common/Card';
-import ToggleRow, { PanelHead } from '../components/settings/ToggleRow';
+import ToggleRow from '../components/settings/ToggleRow';
 import Switch from '../components/settings/Switch';
 import ThemePicker from '../components/settings/ThemePicker';
 import AccentPicker from '../components/settings/AccentPicker';
@@ -101,7 +103,7 @@ function SessionItem({
 
 export default function Settings() {
     return (
-        <div className="animate-view-in">
+        <Page>
             <Card>
                 <PanelHead title="Profile" />
                 <div className="grid grid-cols-2 gap-5 max-[1200px]:grid-cols-1">
@@ -219,6 +221,6 @@ export default function Settings() {
                     </div>
                 </div>
             </Card>
-        </div>
+        </Page>
     );
 }

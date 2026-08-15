@@ -1,5 +1,10 @@
 import { api } from '../services/api';
 import { useApiData } from '../hooks/useApiData';
+import Page from '../components/layout/Page';
+import StatGrid from '../components/layout/StatGrid';
+import PanelGrid from '../components/layout/PanelGrid';
+import PanelHead from '../components/common/PanelHead';
+import Card from '../components/common/Card';
 import StatCard from '../components/dashboard/StatCard';
 import {
     CanopyBarChart,
@@ -8,38 +13,30 @@ import {
 } from '../components/canopy/CanopyCharts';
 import CanopyTable from '../components/canopy/CanopyTable';
 import PriorityZones from '../components/canopy/PriorityZones';
-import Card from '../components/common/Card';
 import { canopyStats } from '../data/mockData';
-
-const PANEL_HEAD_CLASSES =
-    'panel-head mb-5 flex flex-wrap items-center justify-between gap-3';
 
 export default function Canopy() {
     const canopy = useApiData(api.getCanopy);
     const barangays = useApiData(api.getHotspots);
 
     return (
-        <div className="animate-view-in">
-            <section className="mx-5 mb-[30px] grid grid-cols-4 gap-5 max-[1200px]:grid-cols-2">
+        <Page>
+            <StatGrid>
                 {canopyStats.map((stat) => (
                     <StatCard key={stat.label} stat={stat} />
                 ))}
-            </section>
+            </StatGrid>
 
             {canopy ? (
-                <section className="mx-5 mb-[30px] grid grid-cols-[1.6fr_1fr] gap-5 max-[1200px]:grid-cols-1">
+                <PanelGrid>
                     <Card>
-                        <div className={PANEL_HEAD_CLASSES}>
-                            <h3 className="text-lg font-semibold">Canopy Coverage by Barangay</h3>
-                        </div>
+                        <PanelHead title="Canopy Coverage by Barangay" />
                         <div className="relative h-[280px]">
                             <CanopyBarChart data={canopy} />
                         </div>
                     </Card>
                     <Card>
-                        <div className={PANEL_HEAD_CLASSES}>
-                            <h3 className="text-lg font-semibold">5-Year Canopy Trend</h3>
-                        </div>
+                        <PanelHead title="5-Year Canopy Trend" />
                         <div className="relative h-[280px]">
                             <CanopyTrendChart data={canopy} />
                         </div>
@@ -47,16 +44,14 @@ export default function Canopy() {
                             Overall Canopy Change: -2.8% since 2021
                         </p>
                     </Card>
-                </section>
+                </PanelGrid>
             ) : null}
 
             {canopy ? (
-                <section className="mx-5 mb-[30px] grid grid-cols-[1.6fr_1fr] gap-5 max-[1200px]:grid-cols-1">
+                <PanelGrid>
                     <Card>
-                        <div className={PANEL_HEAD_CLASSES}>
-                            <h3 className="text-lg font-semibold">Land Cover Composition</h3>
-                        </div>
-                        <div className="relative h-[450px]">
+                        <PanelHead title="Land Cover Composition" />
+                        <div className="relative h-[280px]">
                             <LandCoverChart data={canopy} />
                         </div>
                         <p className="mt-[14px] text-center text-xs text-[#777]">
@@ -64,23 +59,23 @@ export default function Canopy() {
                         </p>
                     </Card>
                     <Card>
-                        <div className={PANEL_HEAD_CLASSES}>
-                            <h3 className="text-lg font-semibold">Priority Replanting Zones</h3>
-                            <span className="rounded-full border border-white/8 bg-white/5 p-[6px_14px] text-xs text-[#999]">
-                                Ranked by urgency
-                            </span>
-                        </div>
+                        <PanelHead
+                            title="Priority Replanting Zones"
+                            actions={
+                                <span className="rounded-full border border-white/8 bg-white/5 p-[6px_14px] text-xs text-[#999]">
+                                    Ranked by urgency
+                                </span>
+                            }
+                        />
                         <PriorityZones zones={canopy.priorityZones} />
                     </Card>
-                </section>
+                </PanelGrid>
             ) : null}
 
             <Card>
-                <div className={PANEL_HEAD_CLASSES}>
-                    <h3 className="text-lg font-semibold">Canopy Detail by Barangay</h3>
-                </div>
+                <PanelHead title="Canopy Detail by Barangay" />
                 {barangays ? <CanopyTable barangays={barangays} /> : null}
             </Card>
-        </div>
+        </Page>
     );
 }

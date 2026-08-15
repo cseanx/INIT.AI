@@ -17,7 +17,7 @@ export default function MitigationCard({ project }: { project: MitigationProject
                     {project.status}
                 </span>
             </div>
-            <h4 className="mb-2 text-base">{project.title}</h4>
+            <h4 className="mb-2 text-white">{project.title}</h4>
             <p className="mb-4 text-[13px] leading-[1.6] text-[#999]">{project.description}</p>
             <div className="mc-stats mb-[14px] flex gap-[26px]">
                 <div>
