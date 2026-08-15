@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<!---LOGIN !--->
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>INIT.AI | Login</title>
+    <title>INIT.AI | Urban Intelligence Platform</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="dist/style.css">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
     <!-- Open Graph preview -->
     <meta property="og:title" content="INIT.AI"/>
@@ -19,58 +19,8 @@
     <meta property="og:url" content="https://cseanx.github.io/INIT.AI/"/>
     <meta property="og:type" content="website"/>
 </head>
-
 <body>
-<div class="background fixed inset-0">
-    <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
-    <div class="glow-one absolute h-[700px] w-[700px] rounded-full bg-[rgba(255,45,85,.28)] blur-[120px] animate-glow-one"></div>
-    <div class="glow-two absolute -bottom-[150px] -right-[150px] h-[700px] w-[700px] rounded-full bg-[rgba(255,45,85,.16)] blur-[120px] animate-glow-two"></div>
-    <div id="particles"></div>
-</div>
-
-<main class="flex h-screen w-full items-center justify-center">
-    <section class="z-10 w-[430px] rounded-[28px] border border-white/8 bg-white/5 p-[45px] backdrop-blur-[25px] shadow-[0_0_60px_rgba(255,45,85,.12),0_20px_80px_rgba(0,0,0,.45)]">
-        <div class="logo mb-[35px] flex items-center gap-[15px]">
-            <div class="logo-circle flex h-[60px] w-[60px] shrink-0 items-center justify-center">
-                <img src="assets/images/logo.svg" alt="INIT.AI logo" class="h-full w-full object-contain drop-shadow-[0_0_18px_rgba(255,45,85,.4)]">
-            </div>
-            <div>
-                <h1 class="text-[30px]">INIT.AI</h1>
-                <p class="text-[13px] text-[#9f9f9f]">Urban Intelligence Platform</p>
-            </div>
-        </div>
-        <h2 class="mb-2">Welcome Back</h2>
-        <span class="subtitle mb-[30px] block text-[#9f9f9f]">
-            Sign in to continue monitoring urban heat intelligence.
-        </span>
-        <form>
-            <div class="input-group mb-5">
-                <label class="mb-2 block text-sm text-[#d4d4d4]">Email Address</label>
-                <input
-                    type="email"
-                    placeholder="admin@init.ai"
-                    required
-                    class="w-full rounded-[14px] border border-white/8 bg-white/[.04] p-[15px] text-[15px] text-white outline-none transition duration-300 focus:border-primary focus:shadow-[0_0_25px_rgba(255,45,85,.25)]">
-            </div>
-            <div class="input-group mb-5">
-                <label class="mb-2 block text-sm text-[#d4d4d4]">Password</label>
-                <input
-                    type="password"
-                    placeholder="admin123"
-                    required
-                    class="w-full rounded-[14px] border border-white/8 bg-white/[.04] p-[15px] text-[15px] text-white outline-none transition duration-300 focus:border-primary focus:shadow-[0_0_25px_rgba(255,45,85,.25)]">
-            </div>
-           <button id="loginBtn" class="mt-[10px] w-full cursor-pointer rounded-[14px] border-none bg-gradient-to-r from-primary to-accent p-[15px] text-base font-semibold text-white transition duration-300 hover:-translate-y-[3px] hover:shadow-[0_10px_35px_rgba(255,45,85,.45)]">
-                Login
-            </button>
-        </form>
-        <footer class="mt-[30px] text-center text-[13px] text-[#9f9f9f]">
-            Prototype Version • 2026
-        </footer>
-    </section>
-</main>
-
-<script src="script.js"></script>
-
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

@@ -1,0 +1,45 @@
+import { useState } from 'react';
+
+type ThemeName = 'system' | 'dark' | 'light';
+
+interface ThemeOption {
+    name: ThemeName;
+    icon: string;
+    label: string;
+    tag?: string;
+}
+
+const THEMES: ThemeOption[] = [
+    { name: 'system', icon: 'fa-display', label: 'System Default', tag: 'Default' },
+    { name: 'dark', icon: 'fa-moon', label: 'Dark Mode' },
+    { name: 'light', icon: 'fa-sun', label: 'Light Mode' },
+];
+
+const CARD_CLASSES =
+    'relative flex cursor-pointer flex-col items-start gap-[10px] rounded-[16px] border border-white/8 bg-white/[.03] p-[18px] text-left text-[13.5px] font-semibold text-[#ccc] transition duration-200 hover:bg-white/6 hover:text-white';
+
+/** Visual-only theme picker (prototype). */
+export default function ThemePicker() {
+    const [active, setActive] = useState<ThemeName>('system');
+
+    return (
+        <div className="grid grid-cols-3 gap-[14px] max-[1200px]:grid-cols-1">
+            {THEMES.map((theme) => (
+                <button
+                    key={theme.name}
+                    type="button"
+                    className={`${CARD_CLASSES} theme-card ${active === theme.name ? 'active' : ''}`}
+                    onClick={() => setActive(theme.name)}
+                >
+                    <i className={`fa-solid ${theme.icon} text-lg text-[#999]`}></i>
+                    {theme.label}
+                    {theme.tag ? (
+                        <span className="theme-tag absolute right-[14px] top-[14px] rounded-full bg-[rgba(255,45,85,.18)] p-[4px_9px] text-[10px] font-bold uppercase tracking-[.04em] text-[#ff8899]">
+                            {theme.tag}
+                        </span>
+                    ) : null}
+                </button>
+            ))}
+        </div>
+    );
+}
