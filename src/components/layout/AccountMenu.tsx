@@ -70,7 +70,10 @@ export default function AccountMenu({ collapsed }: AccountMenuProps) {
     }
 
     return (
-        <div className="account-section relative" ref={sectionRef}>
+        <div
+            className={`account-section relative ${open ? 'open' : ''}`}
+            ref={sectionRef}
+        >
             <button
                 type="button"
                 className="account-trigger flex w-full cursor-pointer items-center gap-3 rounded-[16px] border border-white/8 bg-white/[.04] p-[9px] text-white transition duration-200 hover:bg-white/8"
@@ -93,12 +96,18 @@ export default function AccountMenu({ collapsed }: AccountMenuProps) {
                 className="account-menu invisible fixed z-[999] flex translate-y-[6px] flex-col gap-0.5 rounded-[14px] border border-white/10 bg-[#101010] p-[6px] opacity-0 shadow-[0_16px_40px_rgba(0,0,0,.55)] transition duration-200"
                 style={menuStyle}
             >
-                <button type="button" className={MENU_ITEM_CLASSES} onClick={switchAccount}>
+                <button
+                    type="button"
+                    id="switchAccountBtn"
+                    className={MENU_ITEM_CLASSES}
+                    onClick={switchAccount}
+                >
                     <i className="fa-solid fa-arrows-rotate w-4 text-center text-[13px]"></i>
                     Switch Account
                 </button>
                 <button
                     type="button"
+                    id="logoutBtn"
                     className={`${MENU_ITEM_CLASSES} danger`}
                     onClick={handleLogout}
                 >
