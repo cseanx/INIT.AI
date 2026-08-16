@@ -28,3 +28,10 @@ yarn-error.log*
  
 # vercel
 .vercel
+
+# python / backend
+backend/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+backend/.env

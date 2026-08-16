@@ -1,6 +1,7 @@
 import type {
     Barangay,
     CanopySnapshot,
+    HealthResponse,
     HeatSnapshot,
     MitigationProject,
     Report,
@@ -15,19 +16,23 @@ import {
 
 /* ==========================
    API SERVICE LAYER
-   The Python backend will eventually serve these endpoints:
+   The Python/FastAPI backend (see backend/) serves these endpoints:
+     GET /api/health
      GET /api/heat
-     GET /api/hotspots
+     GET /api/hotspots (backed by /api/heat + /api/barangays)
      GET /api/canopy
      GET /api/mitigation
      GET /api/reports
-   Until those exist, each call gracefully falls back to the
-   prototype mock data (see src/data/mockData.ts).
+   Base URL comes from VITE_API_URL (frontend .env). When the backend is
+   unreachable, each call gracefully falls back to the prototype mock data
+   (see src/data/mockData.ts).
 ========================== */
 
-async function fromApi<T>(url: string, fallback: T): Promise<T> {
+const API_BASE: string = import.meta.env.VITE_API_URL ?? '';
+
+async function fromApi<T>(path: string, fallback: T): Promise<T> {
     try {
-        const res = await fetch(url);
+        const res = await fetch(`${API_BASE}${path}`);
         if (!res.ok) {
             return fallback;
         }
@@ -38,6 +43,7 @@ async function fromApi<T>(url: string, fallback: T): Promise<T> {
 }
 
 export const api = {
+    getHealth: (): Promise<HealthResponse> => fromApi('/api/health', { status: 'ok' }),
     getHeat: (): Promise<HeatSnapshot> => fromApi('/api/heat', heatSnapshot),
     getHotspots: (): Promise<Barangay[]> => fromApi('/api/hotspots', barangays),
     getCanopy: (): Promise<CanopySnapshot> => fromApi('/api/canopy', canopySnapshot),

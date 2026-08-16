@@ -6,6 +6,10 @@ export type Severity = 'critical' | 'high' | 'moderate';
 export type TrendTone = 'up' | 'down' | 'neutral';
 export type IconTone = 'red' | 'orange' | 'green' | 'blue';
 
+export interface HealthResponse {
+    status: string;
+}
+
 export interface Account {
     name: string;
     role: string;
