@@ -34,15 +34,6 @@ export default function HeatMap() {
                     title="Quezon City — Surface Temperature"
                     actions={
                         <div className="flex flex-wrap items-center gap-[10px]">
-                            <select
-                                id="cityFilter"
-                                className="rounded-xl border border-white/10 bg-white/5 p-[10px_14px] text-white outline-none"
-                            >
-                                <option>Quezon City</option>
-                                <option>Manila</option>
-                                <option>Pasig</option>
-                                <option>Caloocan</option>
-                            </select>
                             <button className={`chip-btn active ${CHIP_CLASSES}`}>Day</button>
                             <button className={`chip-btn ${CHIP_CLASSES}`}>Night</button>
                         </div>

@@ -80,7 +80,7 @@ export default function AccountMenu({ collapsed }: AccountMenuProps) {
         >
             <button
                 type="button"
-                className="account-trigger flex w-full cursor-pointer items-center gap-3 rounded-[16px] border border-white/8 bg-white/[.04] p-[9px] text-white transition duration-200 hover:bg-white/8"
+                className="account-trigger flex w-full cursor-pointer items-center gap-3 rounded-[16px] border border-white/8 bg-white/[.04] p-[9px] text-white transition-all duration-[.35s] hover:bg-white/8"
                 ref={triggerRef}
                 onClick={toggleOpen}
                 aria-haspopup="menu"

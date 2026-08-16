@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import type { ChartConfiguration } from 'chart.js';
-import type { CanopySnapshot } from '../../types';
+import type { CanopySnapshot, ResolvedTheme } from '../../types';
 import { baseChartOptions, chartTheme } from '../../utils/chartTheme';
+import { usePreferences } from '../../preferences/PreferencesContext';
 import ChartCanvas from '../common/ChartCanvas';
 
-function useBarConfig(data: CanopySnapshot) {
+function useBarConfig(data: CanopySnapshot, resolvedTheme: ResolvedTheme) {
     return useMemo<ChartConfiguration<'bar'>>(() => {
-        const th = chartTheme();
+        const th = chartTheme(resolvedTheme);
         return {
             type: 'bar',
             data: {
@@ -41,16 +42,16 @@ function useBarConfig(data: CanopySnapshot) {
                         ticks: { color: th.text, callback: (v) => `${v}%` },
                         grid: { color: th.grid },
                     },
-                    y: { ticks: { color: '#ddd', font: { size: 12.5 } }, grid: { display: false } },
+                    y: { ticks: { color: th.axis, font: { size: 12.5 } }, grid: { display: false } },
                 },
             },
         };
-    }, [data]);
+    }, [data, resolvedTheme]);
 }
 
-function useLineConfig(data: CanopySnapshot) {
+function useLineConfig(data: CanopySnapshot, resolvedTheme: ResolvedTheme) {
     return useMemo<ChartConfiguration<'line'>>(() => {
-        const th = chartTheme();
+        const th = chartTheme(resolvedTheme);
         return {
             type: 'line',
             data: {
@@ -84,12 +85,12 @@ function useLineConfig(data: CanopySnapshot) {
                 },
             },
         };
-    }, [data]);
+    }, [data, resolvedTheme]);
 }
 
-function useDoughnutConfig(data: CanopySnapshot) {
+function useDoughnutConfig(data: CanopySnapshot, resolvedTheme: ResolvedTheme) {
     return useMemo<ChartConfiguration<'doughnut'>>(() => {
-        const th = chartTheme();
+        const th = chartTheme(resolvedTheme);
         return {
             type: 'doughnut',
             data: {
@@ -131,17 +132,20 @@ function useDoughnutConfig(data: CanopySnapshot) {
                 },
             },
         };
-    }, [data]);
+    }, [data, resolvedTheme]);
 }
 
 export function CanopyBarChart({ data }: { data: CanopySnapshot }) {
-    return <ChartCanvas id="canopyBarChart" config={useBarConfig(data)} />;
+    const { resolvedTheme } = usePreferences();
+    return <ChartCanvas id="canopyBarChart" config={useBarConfig(data, resolvedTheme)} />;
 }
 
 export function CanopyTrendChart({ data }: { data: CanopySnapshot }) {
-    return <ChartCanvas id="canopyLineChart" config={useLineConfig(data)} />;
+    const { resolvedTheme } = usePreferences();
+    return <ChartCanvas id="canopyLineChart" config={useLineConfig(data, resolvedTheme)} />;
 }
 
 export function LandCoverChart({ data }: { data: CanopySnapshot }) {
-    return <ChartCanvas id="landCoverChart" config={useDoughnutConfig(data)} />;
+    const { resolvedTheme } = usePreferences();
+    return <ChartCanvas id="landCoverChart" config={useDoughnutConfig(data, resolvedTheme)} />;
 }

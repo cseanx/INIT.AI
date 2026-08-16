@@ -11,6 +11,8 @@ import {
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
+import { BentoSection } from '../common/BentoCard';
+import { usePreferences } from '../../preferences/PreferencesContext';
 
 /**
  * Shared application shell: sidebar + topbar + routed page content.
@@ -58,7 +60,8 @@ function PageSlot({ active, children }: { active: boolean; children: ReactNode }
 
 export default function DashboardLayout() {
     const { pathname } = useLocation();
-    const [collapsed, setCollapsed] = useState(false);
+    const { preferences, setSidebarCollapsed } = usePreferences();
+    const collapsed = preferences.sidebar_collapsed;
     const [visited, setVisited] = useState<Set<string>>(
         () => new Set([pageKey(pathname)]),
     );
@@ -75,22 +78,27 @@ export default function DashboardLayout() {
 
     return (
         <div className="app relative flex h-screen">
-            <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+            <Sidebar
+                collapsed={collapsed}
+                onToggle={() => setSidebarCollapsed(!collapsed)}
+            />
             <main
                 ref={mainRef}
                 className="main-content min-w-0 flex-1 overflow-y-auto p-[30px_35px_30px_10px]"
             >
-                <Topbar />
-                {Object.entries(PAGES).map(([key, Page]) => {
-                    if (!visited.has(key)) return null;
-                    return (
-                        <PageSlot key={key} active={key === current}>
-                            <Suspense fallback={null}>
-                                <Page />
-                            </Suspense>
-                        </PageSlot>
-                    );
-                })}
+                <BentoSection>
+                    <Topbar />
+                    {Object.entries(PAGES).map(([key, Page]) => {
+                        if (!visited.has(key)) return null;
+                        return (
+                            <PageSlot key={key} active={key === current}>
+                                <Suspense fallback={null}>
+                                    <Page />
+                                </Suspense>
+                            </PageSlot>
+                        );
+                    })}
+                </BentoSection>
             </main>
         </div>
     );

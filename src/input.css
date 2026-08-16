@@ -194,7 +194,27 @@
 }
 
 /* ==========================
+   SIDEBAR LABELS
+   Text labels clip smoothly via max-width (animatable) instead of width
+   (auto -> 0 is not animatable, which made them pop in/out instantly).
+========================== */
+
+.logo-text {
+    max-width: 200px;
+}
+
+nav a span,
+.sidebar-bottom a span,
+.sidebar-status span {
+    max-width: 200px;
+    white-space: nowrap;
+}
+
+/* ==========================
    SIDEBAR COLLAPSED
+   Items are centered with padding/margin (both animatable) instead of
+   justify-content / align-self (not animatable), so icons glide smoothly
+   instead of snapping. Collapsed content width is 58px (82 - 2*12).
 ========================== */
 
 .sidebar.collapsed {
@@ -204,36 +224,39 @@
 }
 
 .sidebar.collapsed .logo {
-    justify-content: center;
+    padding-left: 5px; /* 5 + 48px circle + 5 = 58px */
     gap: 0;
 }
 
 .sidebar.collapsed .logo-text {
     opacity: 0;
-    width: 0;
+    max-width: 0;
     overflow: hidden;
 }
 
 .sidebar.collapsed nav a,
 .sidebar.collapsed .sidebar-bottom a {
-    justify-content: center;
+    padding-left: 18px; /* 18 + 22px icon + 18 = 58px */
+    padding-right: 18px;
     gap: 0;
 }
 
 .sidebar.collapsed nav a span,
 .sidebar.collapsed .sidebar-bottom span:not(.status-dot) {
     opacity: 0;
-    width: 0;
+    max-width: 0;
     overflow: hidden;
 }
 
 .sidebar.collapsed .toggle-btn {
-    align-self: center;
+    margin-left: 8px; /* 8 + 42px button + 8 = 58px */
+    margin-right: 8px;
 }
 
 .sidebar.collapsed .sidebar-status {
-    justify-content: center;
     padding: 10px;
+    padding-left: 24px; /* 24 + 10px dot + 24 = 58px */
+    padding-right: 24px;
     gap: 0;
 }
 
@@ -248,8 +271,9 @@
 }
 
 .sidebar.collapsed .account-trigger {
-    justify-content: center;
     padding: 6px;
+    padding-left: 11px; /* 11 + 36px avatar + 11 = 58px */
+    padding-right: 11px;
     gap: 0;
 }
 
@@ -484,4 +508,128 @@ nav a.active {
 
 .logo-circle.about-logo {
     @apply h-[52px] w-[52px];
+}
+
+/* ==========================
+   THEMES
+   Dark is the app's default (unchanged). A `data-theme` attribute on
+   <html> switches to light. The trick that makes this work with almost no
+   component churn: Tailwind's `white/N` utilities are backed by the
+   --color-white token, so in light mode we redefine it to a dark ink —
+   every glass surface, border, and `text-white` flips to dark-on-light in
+   one stroke. Elements that must stay white (gradient CTAs, dark popovers,
+   the thermal viewer) are re-scoped below.
+========================== */
+
+html[data-theme='light'] {
+    color-scheme: light;
+    --color-base: #eef1f6;
+    --color-white: #181a20;
+}
+
+[data-theme='light'] body {
+    color: #181a20;
+}
+
+/* Gradient CTA buttons (bg-gradient-to-r from-primary to-accent) keep white
+   text — dark ink would clash with the pink gradient. */
+[data-theme='light'] .from-primary {
+    color: #fff;
+}
+
+/* Active nav/chip/theme-card states hardcode `color:#fff` on light-tinted
+   gradients; darken the text for light backgrounds. */
+[data-theme='light'] nav a.active,
+[data-theme='light'] .chip-btn.active,
+[data-theme='light'] .theme-card.active {
+    color: #181a20;
+}
+
+[data-theme='light'] nav a.active {
+    background: linear-gradient(135deg, rgba(255, 95, 31, .13), rgba(255, 45, 85, .09));
+}
+
+[data-theme='light'] .theme-card.active i {
+    color: #ff5577;
+}
+
+/* Floating dropdowns stay dark; restore white ink inside them. */
+[data-theme='light'] .account-menu,
+[data-theme='light'] .city-menu {
+    --color-white: #fff;
+}
+
+/* Native <select> option lists stay dark. */
+[data-theme='light'] option {
+    color: #fff;
+    background: #111;
+}
+
+/* Switch knob: dark ink on the light track. */
+[data-theme='light'] .slider::before {
+    background: #181a20;
+}
+
+/* Heatmap cell tooltip stays dark. */
+[data-theme='light'] .cell-tip {
+    color: #fff;
+}
+
+/* The thermal satellite viewer is a dark "photo" — keep its captions white. */
+[data-theme='light'] .thermal-visual {
+    color: #fff;
+}
+
+/* Muted grays tuned for dark glass are too faint on light surfaces. */
+[data-theme='light'] .text-\[\#ccc\],
+[data-theme='light'] .text-\[\#aaa\],
+[data-theme='light'] .text-\[\#d4d4d4\] {
+    color: #4d525b;
+}
+
+[data-theme='light'] .text-\[\#999\],
+[data-theme='light'] .text-\[\#9f9f9f\] {
+    color: #565b66;
+}
+
+[data-theme='light'] .text-\[\#888\] {
+    color: #5a5f69;
+}
+
+[data-theme='light'] .text-\[\#b4b4b4\] {
+    color: #3a3f47;
+}
+
+/* Scrollbars */
+[data-theme='light'] ::-webkit-scrollbar-track {
+    background: #e3e6ec;
+}
+
+[data-theme='light'] ::-webkit-scrollbar-thumb {
+    background: #b9bec9;
+}
+
+[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+    background: #ff6232;
+}
+
+/* Ambient background: soften the warm glow and draw the grid with dark
+   lines so it stays visible on a light page. */
+[data-theme='light'] .app::before {
+    background: radial-gradient(
+        circle,
+        rgba(255, 85, 20, .16),
+        rgba(255, 45, 85, .08),
+        transparent 70%
+    );
+}
+
+[data-theme='light'] .app::after {
+    background-image:
+        linear-gradient(rgba(20, 25, 35, .04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20, 25, 35, .04) 1px, transparent 1px);
+}
+
+[data-theme='light'] .hero-panel::before {
+    background: radial-gradient(circle, rgba(255, 45, 85, .09), transparent 70%);
 }

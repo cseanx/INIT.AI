@@ -2,12 +2,14 @@ import { useMemo } from 'react';
 import type { ChartConfiguration } from 'chart.js';
 import type { Barangay } from '../../types';
 import { baseChartOptions, chartTheme } from '../../utils/chartTheme';
+import { usePreferences } from '../../preferences/PreferencesContext';
 import ChartCanvas from '../common/ChartCanvas';
 
 /** Canopy % vs surface temp scatter for the dashboard panel. */
 export default function DashboardChart({ data }: { data: Barangay[] }) {
+    const { resolvedTheme } = usePreferences();
     const config = useMemo<ChartConfiguration<'scatter'>>(() => {
-        const th = chartTheme();
+        const th = chartTheme(resolvedTheme);
         return {
             type: 'scatter',
             data: {
@@ -37,7 +39,7 @@ export default function DashboardChart({ data }: { data: Barangay[] }) {
                 },
             },
         };
-    }, [data]);
+    }, [data, resolvedTheme]);
 
     return <ChartCanvas id="dashMiniChart" config={config} />;
 }

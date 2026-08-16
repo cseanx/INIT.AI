@@ -5,6 +5,7 @@ import ToggleRow from '../components/settings/ToggleRow';
 import Switch from '../components/settings/Switch';
 import ThemePicker from '../components/settings/ThemePicker';
 import AccentPicker from '../components/settings/AccentPicker';
+import { usePreferences } from '../preferences/PreferencesContext';
 
 const SUBHEAD_CLASSES =
     'mb-[14px] block text-[12.5px] uppercase tracking-[.05em] text-[#999]';
@@ -102,6 +103,8 @@ function SessionItem({
 }
 
 export default function Settings() {
+    const { preferences, setSidebarCollapsed } = usePreferences();
+
     return (
         <Page>
             <Card>
@@ -174,7 +177,10 @@ export default function Settings() {
                                 Start every session with the sidebar collapsed to icons
                             </span>
                         </div>
-                        <Switch />
+                        <Switch
+                            checked={preferences.sidebar_collapsed}
+                            onChange={setSidebarCollapsed}
+                        />
                     </div>
                 </div>
             </Card>

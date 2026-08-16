@@ -1,12 +1,15 @@
 import type { MitigationProject } from '../../types';
 import { MITIGATION_STATUS_BADGES } from '../../utils/toneClasses';
+import { useBentoFx } from '../common/BentoCard';
 
 const CARD_CLASSES =
     'rounded-[20px] border border-white/7 bg-white/[.03] p-[22px] transition duration-200 hover:-translate-y-0.5 hover:bg-white/5';
 
 export default function MitigationCard({ project }: { project: MitigationProject }) {
+    const { ref, className: bentoClassName, style } = useBentoFx();
+
     return (
-        <div className={CARD_CLASSES}>
+        <div ref={ref} style={style} className={`${CARD_CLASSES} ${bentoClassName}`}>
             <div className="mc-top mb-[14px] flex items-center justify-between">
                 <div className="mc-icon flex h-[42px] w-[42px] items-center justify-center rounded-[13px] bg-gradient-to-br from-orange to-primary">
                     <i className={`fa-solid ${project.icon}`}></i>

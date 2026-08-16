@@ -4,6 +4,7 @@ import StatGrid from '../components/layout/StatGrid';
 import PanelGrid from '../components/layout/PanelGrid';
 import PanelHead from '../components/common/PanelHead';
 import Card from '../components/common/Card';
+import { BentoCard } from '../components/common/BentoCard';
 import StatCard from '../components/dashboard/StatCard';
 import DashboardChart from '../components/dashboard/DashboardChart';
 import MiniHotspotList from '../components/dashboard/MiniHotspotList';
@@ -22,7 +23,7 @@ export default function Dashboard() {
 
     return (
         <Page>
-            <section className="hero-panel relative mx-5 mb-[30px] flex items-center justify-between gap-10 overflow-hidden rounded-[28px] border border-white/8 bg-white/5 p-[44px_46px] backdrop-blur-[25px] shadow-[0_20px_60px_rgba(0,0,0,.35)]">
+            <BentoCard className="hero-panel relative mx-5 mb-[30px] flex items-center justify-between gap-10 overflow-hidden rounded-[28px] border border-white/8 bg-white/5 p-[44px_46px] backdrop-blur-[25px] shadow-[0_20px_60px_rgba(0,0,0,.35)]">
                 <div className="relative z-10 max-w-[480px]">
                     <span className="mb-5 inline-block rounded-full border border-[rgba(255,85,85,.3)] bg-gradient-to-br from-[rgba(255,140,66,.2)] to-[rgba(255,45,85,.18)] px-4 py-2 text-[12.5px] tracking-[.03em] text-[#ff8899]">
                         AI Climate Intelligence
@@ -71,7 +72,7 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </div>
-            </section>
+            </BentoCard>
 
             <StatGrid>
                 {dashboardStats.map((stat) => (

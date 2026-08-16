@@ -1,0 +1,77 @@
+/* ==========================
+   BentoCard — INIT.AI red glow effects (stars + rounded border glow)
+========================== */
+
+.bento-card {
+    min-width: 0;
+    --glow-color: 255, 45, 85;
+    --glow-x: 50%;
+    --glow-y: 50%;
+    --glow-intensity: 0;
+    --glow-radius: 200px;
+}
+
+.bento-card:hover {
+    box-shadow: 0 0 30px rgba(255, 45, 85, 0.1);
+}
+
+/* Border glow effect — follows the card's own border radius */
+.bento-card--border-glow::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 2px; /* Adjust the padding to control the glow thickness */
+    background: radial-gradient(
+        var(--glow-radius) circle at var(--glow-x) var(--glow-y),
+        rgba(var(--glow-color), calc(var(--glow-intensity) * 0.8)) 0%,
+        rgba(var(--glow-color), calc(var(--glow-intensity) * 0.4)) 30%,
+        transparent 60%
+    );
+    border-radius: inherit;
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    z-index: 1;
+}
+
+.particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.particle::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: rgba(255, 45, 85, 0.2);
+    border-radius: 50%;
+    z-index: -1;
+}
+
+/* Global spotlight styles */
+.global-spotlight {
+    mix-blend-mode: screen;
+    will-change: transform, opacity;
+    z-index: 200 !important;
+    pointer-events: none;
+}
+
+.bento-section {
+    position: relative;
+    user-select: none;
+}

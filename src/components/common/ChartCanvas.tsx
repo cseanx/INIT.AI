@@ -119,5 +119,5 @@ export default function ChartCanvas({ id, config, className }: ChartCanvasProps)
         );
     }
 
-    return <canvas id={id} ref={canvasRef} className={className ?? 'block h-full w-full'} />;
+    return <canvas id={id} ref={canvasRef} className={className ?? 'block h-full w-full max-w-full'} />;
 }

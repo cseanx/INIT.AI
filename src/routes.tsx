@@ -74,7 +74,7 @@ export function metaFor(pathname: string): RouteMeta {
 
 /* Shared link styling for the sidebar nav anchors. */
 export const NAV_LINK_CLASSES =
-    'relative flex items-center gap-4 rounded-[18px] p-3 text-[#b4b4b4] no-underline transition duration-[.35s] hover:bg-white/5 hover:text-white';
+    'relative flex items-center gap-4 rounded-[18px] p-3 text-[#b4b4b4] no-underline transition-all duration-[.35s] hover:bg-white/5 hover:text-white';
 
 export function NavLinkClasses({ isActive }: { isActive: boolean }): string {
     return isActive ? `${NAV_LINK_CLASSES} active` : NAV_LINK_CLASSES;
@@ -94,7 +94,7 @@ export function SidebarNavLink({
     return (
         <NavLink to={to} className={({ isActive }) => NavLinkClasses({ isActive })}>
             <i className={`fa-solid ${icon} w-[22px] shrink-0 text-center text-lg`}></i>
-            <span className="whitespace-nowrap transition duration-[.25s]">{children}</span>
+            <span className="whitespace-nowrap transition-all duration-[.25s]">{children}</span>
             {notification ? (
                 <div className="notification-dot absolute right-[14px] top-[10px] h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(255,45,85,.6)]"></div>
             ) : null}

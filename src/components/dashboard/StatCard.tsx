@@ -1,12 +1,15 @@
 import type { StatCardData } from '../../types';
 import { STAT_ICON_TONES, TREND_TONES } from '../../utils/toneClasses';
+import { useBentoFx } from '../common/BentoCard';
 
 const CARD_CLASSES =
     'flex flex-col gap-[14px] rounded-[22px] border border-white/8 bg-white/5 p-[22px] backdrop-blur-2xl';
 
 export default function StatCard({ stat }: { stat: StatCardData }) {
+    const { ref, className: bentoClassName, style } = useBentoFx();
+
     return (
-        <div className={CARD_CLASSES}>
+        <div ref={ref} style={style} className={`${CARD_CLASSES} ${bentoClassName}`}>
             <div
                 className={`flex h-11 w-11 items-center justify-center rounded-[14px] text-[17px] ${STAT_ICON_TONES[stat.tone]}`}
             >

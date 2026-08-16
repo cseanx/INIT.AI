@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import { metaFor } from '../../routes';
 import { useClock } from '../../hooks/useClock';
+import CitySelector from '../common/CitySelector';
 
 export default function Topbar() {
     const { pathname } = useLocation();
@@ -8,7 +9,7 @@ export default function Topbar() {
     const { time, date } = useClock();
 
     return (
-        <header className="topbar m-[20px_20px_35px] flex items-center justify-between rounded-[24px] border border-white/8 bg-white/5 p-[22px_28px] backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,.35)]">
+        <header className="topbar relative z-20 m-[20px_20px_35px] flex items-center justify-between rounded-[24px] border border-white/8 bg-white/5 p-[22px_28px] backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,.35)]">
             <div>
                 <h1 id="topbarTitle" className="text-[36px]">
                     {meta.title}
@@ -27,6 +28,8 @@ export default function Topbar() {
                         className="w-full border-none bg-transparent text-white outline-none"
                     />
                 </div>
+
+                <CitySelector />
 
                 <div className="datetime flex flex-col items-end gap-1">
                     <span className="date text-xs tracking-[.02em] text-[#888]" id="dateDisplay">
