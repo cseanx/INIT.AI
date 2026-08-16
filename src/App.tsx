@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import DashboardLayout from './components/layout/DashboardLayout';
+import RequireAuth from './auth/RequireAuth';
 
 const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -25,7 +26,13 @@ export default function App() {
             <Routes>
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="/login" element={<Login />} />
-                <Route element={<DashboardLayout />}>
+                <Route
+                    element={
+                        <RequireAuth>
+                            <DashboardLayout />
+                        </RequireAuth>
+                    }
+                >
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/heatmap" element={<HeatMap />} />
                     <Route path="/hotspots" element={<Hotspots />} />

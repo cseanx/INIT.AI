@@ -1,6 +1,7 @@
-"""Seed the database with a small amount of INIT.AI demo data.
+"""Seed the database with INIT.AI demo data.
 
-Safe to re-run: skips seeding when data already exists.
+Demo users are upserted on every run (so existing databases get proper
+password hashes); domain data is only inserted when missing.
 
 Usage (from the backend/ directory):
     python -m app.db.seed
@@ -11,13 +12,30 @@ from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
 from app.models import Barangay, CanopyData, City, HeatData, MitigationProject, Report, User
+from app.services.auth import hash_password
 
-DEMO_USER = {
-    "name": "Juan Dela Cruz",
-    "email": "admin@init.ai",
-    "password_hash": "!demo-placeholder-hash-bcrypt-phase2!",
-    "role": "admin",
-}
+# Demo accounts for all three roles. Passwords are hashed with Argon2id
+# at seed time — never stored in plaintext. Documented in backend/README.md.
+DEMO_USERS = [
+    {
+        "name": "Juan Dela Cruz",
+        "email": "admin@init.ai",
+        "password": "admin123",
+        "role": "LGU Administrator",
+    },
+    {
+        "name": "Maria Santos",
+        "email": "analyst@init.ai",
+        "password": "analyst123",
+        "role": "Climate Analyst",
+    },
+    {
+        "name": "Ramon Reyes",
+        "email": "coordinator@init.ai",
+        "password": "coordinator123",
+        "role": "Field Coordinator",
+    },
+]
 
 # (name, temp, canopy_pct, driver) — mirrors the frontend prototype mock data
 BARANGAYS = [
@@ -57,11 +75,29 @@ REPORTS = [
 
 
 def seed(db: Session) -> None:
-    if db.scalar(select(func.count()).select_from(Barangay)):
-        print("Data already present — skipping seed.")
-        return
+    # Demo users are upserted on every run so existing databases (e.g. one
+    # seeded before authentication existed) get proper Argon2id hashes.
+    for demo in DEMO_USERS:
+        user = db.scalar(select(User).where(User.email == demo["email"]))
+        if user is None:
+            db.add(
+                User(
+                    name=demo["name"],
+                    email=demo["email"],
+                    password_hash=hash_password(demo["password"]),
+                    role=demo["role"],
+                )
+            )
+        else:
+            user.name = demo["name"]
+            user.role = demo["role"]
+            user.password_hash = hash_password(demo["password"])
+    db.commit()
+    print(f"Upserted {len(DEMO_USERS)} demo users with Argon2id password hashes.")
 
-    db.add(User(**DEMO_USER))
+    if db.scalar(select(func.count()).select_from(Barangay)):
+        print("Domain data already present — skipping.")
+        return
 
     city = City(name="Quezon City", region="NCR")
     db.add(city)
@@ -105,7 +141,7 @@ def seed(db: Session) -> None:
     db.commit()
     print(
         f"Seeded: 1 city, {len(BARANGAYS)} barangays, heat+canopy readings, "
-        f"{len(MITIGATION_PROJECTS)} mitigation projects, {len(REPORTS)} reports, 1 demo user."
+        f"{len(MITIGATION_PROJECTS)} mitigation projects, {len(REPORTS)} reports."
     )
 
 

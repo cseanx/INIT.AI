@@ -1,21 +1,38 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import Particles from '../components/common/Particles';
+import { useAuth } from '../auth/AuthContext';
 
 const INPUT_CLASSES =
     'w-full rounded-[14px] border border-white/8 bg-white/[.04] p-[15px] text-[15px] text-white outline-none transition duration-300 focus:border-primary focus:shadow-[0_0_25px_rgba(255,45,85,.25)]';
 
 export default function Login() {
     const navigate = useNavigate();
+    const { user, loading, login } = useAuth();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [loggingIn, setLoggingIn] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    function handleLogin(e: FormEvent) {
+    if (loading) {
+        return null;
+    }
+    if (user) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    async function handleLogin(e: FormEvent) {
         e.preventDefault();
         if (loggingIn) return;
         setLoggingIn(true);
-        setTimeout(() => {
-            navigate('/dashboard');
-        }, 500);
+        setError(null);
+        try {
+            await login(email, password);
+            navigate('/dashboard', { replace: true });
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
+            setLoggingIn(false);
+        }
     }
 
     return (
@@ -53,6 +70,9 @@ export default function Login() {
                                 type="email"
                                 placeholder="admin@init.ai"
                                 required
+                                autoComplete="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 className={INPUT_CLASSES}
                             />
                         </div>
@@ -62,9 +82,20 @@ export default function Login() {
                                 type="password"
                                 placeholder="admin123"
                                 required
+                                autoComplete="current-password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 className={INPUT_CLASSES}
                             />
                         </div>
+                        {error ? (
+                            <p
+                                role="alert"
+                                className="mb-4 text-center text-[13px] font-medium text-accent"
+                            >
+                                {error}
+                            </p>
+                        ) : null}
                         <button
                             id="loginBtn"
                             type="submit"

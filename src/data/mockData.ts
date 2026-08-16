@@ -1,5 +1,4 @@
 import type {
-    Account,
     Barangay,
     CanopySnapshot,
     HeatSnapshot,
@@ -14,12 +13,6 @@ import type {
    (see src/services/api.ts). Do not treat as real
    satellite / sensor observations.
 ========================== */
-
-export const accounts: Account[] = [
-    { name: 'Juan Dela Cruz', role: 'LGU Administrator', initials: 'JD' },
-    { name: 'Maria Santos', role: 'Climate Analyst', initials: 'MS' },
-    { name: 'Ramon Reyes', role: 'Field Coordinator', initials: 'RR' },
-];
 
 export const barangays: Barangay[] = [
     { name: 'Payatas', temp: 41.2, canopy: 12, severity: 'critical', driver: 'Open dump heat retention', trend: 2.4, area: 180, canopyChange: -4.1, priority: true },

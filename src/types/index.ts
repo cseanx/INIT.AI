@@ -10,10 +10,20 @@ export interface HealthResponse {
     status: string;
 }
 
-export interface Account {
+export interface AuthUser {
+    id: number;
     name: string;
+    email: string;
     role: string;
-    initials: string;
+    created_at: string;
+}
+
+export interface AuthUser {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    created_at: string;
 }
 
 export interface Barangay {

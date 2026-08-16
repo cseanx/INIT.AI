@@ -44,12 +44,27 @@ Requires an up-to-date schema (`alembic upgrade head` first):
 python -m app.db.seed
 ```
 
-The seed is idempotent — it skips when data already exists.
+The seed upserts the demo users (fixing password hashes on re-runs) and
+inserts domain data only when missing.
+
+### Demo accounts (development only)
+
+| Role                | Email             | Password        |
+|---------------------|-------------------|-----------------|
+| LGU Administrator   | admin@init.ai     | admin123        |
+| Climate Analyst     | analyst@init.ai   | analyst123      |
+| Field Coordinator   | coordinator@init.ai | coordinator123 |
+
+Passwords are stored as Argon2id hashes — never in plaintext. These
+credentials are for local development only.
 
 ## Endpoints
 
 | Method | Path              | Description                              |
 |--------|-------------------|------------------------------------------|
+| POST   | /api/auth/login   | Authenticate, sets an HTTP-only session cookie |
+| POST   | /api/auth/logout  | Invalidates the session and clears the cookie |
+| GET    | /api/auth/me      | Current authenticated user (401 if none) |
 | GET    | /api/health       | Service health check                     |
 | GET    | /api/cities       | List cities                              |
 | GET    | /api/barangays    | List barangays (with city name)          |

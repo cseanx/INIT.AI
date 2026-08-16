@@ -4,6 +4,7 @@ from app.models.city import City
 from app.models.heat import HeatData
 from app.models.mitigation import MitigationProject
 from app.models.report import Report
+from app.models.session import UserSession
 from app.models.user import User
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "MitigationProject",
     "Report",
     "User",
+    "UserSession",
 ]
