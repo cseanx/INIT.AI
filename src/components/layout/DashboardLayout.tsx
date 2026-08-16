@@ -6,6 +6,7 @@ import {
     useState,
     type ComponentType,
     type LazyExoticComponent,
+    type ReactNode,
 } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
@@ -30,6 +31,29 @@ const PAGES: Record<string, LazyExoticComponent<ComponentType>> = {
 
 function pageKey(pathname: string): string {
     return pathname.split('/')[1] ?? 'dashboard';
+}
+
+/**
+ * Keeps a visited page mounted while hiding it. When the page becomes
+ * visible again (a page switch), it fires a bubbling `page-visible` event
+ * so nested charts can replay their entrance animation.
+ */
+function PageSlot({ active, children }: { active: boolean; children: ReactNode }) {
+    const ref = useRef<HTMLDivElement>(null);
+    const prevActive = useRef(active);
+
+    useEffect(() => {
+        if (active && !prevActive.current) {
+            ref.current?.dispatchEvent(new Event('page-visible', { bubbles: true }));
+        }
+        prevActive.current = active;
+    }, [active]);
+
+    return (
+        <div ref={ref} className={active ? undefined : 'hidden'}>
+            {children}
+        </div>
+    );
 }
 
 export default function DashboardLayout() {
@@ -60,15 +84,11 @@ export default function DashboardLayout() {
                 {Object.entries(PAGES).map(([key, Page]) => {
                     if (!visited.has(key)) return null;
                     return (
-                        <div
-                            key={key}
-                            className={key === current ? undefined : 'hidden'}
-                            data-page={key}
-                        >
+                        <PageSlot key={key} active={key === current}>
                             <Suspense fallback={null}>
                                 <Page />
                             </Suspense>
-                        </div>
+                        </PageSlot>
                     );
                 })}
             </main>

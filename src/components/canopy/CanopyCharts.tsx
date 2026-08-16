@@ -106,6 +106,18 @@ function useDoughnutConfig(data: CanopySnapshot) {
             options: {
                 cutout: '62%',
                 ...baseChartOptions(),
+                // Override the inherited per-slice stagger: a doughnut/pie
+                // reads best as one continuous sweep completing the ring,
+                // not each wedge popping in independently.
+                animation: {
+                    // animateRotate sweeps the whole arc set from 0° like a
+                    // clock filling in; animateScale grows it from the
+                    // center at the same time for a bit more presence.
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 1300,
+                    easing: 'easeOutQuart',
+                },
                 plugins: {
                     legend: {
                         position: 'bottom',
