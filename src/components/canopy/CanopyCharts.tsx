@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { ChartConfiguration } from 'chart.js';
 import type { CanopySnapshot } from '../../types';
-import { chartTheme } from '../../utils/chartTheme';
+import { baseChartOptions, chartTheme } from '../../utils/chartTheme';
 import ChartCanvas from '../common/ChartCanvas';
 
 function useBarConfig(data: CanopySnapshot) {
@@ -25,8 +25,7 @@ function useBarConfig(data: CanopySnapshot) {
             },
             options: {
                 indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
+                ...baseChartOptions(),
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -70,8 +69,7 @@ function useLineConfig(data: CanopySnapshot) {
                 ],
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                ...baseChartOptions(),
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -106,9 +104,8 @@ function useDoughnutConfig(data: CanopySnapshot) {
                 ],
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
                 cutout: '62%',
+                ...baseChartOptions(),
                 plugins: {
                     legend: {
                         position: 'bottom',

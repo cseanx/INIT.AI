@@ -1,16 +1,49 @@
-import { useEffect, useRef, useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import {
+    lazy,
+    Suspense,
+    useEffect,
+    useRef,
+    useState,
+    type ComponentType,
+    type LazyExoticComponent,
+} from 'react';
+import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 
 /**
  * Shared application shell: sidebar + topbar + routed page content.
- * Resets scroll position whenever the route changes.
+ *
+ * Pages are lazy-loaded, but once visited they stay mounted (hidden with
+ * CSS) so charts and data survive navigation — returning to a page is
+ * instant instead of rebuilding everything from scratch.
  */
+const PAGES: Record<string, LazyExoticComponent<ComponentType>> = {
+    dashboard: lazy(() => import('../../pages/Dashboard')),
+    heatmap: lazy(() => import('../../pages/HeatMap')),
+    hotspots: lazy(() => import('../../pages/Hotspots')),
+    canopy: lazy(() => import('../../pages/Canopy')),
+    mitigation: lazy(() => import('../../pages/Mitigation')),
+    reports: lazy(() => import('../../pages/Reports')),
+    settings: lazy(() => import('../../pages/Settings')),
+};
+
+function pageKey(pathname: string): string {
+    return pathname.split('/')[1] ?? 'dashboard';
+}
+
 export default function DashboardLayout() {
-    const [collapsed, setCollapsed] = useState(false);
     const { pathname } = useLocation();
+    const [collapsed, setCollapsed] = useState(false);
+    const [visited, setVisited] = useState<Set<string>>(
+        () => new Set([pageKey(pathname)]),
+    );
     const mainRef = useRef<HTMLElement>(null);
+    const current = pageKey(pathname);
+
+    useEffect(() => {
+        setVisited((prev) => (prev.has(current) ? prev : new Set(prev).add(current)));
+    }, [current]);
 
     useEffect(() => {
         mainRef.current?.scrollTo({ top: 0 });
@@ -24,7 +57,20 @@ export default function DashboardLayout() {
                 className="main-content min-w-0 flex-1 overflow-y-auto p-[30px_35px_30px_10px]"
             >
                 <Topbar />
-                <Outlet />
+                {Object.entries(PAGES).map(([key, Page]) => {
+                    if (!visited.has(key)) return null;
+                    return (
+                        <div
+                            key={key}
+                            className={key === current ? undefined : 'hidden'}
+                            data-page={key}
+                        >
+                            <Suspense fallback={null}>
+                                <Page />
+                            </Suspense>
+                        </div>
+                    );
+                })}
             </main>
         </div>
     );

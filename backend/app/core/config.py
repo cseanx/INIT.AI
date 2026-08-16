@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     )
 
     database_url: str
-    cors_origins: str = "http://localhost:5173"
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     # Session cookie
     session_cookie_name: str = "initai_session"

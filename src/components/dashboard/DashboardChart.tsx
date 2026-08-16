@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { ChartConfiguration } from 'chart.js';
 import type { Barangay } from '../../types';
-import { chartTheme } from '../../utils/chartTheme';
+import { baseChartOptions, chartTheme } from '../../utils/chartTheme';
 import ChartCanvas from '../common/ChartCanvas';
 
 /** Canopy % vs surface temp scatter for the dashboard panel. */
@@ -21,8 +21,7 @@ export default function DashboardChart({ data }: { data: Barangay[] }) {
                 ],
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                ...baseChartOptions(),
                 plugins: { legend: { display: false } },
                 scales: {
                     x: {

@@ -10,3 +10,24 @@ export function chartTheme() {
         blue: '#5aa9ff',
     };
 }
+
+/**
+ * Shared chart options for the dashboard:
+ * entrance animation per the Chart.js docs (options.animation); resizes
+ * stay instant because the default 'resize' transition duration is 0.
+ *
+ * Note: do NOT add `devicePixelRatio` here — it forces an immediate
+ * full-resolution draw that bypasses the entrance animation.
+ *
+ * See https://www.chartjs.org/docs/latest/configuration/animations.html
+ */
+export function baseChartOptions() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+            duration: 800,
+            easing: 'easeOutQuart',
+        },
+    } as const;
+}
