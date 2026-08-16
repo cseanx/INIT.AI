@@ -6,6 +6,7 @@ import type {
     HeatSnapshot,
     MitigationProject,
     Report,
+    UserPreferences,
 } from '../types';
 import {
     barangays,
@@ -22,6 +23,8 @@ import {
      POST /api/auth/login
      POST /api/auth/logout
      GET  /api/auth/me
+     GET  /api/preferences
+     PUT  /api/preferences
      GET  /api/heat
      GET  /api/canopy
      GET  /api/mitigation
@@ -169,5 +172,15 @@ export const api = {
             authFetch<void>('/api/auth/logout', { method: 'POST' }),
         me: (): Promise<AuthUser | null> =>
             authFetch<AuthUser | null>('/api/auth/me').catch(() => null),
+    },
+
+    preferences: {
+        get: (): Promise<UserPreferences> =>
+            authFetch<UserPreferences>('/api/preferences'),
+        update: (patch: Partial<UserPreferences>): Promise<UserPreferences> =>
+            authFetch<UserPreferences>('/api/preferences', {
+                method: 'PUT',
+                body: JSON.stringify(patch),
+            }),
     },
 };

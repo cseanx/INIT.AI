@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 if TYPE_CHECKING:
+    from app.models.preference import UserPreference
     from app.models.session import UserSession
 
 
@@ -23,5 +24,8 @@ class User(Base):
     )
 
     sessions: Mapped[list["UserSession"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    preferences: Mapped["UserPreference | None"] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )

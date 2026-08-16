@@ -20,6 +20,14 @@
     <meta property="og:image" content="https://cseanx.github.io/INIT.AI/assets/images/preview_image.png"/>
     <meta property="og:url" content="https://cseanx.github.io/INIT.AI/"/>
     <meta property="og:type" content="website"/>
+    <!-- Apply the OS theme before the app mounts to avoid a dark flash. -->
+    <script>
+        (function () {
+            var theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            document.documentElement.dataset.theme = theme;
+            document.documentElement.style.colorScheme = theme;
+        })();
+    </script>
 </head>
 <body>
     <div id="root"></div>

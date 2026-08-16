@@ -6,6 +6,14 @@ export type Severity = 'critical' | 'high' | 'moderate';
 export type TrendTone = 'up' | 'down' | 'neutral';
 export type IconTone = 'red' | 'orange' | 'green' | 'blue';
 
+export type ThemePreference = 'system' | 'dark' | 'light';
+export type ResolvedTheme = 'dark' | 'light';
+
+export interface UserPreferences {
+    theme: ThemePreference;
+    sidebar_collapsed: boolean;
+}
+
 export interface HealthResponse {
     status: string;
 }

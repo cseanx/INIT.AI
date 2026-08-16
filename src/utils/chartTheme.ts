@@ -1,8 +1,10 @@
-/* Shared Chart.js palette, matching the app's dark glass theme. */
-export function chartTheme() {
+/* Shared Chart.js palette. Dark matches the app's dark glass theme; light
+   adapts the same accents for light backgrounds. */
+export function chartTheme(theme: 'dark' | 'light' = 'dark') {
     return {
-        grid: 'rgba(255,255,255,.06)',
-        text: '#888',
+        grid: theme === 'light' ? 'rgba(15,20,30,.08)' : 'rgba(255,255,255,.06)',
+        text: theme === 'light' ? '#5a5f69' : '#888',
+        axis: theme === 'light' ? '#3a3f47' : '#ddd',
         red: '#ff2d55',
         orange: '#ff8c42',
         yellow: '#ffd23f',
