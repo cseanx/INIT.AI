@@ -5,8 +5,8 @@ import type { IconTone, Severity, TrendTone } from '../types';
 ========================== */
 
 export const STAT_ICON_TONES: Record<IconTone, string> = {
-    red: 'bg-[rgba(255,45,85,.16)] text-accent',
-    orange: 'bg-[rgba(255,140,66,.16)] text-orange',
+    red: 'bg-[rgba(255,45,85,.16)] text-[#ff5577]',
+    orange: 'bg-[rgba(255,140,66,.16)] text-[#ff8c42]',
     green: 'bg-[rgba(0,255,132,.14)] text-mint',
     blue: 'bg-[rgba(64,160,255,.16)] text-sky',
 };
@@ -24,8 +24,8 @@ export const SEVERITY_BADGES: Record<Severity, string> = {
 };
 
 export const SEVERITY_DOTS: Record<Severity, string> = {
-    critical: 'bg-primary shadow-[0_0_10px_#ff2d55]',
-    high: 'bg-orange shadow-[0_0_10px_#ff8c42]',
+    critical: 'bg-[#ff2d55] shadow-[0_0_10px_#ff2d55]',
+    high: 'bg-[#ff8c42] shadow-[0_0_10px_#ff8c42]',
     moderate: 'bg-gold shadow-[0_0_10px_#ffd23f]',
 };
 

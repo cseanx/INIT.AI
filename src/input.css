@@ -79,6 +79,13 @@
     }
 }
 
+/* Accent color defaults — overridden inline by the app when a user picks a
+   different accent. `--accent-glow` is the "r, g, b" triplet used for tints
+   and glows via rgba(var(--accent-glow), <alpha>). */
+:root {
+    --accent-glow: 255, 45, 85;
+}
+
 @layer base {
     body {
         font-family: "Outfit", system-ui, sans-serif;
@@ -127,8 +134,8 @@
     border-radius: 50%;
     background: radial-gradient(
         circle,
-        rgba(255, 85, 20, .28),
-        rgba(255, 45, 85, .15),
+        rgba(var(--accent-glow), .28),
+        rgba(var(--accent-glow), .15),
         transparent 70%
     );
     filter: blur(90px);
@@ -161,7 +168,7 @@
     top: -200px;
     left: -150px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 45, 85, .16), transparent 70%);
+    background: radial-gradient(circle, rgba(var(--accent-glow), .16), transparent 70%);
     filter: blur(60px);
     pointer-events: none;
 }
@@ -282,7 +289,7 @@ nav a span,
 ========================== */
 
 nav a.active {
-    background: linear-gradient(135deg, rgba(255, 95, 31, .22), rgba(255, 45, 85, .15));
+    background: linear-gradient(135deg, rgba(var(--accent-glow), .22), rgba(var(--accent-glow), .15));
     color: #fff;
 }
 
@@ -301,11 +308,11 @@ nav a.active {
 }
 
 .account-menu-item.danger {
-    color: #ff5577;
+    color: var(--color-accent);
 }
 
 .account-menu-item.danger:hover {
-    background: rgba(255, 45, 85, .12);
+    background: rgba(var(--accent-glow), .12);
 }
 
 /* ==========================
@@ -313,8 +320,8 @@ nav a.active {
 ========================== */
 
 .chip-btn.active {
-    background: linear-gradient(135deg, rgba(255, 140, 66, .28), rgba(255, 45, 85, .24));
-    border-color: rgba(255, 85, 85, .4);
+    background: linear-gradient(135deg, rgba(var(--accent-glow), .28), rgba(var(--accent-glow), .24));
+    border-color: rgba(var(--accent-glow), .4);
     color: #fff;
 }
 
@@ -323,13 +330,13 @@ nav a.active {
 ========================== */
 
 .theme-card.active {
-    border-color: rgba(255, 85, 85, .4);
-    background: linear-gradient(135deg, rgba(255, 140, 66, .14), rgba(255, 45, 85, .1));
+    border-color: rgba(var(--accent-glow), .4);
+    background: linear-gradient(135deg, rgba(var(--accent-glow), .14), rgba(var(--accent-glow), .1));
     color: #fff;
 }
 
 .theme-card.active i {
-    color: #ff5577;
+    color: var(--color-accent);
 }
 
 .swatch.active {
@@ -369,7 +376,7 @@ nav a.active {
 }
 
 .switch input:checked + .slider {
-    background: linear-gradient(90deg, #ff8c42, #ff2d55);
+    background: linear-gradient(90deg, var(--color-orange), var(--color-primary));
     border-color: transparent;
 }
 
@@ -423,7 +430,7 @@ nav a.active {
 }
 
 .chart-fallback i {
-    color: #ff5577;
+    color: var(--color-accent);
 }
 
 /* ==========================
@@ -546,11 +553,11 @@ html[data-theme='light'] {
 }
 
 [data-theme='light'] nav a.active {
-    background: linear-gradient(135deg, rgba(255, 95, 31, .13), rgba(255, 45, 85, .09));
+    background: linear-gradient(135deg, rgba(var(--accent-glow), .13), rgba(var(--accent-glow), .09));
 }
 
 [data-theme='light'] .theme-card.active i {
-    color: #ff5577;
+    color: var(--color-accent);
 }
 
 /* Floating dropdowns stay dark; restore white ink inside them. */
@@ -618,8 +625,8 @@ html[data-theme='light'] {
 [data-theme='light'] .app::before {
     background: radial-gradient(
         circle,
-        rgba(255, 85, 20, .16),
-        rgba(255, 45, 85, .08),
+        rgba(var(--accent-glow), .16),
+        rgba(var(--accent-glow), .08),
         transparent 70%
     );
 }
@@ -631,5 +638,5 @@ html[data-theme='light'] {
 }
 
 [data-theme='light'] .hero-panel::before {
-    background: radial-gradient(circle, rgba(255, 45, 85, .09), transparent 70%);
+    background: radial-gradient(circle, rgba(var(--accent-glow), .09), transparent 70%);
 }

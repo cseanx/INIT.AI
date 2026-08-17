@@ -12,7 +12,7 @@
 }
 
 .bento-card:hover {
-    box-shadow: 0 0 30px rgba(255, 45, 85, 0.1);
+    box-shadow: 0 0 30px rgba(var(--glow-color), 0.1);
 }
 
 /* Border glow effect — follows the card's own border radius */
@@ -58,7 +58,7 @@
     left: -2px;
     right: -2px;
     bottom: -2px;
-    background: rgba(255, 45, 85, 0.2);
+    background: rgba(var(--glow-color), 0.2);
     border-radius: 50%;
     z-index: -1;
 }

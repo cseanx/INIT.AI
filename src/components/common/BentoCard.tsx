@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { gsap } from 'gsap';
+import { usePreferences } from '../../preferences/PreferencesContext';
 import './BentoCard.css';
 
 const DEFAULT_PARTICLE_COUNT = 12;
@@ -76,11 +77,14 @@ export interface BentoFxOptions {
  */
 export function useBentoFx(options: BentoFxOptions = {}) {
     const {
-        glowColor = DEFAULT_GLOW_COLOR,
+        glowColor,
         particleCount = DEFAULT_PARTICLE_COUNT,
         borderGlow = true,
         disableAnimations = false,
     } = options;
+
+    const { accentGlow } = usePreferences();
+    const activeGlow = glowColor ?? accentGlow ?? DEFAULT_GLOW_COLOR;
 
     const ref = useRef<HTMLDivElement | null>(null);
     const particlesRef = useRef<HTMLDivElement[]>([]);
@@ -96,10 +100,10 @@ export function useBentoFx(options: BentoFxOptions = {}) {
 
         const { width, height } = ref.current.getBoundingClientRect();
         memoizedParticles.current = Array.from({ length: particleCount }, () =>
-            createParticleElement(Math.random() * width, Math.random() * height, glowColor),
+            createParticleElement(Math.random() * width, Math.random() * height, activeGlow),
         );
         particlesInitialized.current = true;
-    }, [particleCount, glowColor]);
+    }, [particleCount, activeGlow]);
 
     const clearAllParticles = useCallback(() => {
         timeoutsRef.current.forEach(clearTimeout);
@@ -178,20 +182,26 @@ export function useBentoFx(options: BentoFxOptions = {}) {
             clearAllParticles();
         };
 
-        element.addEventListener('mouseenter', handleMouseEnter);
-        element.addEventListener('mouseleave', handleMouseLeave);
+            element.addEventListener('mouseenter', handleMouseEnter);
+            element.addEventListener('mouseleave', handleMouseLeave);
 
-        return () => {
-            isHoveredRef.current = false;
-            element.removeEventListener('mouseenter', handleMouseEnter);
-            element.removeEventListener('mouseleave', handleMouseLeave);
-            clearAllParticles();
-        };
-    }, [animateParticles, clearAllParticles, shouldDisableAnimations]);
+            return () => {
+                isHoveredRef.current = false;
+                element.removeEventListener('mouseenter', handleMouseEnter);
+                element.removeEventListener('mouseleave', handleMouseLeave);
+                clearAllParticles();
+            };
+        }, [animateParticles, clearAllParticles, shouldDisableAnimations]);
+
+    // Re-seed particles with the current accent color after a change.
+    useEffect(() => {
+        particlesInitialized.current = false;
+        clearAllParticles();
+    }, [activeGlow, clearAllParticles]);
 
     const className = `bento-card ${borderGlow ? 'bento-card--border-glow' : ''}`;
     const style = {
-        '--glow-color': glowColor,
+        '--glow-color': activeGlow,
         position: 'relative',
         overflow: 'hidden',
     } as CSSProperties;
@@ -389,11 +399,13 @@ export interface BentoSectionProps {
 export const BentoSection = ({
     children,
     className = '',
-    glowColor = DEFAULT_GLOW_COLOR,
+    glowColor,
     spotlightRadius = DEFAULT_SPOTLIGHT_RADIUS,
     enableSpotlight = true,
     disableAnimations = false,
 }: BentoSectionProps) => {
+    const { accentGlow } = usePreferences();
+    const activeGlow = glowColor ?? accentGlow ?? DEFAULT_GLOW_COLOR;
     const sectionRef = useRef<HTMLDivElement | null>(null);
     const isMobile = useMobileDetection();
     const shouldDisableAnimations = disableAnimations || isMobile;
@@ -405,7 +417,7 @@ export const BentoSection = ({
                     sectionRef={sectionRef}
                     disableAnimations={shouldDisableAnimations}
                     spotlightRadius={spotlightRadius}
-                    glowColor={glowColor}
+                    glowColor={activeGlow}
                 />
             )}
             {children}

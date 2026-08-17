@@ -33,7 +33,7 @@ export default function ThemePicker() {
                     <i className={`fa-solid ${theme.icon} text-lg text-[#999]`}></i>
                     {theme.label}
                     {theme.tag ? (
-                        <span className="theme-tag absolute right-[14px] top-[14px] rounded-full bg-[rgba(255,45,85,.18)] p-[4px_9px] text-[10px] font-bold uppercase tracking-[.04em] text-[#ff8899]">
+                        <span className="theme-tag absolute right-[14px] top-[14px] rounded-full bg-[rgba(var(--accent-glow),.18)] p-[4px_9px] text-[10px] font-bold uppercase tracking-[.04em] text-accent">
                             {theme.tag}
                         </span>
                     ) : null}

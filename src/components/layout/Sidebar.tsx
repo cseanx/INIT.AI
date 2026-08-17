@@ -27,7 +27,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                         <img
                             src="/assets/images/logo.svg"
                             alt="INIT.AI logo"
-                            className="h-full w-full object-contain drop-shadow-[0_0_14px_rgba(255,45,85,.35)]"
+                            className="h-full w-full object-contain drop-shadow-[0_0_14px_rgba(var(--accent-glow),.35)]"
                         />
                     </div>
                     <div className="logo-text overflow-hidden whitespace-nowrap transition-all duration-[.25s]">

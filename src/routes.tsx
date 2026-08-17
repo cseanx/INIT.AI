@@ -96,7 +96,7 @@ export function SidebarNavLink({
             <i className={`fa-solid ${icon} w-[22px] shrink-0 text-center text-lg`}></i>
             <span className="whitespace-nowrap transition-all duration-[.25s]">{children}</span>
             {notification ? (
-                <div className="notification-dot absolute right-[14px] top-[10px] h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(255,45,85,.6)]"></div>
+                <div className="notification-dot absolute right-[14px] top-[10px] h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--accent-glow),.6)]"></div>
             ) : null}
         </NavLink>
     );
