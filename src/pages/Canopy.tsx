@@ -72,7 +72,7 @@ export default function Canopy() {
                 </PanelGrid>
             ) : null}
 
-            <Card>
+            <Card className="mx-5">
                 <PanelHead title="Canopy Detail by Barangay" />
                 {barangays ? <CanopyTable barangays={barangays} /> : null}
             </Card>

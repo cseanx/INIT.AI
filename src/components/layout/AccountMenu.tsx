@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 
@@ -23,6 +24,7 @@ export default function AccountMenu({ collapsed }: AccountMenuProps) {
     const { user, logout } = useAuth();
     const sectionRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
 
@@ -52,9 +54,14 @@ export default function AccountMenu({ collapsed }: AccountMenuProps) {
 
     useEffect(() => {
         function onDocumentClick(e: MouseEvent) {
-            if (sectionRef.current && !sectionRef.current.contains(e.target as Node)) {
-                setOpen(false);
+            const target = e.target as Node;
+            if (
+                sectionRef.current?.contains(target) ||
+                menuRef.current?.contains(target)
+            ) {
+                return;
             }
+            setOpen(false);
         }
         function onResize() {
             setOpen(false);
@@ -100,21 +107,25 @@ export default function AccountMenu({ collapsed }: AccountMenuProps) {
                 <i className="fa-solid fa-chevron-up account-chevron shrink-0 text-[11px] text-[#888] transition duration-200 ease-in-out"></i>
             </button>
 
-            <div
-                className="account-menu invisible fixed z-[999] flex translate-y-[6px] flex-col gap-0.5 rounded-[14px] border border-white/10 bg-[#101010] p-[6px] opacity-0 shadow-[0_16px_40px_rgba(0,0,0,.55)] transition duration-200"
-                style={menuStyle}
-                role="menu"
-            >
-                <button
-                    type="button"
-                    id="logoutBtn"
-                    className={`${MENU_ITEM_CLASSES} danger`}
-                    onClick={handleLogout}
+            {createPortal(
+                <div
+                    ref={menuRef}
+                    className={`account-menu invisible fixed z-[999] flex translate-y-[6px] flex-col gap-0.5 rounded-[14px] border border-white/10 bg-[#101010] p-[6px] opacity-0 shadow-[0_16px_40px_rgba(0,0,0,.55)] transition duration-200 ${open ? 'open' : ''}`}
+                    style={menuStyle}
+                    role="menu"
                 >
-                    <i className="fa-solid fa-right-from-bracket w-4 text-center text-[13px]"></i>
-                    Log Out
-                </button>
-            </div>
+                    <button
+                        type="button"
+                        id="logoutBtn"
+                        className={`${MENU_ITEM_CLASSES} danger`}
+                        onClick={handleLogout}
+                    >
+                        <i className="fa-solid fa-right-from-bracket w-4 text-center text-[13px]"></i>
+                        Log Out
+                    </button>
+                </div>,
+                document.body,
+            )}
         </div>
     );
 }

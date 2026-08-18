@@ -1,13 +1,17 @@
 import { useMemo } from 'react';
 import type { ChartConfiguration } from 'chart.js';
-import type { CanopySnapshot, ResolvedTheme } from '../../types';
+import type { AccentName, CanopySnapshot, ResolvedTheme } from '../../types';
 import { baseChartOptions, chartTheme } from '../../utils/chartTheme';
 import { usePreferences } from '../../preferences/PreferencesContext';
 import ChartCanvas from '../common/ChartCanvas';
 
-function useBarConfig(data: CanopySnapshot, resolvedTheme: ResolvedTheme) {
+function useBarConfig(
+    data: CanopySnapshot,
+    resolvedTheme: ResolvedTheme,
+    accent: AccentName,
+) {
     return useMemo<ChartConfiguration<'bar'>>(() => {
-        const th = chartTheme(resolvedTheme);
+        const th = chartTheme(resolvedTheme, accent);
         return {
             type: 'bar',
             data: {
@@ -46,12 +50,16 @@ function useBarConfig(data: CanopySnapshot, resolvedTheme: ResolvedTheme) {
                 },
             },
         };
-    }, [data, resolvedTheme]);
+    }, [data, resolvedTheme, accent]);
 }
 
-function useLineConfig(data: CanopySnapshot, resolvedTheme: ResolvedTheme) {
+function useLineConfig(
+    data: CanopySnapshot,
+    resolvedTheme: ResolvedTheme,
+    accent: AccentName,
+) {
     return useMemo<ChartConfiguration<'line'>>(() => {
-        const th = chartTheme(resolvedTheme);
+        const th = chartTheme(resolvedTheme, accent);
         return {
             type: 'line',
             data: {
@@ -60,12 +68,12 @@ function useLineConfig(data: CanopySnapshot, resolvedTheme: ResolvedTheme) {
                     {
                         label: 'Canopy %',
                         data: data.trend.values,
-                        borderColor: th.red,
-                        backgroundColor: 'rgba(255,45,85,.12)',
+                        borderColor: th.brand,
+                        backgroundColor: `rgba(${th.brandRgb},.12)`,
                         fill: true,
                         tension: 0.35,
                         pointRadius: 3,
-                        pointBackgroundColor: th.red,
+                        pointBackgroundColor: th.brand,
                     },
                 ],
             },
@@ -85,12 +93,16 @@ function useLineConfig(data: CanopySnapshot, resolvedTheme: ResolvedTheme) {
                 },
             },
         };
-    }, [data, resolvedTheme]);
+    }, [data, resolvedTheme, accent]);
 }
 
-function useDoughnutConfig(data: CanopySnapshot, resolvedTheme: ResolvedTheme) {
+function useDoughnutConfig(
+    data: CanopySnapshot,
+    resolvedTheme: ResolvedTheme,
+    accent: AccentName,
+) {
     return useMemo<ChartConfiguration<'doughnut'>>(() => {
-        const th = chartTheme(resolvedTheme);
+        const th = chartTheme(resolvedTheme, accent);
         return {
             type: 'doughnut',
             data: {
@@ -132,20 +144,20 @@ function useDoughnutConfig(data: CanopySnapshot, resolvedTheme: ResolvedTheme) {
                 },
             },
         };
-    }, [data, resolvedTheme]);
+    }, [data, resolvedTheme, accent]);
 }
 
 export function CanopyBarChart({ data }: { data: CanopySnapshot }) {
-    const { resolvedTheme } = usePreferences();
-    return <ChartCanvas id="canopyBarChart" config={useBarConfig(data, resolvedTheme)} />;
+    const { resolvedTheme, preferences } = usePreferences();
+    return <ChartCanvas id="canopyBarChart" config={useBarConfig(data, resolvedTheme, preferences.accent)} />;
 }
 
 export function CanopyTrendChart({ data }: { data: CanopySnapshot }) {
-    const { resolvedTheme } = usePreferences();
-    return <ChartCanvas id="canopyLineChart" config={useLineConfig(data, resolvedTheme)} />;
+    const { resolvedTheme, preferences } = usePreferences();
+    return <ChartCanvas id="canopyLineChart" config={useLineConfig(data, resolvedTheme, preferences.accent)} />;
 }
 
 export function LandCoverChart({ data }: { data: CanopySnapshot }) {
-    const { resolvedTheme } = usePreferences();
-    return <ChartCanvas id="landCoverChart" config={useDoughnutConfig(data, resolvedTheme)} />;
+    const { resolvedTheme, preferences } = usePreferences();
+    return <ChartCanvas id="landCoverChart" config={useDoughnutConfig(data, resolvedTheme, preferences.accent)} />;
 }

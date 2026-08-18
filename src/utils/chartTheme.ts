@@ -1,10 +1,22 @@
 /* Shared Chart.js palette. Dark matches the app's dark glass theme; light
-   adapts the same accents for light backgrounds. */
-export function chartTheme(theme: 'dark' | 'light' = 'dark') {
+   adapts the same accents for light backgrounds. `brand` follows the user's
+   accent color (used by the dashboard scatter and canopy trend line); the
+   red/orange/yellow/green/blue data scale stays semantic so heat/severity
+   charts keep their meaning under any accent. */
+import type { AccentName } from '../types';
+import { ACCENTS } from './accent';
+
+export function chartTheme(
+    theme: 'dark' | 'light' = 'dark',
+    accent: AccentName = 'sunset',
+) {
+    const palette = ACCENTS[accent] ?? ACCENTS.sunset;
     return {
         grid: theme === 'light' ? 'rgba(15,20,30,.08)' : 'rgba(255,255,255,.06)',
         text: theme === 'light' ? '#5a5f69' : '#888',
         axis: theme === 'light' ? '#3a3f47' : '#ddd',
+        brand: palette.primary,
+        brandRgb: palette.glow,
         red: '#ff2d55',
         orange: '#ff8c42',
         yellow: '#ffd23f',
