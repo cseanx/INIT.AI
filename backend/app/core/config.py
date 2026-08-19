@@ -16,7 +16,10 @@ class Settings(BaseSettings):
     # Session cookie
     session_cookie_name: str = "initai_session"
     session_ttl_days: int = 7
-    session_cookie_secure: bool = False  # set True behind HTTPS (Neon/production)
+    session_cookie_secure: bool = False  # set True behind HTTPS (production)
+    # "lax" works when the frontend and API share a site (e.g. both on
+    # *.vercel.app); use "none" for cross-site setups (e.g. Vercel + Render).
+    session_cookie_samesite: str = "lax"
 
     @property
     def cors_origin_list(self) -> list[str]:

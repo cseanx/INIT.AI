@@ -35,3 +35,4 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 backend/.env
+.env*

@@ -1,0 +1,20 @@
+# Deploy the backend to Render as a public web service.
+# Connect your GitHub repo to Render and it will pick this blueprint up.
+# After deploying, set VITE_API_URL on the Vercel frontend project to
+# https://<service-name>.onrender.com and add the Vercel origin to CORS_ORIGINS.
+services:
+  - type: web
+    name: init-ai-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: SESSION_COOKIE_SAMESITE
+        value: "none"
