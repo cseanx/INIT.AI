@@ -251,6 +251,110 @@
 }
 
 /* ==========================
+   INSPECTOR PANEL SCROLLBAR
+   Thin scrollbar for the collapsible right-side inspector panel.
+   ========================== */
+
+.inspector-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, .18) transparent;
+}
+
+.inspector-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+
+.inspector-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.inspector-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, .16);
+    border-radius: 50px;
+}
+
+.inspector-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, .28);
+}
+
+[data-theme='light'] .inspector-scroll {
+    scrollbar-color: rgba(20, 25, 35, .22) transparent;
+}
+
+[data-theme='light'] .inspector-scroll::-webkit-scrollbar-thumb {
+    background: rgba(20, 25, 35, .22);
+}
+
+[data-theme='light'] .inspector-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(20, 25, 35, .35);
+}
+
+/* ==========================
+   MAPLIBRE MAP CONTROLS
+   Dark glass treatment matching the app UI. Every rule is scoped under
+   `.map-view` so it beats maplibre's own CSS — the library stylesheet is
+   bundled into the lazily-loaded map chunk and would otherwise override
+   these styles (its defaults are white buttons with dark icons).
+   ========================== */
+
+.map-view .maplibregl-ctrl-group {
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    background: rgba(16, 16, 16, .75);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+    overflow: hidden;
+}
+
+.map-view .maplibregl-ctrl-group button + button {
+    border-top: 1px solid rgba(255, 255, 255, .08);
+}
+
+.map-view .maplibregl-ctrl-group button:hover {
+    background: rgba(255, 255, 255, .1);
+}
+
+.map-view .maplibregl-ctrl-group button:active {
+    background: rgba(255, 255, 255, .16);
+}
+
+/* Invert the library's dark icons (zoom in/out, compass, geolocate…) so
+   they read as light glyphs on the dark glass buttons. */
+.map-view .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+    filter: invert(1) opacity(.9);
+}
+
+.map-view .maplibregl-ctrl-group button:hover .maplibregl-ctrl-icon {
+    filter: invert(1) opacity(1);
+}
+
+/* Info / attribution button — dark glass square with an inverted glyph.
+   Specificity is bumped above the library's own compact rule (white pill,
+   black text) which would otherwise win by load order. */
+.map-view .maplibregl-ctrl.maplibregl-ctrl-attrib {
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 10px;
+    background-color: rgba(16, 16, 16, .75);
+    color: rgba(255, 255, 255, .55);
+    font-size: 10px;
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+}
+
+.map-view .maplibregl-ctrl-attrib summary.maplibregl-ctrl-attrib-button {
+    filter: invert(1) opacity(.7);
+}
+
+.map-view .maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-button {
+    background-color: rgba(255, 255, 255, .12);
+}
+
+.map-view .maplibregl-ctrl-attrib a,
+.map-view .maplibregl-ctrl-attrib a:hover {
+    color: rgba(255, 255, 255, .75);
+}
+
+/* ==========================
    SIDEBAR LABELS
    Text labels clip smoothly via max-width (animatable) instead of width
    (auto -> 0 is not animatable, which made them pop in/out instantly).
@@ -443,37 +547,8 @@ nav a.active {
 }
 
 /* ==========================
-   HEATMAP CELLS (JS-GENERATED)
-========================== */
-
-.heatmap-cell {
-    @apply relative cursor-pointer rounded-lg border border-white/6 transition duration-200 hover:z-[2] hover:scale-[1.06] hover:shadow-[0_8px_24px_rgba(0,0,0,.4)];
-}
-
-.cell-tip {
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: #111;
-    border: 1px solid rgba(255, 255, 255, .12);
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 11px;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: .2s;
-}
-
-.heatmap-cell:hover .cell-tip {
-    opacity: 1;
-    transform: translateX(-50%) translateY(-4px);
-}
-
-/* ==========================
    CHART FALLBACK (JS-GENERATED)
-========================== */
+   ========================== */
 
 .chart-fallback {
     @apply flex h-full items-center justify-center gap-[10px] text-center text-[13px] text-[#777];
@@ -633,11 +708,6 @@ html[data-theme='light'] {
 /* Switch knob: dark ink on the light track. */
 [data-theme='light'] .slider::before {
     background: #181a20;
-}
-
-/* Heatmap cell tooltip stays dark. */
-[data-theme='light'] .cell-tip {
-    color: #fff;
 }
 
 /* The thermal satellite viewer is a dark "photo" — keep its captions white. */
