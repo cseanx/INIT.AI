@@ -20,12 +20,34 @@
     <meta property="og:image" content="https://cseanx.github.io/INIT.AI/assets/images/preview_image.png"/>
     <meta property="og:url" content="https://cseanx.github.io/INIT.AI/"/>
     <meta property="og:type" content="website"/>
-    <!-- Apply the OS theme before the app mounts to avoid a dark flash. -->
+    <!-- Apply the saved theme + accent before the app mounts to avoid a flash. -->
     <script>
         (function () {
-            var theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            var prefs = null;
+            try {
+                prefs = JSON.parse(localStorage.getItem('initai_preferences') || 'null');
+            } catch (e) { /* corrupted storage — fall back to defaults */ }
+
+            var theme = prefs && prefs.theme === 'light' ? 'light'
+                : prefs && prefs.theme === 'dark' ? 'dark'
+                : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             document.documentElement.dataset.theme = theme;
             document.documentElement.style.colorScheme = theme;
+
+            var accents = {
+                sunset: ['#ff2d55', '#ff5577', '#ff8c42', '255, 45, 85'],
+                ocean: ['#5aa9ff', '#2f6f9e', '#8ec7ff', '90, 169, 255'],
+                canopy: ['#ff2d55', '#ff5577', '#ff8c42', '255, 45, 85'],
+                amber: ['#ff2d55', '#ff5577', '#ff8c42', '255, 45, 85'],
+                violet: ['#ff2d55', '#ff5577', '#ff8c42', '255, 45, 85']
+            };
+            var palette = accents[(prefs && prefs.accent) || 'sunset'] || accents.sunset;
+            var root = document.documentElement;
+            root.style.setProperty('--color-primary', palette[0]);
+            root.style.setProperty('--color-accent', palette[1]);
+            root.style.setProperty('--color-orange', palette[2]);
+            root.style.setProperty('--accent-glow', palette[3]);
+            root.dataset.accent = (prefs && prefs.accent) || 'sunset';
         })();
     </script>
 </head>

@@ -18,6 +18,23 @@ const DEFAULT_PREFERENCES: UserPreferences = {
     sidebar_collapsed: false,
 };
 
+const STORAGE_KEY = 'initai_preferences';
+
+function loadStoredPreferences(): UserPreferences {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return DEFAULT_PREFERENCES;
+        const stored = JSON.parse(raw) as Partial<UserPreferences>;
+        return {
+            theme: stored.theme ?? DEFAULT_PREFERENCES.theme,
+            accent: stored.accent ?? DEFAULT_PREFERENCES.accent,
+            sidebar_collapsed: stored.sidebar_collapsed ?? DEFAULT_PREFERENCES.sidebar_collapsed,
+        };
+    } catch {
+        return DEFAULT_PREFERENCES;
+    }
+}
+
 interface PreferencesContextValue {
     preferences: UserPreferences;
     ready: boolean;
@@ -49,12 +66,22 @@ function applyTheme(theme: ResolvedTheme) {
  */
 export function PreferencesProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
-    const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
+    const [preferences, setPreferences] = useState<UserPreferences>(loadStoredPreferences);
     const [ready, setReady] = useState(false);
     const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() =>
-        resolveTheme(DEFAULT_PREFERENCES.theme),
+        resolveTheme(preferences.theme),
     );
     const accentGlow = ACCENTS[preferences.accent]?.glow ?? ACCENTS.sunset.glow;
+
+    // Cache locally so a refresh (login page included) applies the saved
+    // theme/accent instantly instead of flashing the defaults.
+    useEffect(() => {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+        } catch {
+            /* storage unavailable — settings still apply in-memory */
+        }
+    }, [preferences]);
 
     useEffect(() => {
         let active = true;
