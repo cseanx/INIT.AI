@@ -95,7 +95,8 @@
     }
 
     ::-webkit-scrollbar {
-        width: 8px;
+        width: 5px;
+        height: 5px;
     }
 
     ::-webkit-scrollbar-track {
@@ -109,6 +110,11 @@
 
     ::-webkit-scrollbar-thumb:hover {
         background: #ff6232;
+    }
+
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: #2b2b2b #090909;
     }
 }
 
@@ -365,8 +371,7 @@
 }
 
 nav a span,
-.sidebar-bottom a span,
-.sidebar-status span {
+.sidebar-bottom a span {
     max-width: 200px;
     white-space: nowrap;
 }
@@ -375,17 +380,17 @@ nav a span,
    SIDEBAR COLLAPSED
    Items are centered with padding/margin (both animatable) instead of
    justify-content / align-self (not animatable), so icons glide smoothly
-   instead of snapping. Collapsed content width is 58px (82 - 2*12).
-========================== */
+   instead of snapping. Collapsed content width is 48px (72 - 2*12).
+   ========================== */
 
 .sidebar.collapsed {
-    width: 82px;
+    width: 72px;
     padding-left: 12px;
     padding-right: 12px;
 }
 
 .sidebar.collapsed .logo {
-    padding-left: 5px; /* 5 + 48px circle + 5 = 58px */
+    padding-left: 0; /* 0 + 48px circle + 0 = 48px content box */
     gap: 0;
 }
 
@@ -397,33 +402,21 @@ nav a span,
 
 .sidebar.collapsed nav a,
 .sidebar.collapsed .sidebar-bottom a {
-    padding-left: 18px; /* 18 + 22px icon + 18 = 58px */
-    padding-right: 18px;
+    padding-left: 13px; /* 13 + 22px icon + 13 = 48px */
+    padding-right: 13px;
     gap: 0;
 }
 
 .sidebar.collapsed nav a span,
-.sidebar.collapsed .sidebar-bottom span:not(.status-dot) {
+.sidebar.collapsed .sidebar-bottom span {
     opacity: 0;
     max-width: 0;
     overflow: hidden;
 }
 
 .sidebar.collapsed .toggle-btn {
-    margin-left: 8px; /* 8 + 42px button + 8 = 58px */
-    margin-right: 8px;
-}
-
-.sidebar.collapsed .sidebar-status {
-    padding: 10px;
-    padding-left: 24px; /* 24 + 10px dot + 24 = 58px */
-    padding-right: 24px;
-    gap: 0;
-}
-
-.sidebar.collapsed .notification-dot {
-    top: 8px;
-    right: 8px;
+    margin-left: 3px; /* 3 + 42px button + 3 = 48px content box */
+    margin-right: 3px;
 }
 
 .sidebar.collapsed .account-info,
@@ -432,9 +425,7 @@ nav a span,
 }
 
 .sidebar.collapsed .account-trigger {
-    padding: 6px;
-    padding-left: 11px; /* 11 + 36px avatar + 11 = 58px */
-    padding-right: 11px;
+    padding: 5px; /* 5 + 36px avatar + 5 = 46px content box (48 - 2px border) */
     gap: 0;
 }
 
@@ -442,7 +433,7 @@ nav a span,
    ACTIVE NAV LINK
 ========================== */
 
-nav a.active {
+.sidebar a.active {
     background: linear-gradient(135deg, rgba(var(--accent-glow), .22), rgba(var(--accent-glow), .15));
     color: #fff;
 }
@@ -663,6 +654,10 @@ html[data-theme='light'] {
     color: #181a20;
 }
 
+[data-theme='light'] .app {
+    background: var(--color-base);
+}
+
 /* Gradient CTA buttons (bg-gradient-to-r from-primary to-accent) keep white
    text — dark ink would clash with the pink gradient. */
 [data-theme='light'] .from-primary {
@@ -671,13 +666,13 @@ html[data-theme='light'] {
 
 /* Active nav/chip/theme-card states hardcode `color:#fff` on light-tinted
    gradients; darken the text for light backgrounds. */
-[data-theme='light'] nav a.active,
+[data-theme='light'] .sidebar a.active,
 [data-theme='light'] .chip-btn.active,
 [data-theme='light'] .theme-card.active {
     color: #181a20;
 }
 
-[data-theme='light'] nav a.active {
+[data-theme='light'] .sidebar a.active {
     background: linear-gradient(135deg, rgba(var(--accent-glow), .13), rgba(var(--accent-glow), .09));
 }
 

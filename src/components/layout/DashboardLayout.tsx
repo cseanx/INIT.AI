@@ -77,14 +77,14 @@ export default function DashboardLayout() {
     }, [pathname]);
 
     return (
-        <div className="app relative flex h-screen">
+        <div className="app isolate relative flex h-screen w-screen gap-3 overflow-hidden bg-[#0a0a0c] p-3">
             <Sidebar
                 collapsed={collapsed}
                 onToggle={() => setSidebarCollapsed(!collapsed)}
             />
             <main
                 ref={mainRef}
-                className="main-content min-w-0 flex-1 overflow-y-auto p-[30px_35px_30px_10px]"
+                className="main-content min-w-0 flex-1 overflow-y-auto"
             >
                 <BentoSection>
                     <Topbar />

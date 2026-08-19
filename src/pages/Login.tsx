@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import Particles from '../components/common/Particles';
 import { useAuth } from '../auth/AuthContext';
+import { ApiError } from '../services/api';
 
 const INPUT_CLASSES =
     'w-full rounded-[14px] border border-white/8 bg-white/[.04] p-[15px] text-[15px] text-white outline-none transition duration-300 focus:border-primary focus:shadow-[0_0_25px_rgba(var(--accent-glow),.25)]';
@@ -13,6 +14,13 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [loggingIn, setLoggingIn] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [cooldown, setCooldown] = useState(0);
+
+    useEffect(() => {
+        if (cooldown <= 0) return;
+        const timer = setInterval(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
+        return () => clearInterval(timer);
+    }, [cooldown > 0]);
 
     if (loading) {
         return null;
@@ -23,14 +31,24 @@ export default function Login() {
 
     async function handleLogin(e: FormEvent) {
         e.preventDefault();
-        if (loggingIn) return;
+        if (loggingIn || cooldown > 0) return;
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(email.trim())) {
+            setError('Enter a valid email address');
+            return;
+        }
         setLoggingIn(true);
         setError(null);
         try {
             await login(email, password);
             navigate('/dashboard', { replace: true });
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
+            if (err instanceof ApiError && err.status === 429 && err.retryAfter) {
+                setCooldown(err.retryAfter);
+                setError('Too many failed attempts. Please wait to try again.');
+            } else {
+                setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
+            }
             setLoggingIn(false);
         }
     }
@@ -93,16 +111,22 @@ export default function Login() {
                                 role="alert"
                                 className="mb-4 text-center text-[13px] font-medium text-accent"
                             >
-                                {error}
+                                {cooldown > 0
+                                    ? `Too many failed attempts — try again in ${cooldown}s`
+                                    : error}
                             </p>
                         ) : null}
                         <button
                             id="loginBtn"
                             type="submit"
-                            disabled={loggingIn}
+                            disabled={loggingIn || cooldown > 0}
                             className="mt-[10px] w-full cursor-pointer rounded-[14px] border-none bg-gradient-to-r from-primary to-accent p-[15px] text-base font-semibold text-white transition duration-300 hover:-translate-y-[3px] hover:shadow-[0_10px_35px_rgba(var(--accent-glow),.45)] disabled:cursor-not-allowed disabled:opacity-70"
                         >
-                            {loggingIn ? 'Logging in...' : 'Login'}
+                            {loggingIn
+                                ? 'Logging in...'
+                                : cooldown > 0
+                                  ? `Try again in ${cooldown}s`
+                                  : 'Login'}
                         </button>
                     </form>
                     <footer className="mt-[30px] text-center text-[13px] text-[#9f9f9f]">

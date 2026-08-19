@@ -84,12 +84,10 @@ export function SidebarNavLink({
     to,
     icon,
     children,
-    notification,
 }: {
     to: string;
     icon: string;
     children: ReactNode;
-    notification?: boolean;
 }) {
     return (
         <NavLink to={to} className={({ isActive }) => NavLinkClasses({ isActive })}>
@@ -98,9 +96,6 @@ export function SidebarNavLink({
             <div className="nav-tooltip" role="tooltip">
                 {children}
             </div>
-            {notification ? (
-                <div className="notification-dot absolute right-[14px] top-[10px] h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--accent-glow),.6)]"></div>
-            ) : null}
         </NavLink>
     );
 }

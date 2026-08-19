@@ -9,7 +9,7 @@ interface SidebarProps {
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     return (
         <aside
-            className={`sidebar m-[18px] flex w-[230px] shrink-0 flex-col overflow-clip rounded-[30px] border border-white/8 bg-white/5 p-[18px] backdrop-blur-[25px] transition-[width,padding] duration-[.35s] ease-[cubic-bezier(0.32,0.72,0,1)] ${collapsed ? 'collapsed' : ''}`}
+            className={`sidebar flex w-[230px] shrink-0 flex-col overflow-clip rounded-[30px] border border-white/8 bg-white/5 p-[18px] backdrop-blur-[25px] transition-[width,padding] duration-[.35s] ease-[cubic-bezier(0.32,0.72,0,1)] ${collapsed ? 'collapsed' : ''}`}
             id="sidebar"
         >
             <div className="sidebar-top flex flex-col gap-[25px]">
@@ -46,14 +46,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             </nav>
 
             <div className="sidebar-bottom mt-auto flex flex-col gap-[10px] pt-5">
-                <SidebarNavLink to={SETTINGS_ROUTE.path} icon={SETTINGS_ROUTE.icon} notification>
+                <SidebarNavLink to={SETTINGS_ROUTE.path} icon={SETTINGS_ROUTE.icon}>
                     {SETTINGS_ROUTE.label}
                 </SidebarNavLink>
-
-                <div className="sidebar-status flex items-center gap-[10px] rounded-[14px] border border-white/6 bg-white/[.03] p-[10px_12px] text-xs tracking-[.03em] text-[#ccc] transition-all duration-[.35s]">
-                    <span className="status-dot h-[10px] w-[10px] shrink-0 rounded-full bg-mint shadow-[0_0_15px_#00ff84] animate-status-pulse"></span>
-                    <span className="transition-all duration-[.25s]">SYSTEM ONLINE</span>
-                </div>
 
                 <AccountMenu collapsed={collapsed} />
             </div>

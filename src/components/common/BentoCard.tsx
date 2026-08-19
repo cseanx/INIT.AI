@@ -297,9 +297,12 @@ const BentoSpotlight = ({
                 e.clientY >= rect.top &&
                 e.clientY <= rect.bottom;
 
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            const overMedia = !!target && !!target.closest('img, .maplibregl-map');
+
             const cards = sectionRef.current.querySelectorAll('.bento-card');
 
-            if (!mouseInside) {
+            if (!mouseInside || overMedia) {
                 gsap.to(spotlightRef.current, {
                     opacity: 0,
                     duration: 0.3,

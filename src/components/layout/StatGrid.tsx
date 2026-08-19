@@ -8,7 +8,7 @@ export default function StatGrid({
 }: HTMLAttributes<HTMLElement>) {
     return (
         <section
-            className={`mx-5 mb-[30px] grid grid-cols-4 gap-5 max-[1200px]:grid-cols-2 ${className}`}
+            className={`mb-5 grid w-full grid-cols-4 gap-5 max-[1200px]:grid-cols-2 ${className}`}
             {...rest}
         >
             {children}

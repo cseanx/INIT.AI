@@ -23,8 +23,8 @@ export default function Dashboard() {
 
     return (
         <Page>
-            <BentoCard className="hero-panel relative mx-5 mb-[30px] flex items-center justify-between gap-10 overflow-hidden rounded-[28px] border border-white/8 bg-white/5 p-[44px_46px] backdrop-blur-[25px] shadow-[0_20px_60px_rgba(0,0,0,.35)]">
-                <div className="relative z-10 max-w-[480px]">
+            <BentoCard className="hero-panel relative mb-5 flex w-full items-center justify-between gap-10 overflow-hidden rounded-[28px] border border-white/8 bg-white/5 p-[40px_44px] backdrop-blur-[25px] shadow-[0_20px_60px_rgba(0,0,0,.35)]">
+                <div className="relative z-10 w-[55%] min-w-0">
                     <span className="mb-5 inline-block rounded-full border border-[rgba(var(--accent-glow),.3)] bg-gradient-to-br from-[rgba(var(--accent-glow),.2)] to-[rgba(var(--accent-glow),.18)] px-4 py-2 text-[12.5px] tracking-[.03em] text-accent">
                         AI Climate Intelligence
                     </span>
@@ -49,8 +49,8 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                <div className="relative z-10 shrink-0">
-                    <div className="relative h-[340px] w-[320px] overflow-hidden rounded-[24px] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,.5)]">
+                <div className="relative z-10 flex w-[45%] min-w-0 justify-end">
+                    <div className="relative h-[340px] w-full max-w-[420px] min-w-[280px] overflow-hidden rounded-[24px] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,.5)]">
                         <div className="thermal-visual absolute inset-0 bg-[#0a1220]">
                             <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
                                 <img src="/assets/images/urban1.png" alt="" className="block h-full w-full object-cover saturate-[1.1] brightness-[.85]" />

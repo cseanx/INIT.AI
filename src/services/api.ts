@@ -105,6 +105,18 @@ function isReportArray(data: unknown): data is Report[] {
 
 /* ---------- fetch helpers ---------- */
 
+export class ApiError extends Error {
+    status: number;
+    retryAfter?: number;
+
+    constructor(message: string, status: number, retryAfter?: number) {
+        super(message);
+        this.name = 'ApiError';
+        this.status = status;
+        this.retryAfter = retryAfter;
+    }
+}
+
 async function fromApi<T>(
     path: string,
     fallback: T,
@@ -131,12 +143,18 @@ async function authFetch<T>(path: string, init?: RequestInit): Promise<T> {
     if (!res.ok) {
         let detail = `Request failed (${res.status})`;
         try {
-            const body = (await res.json()) as { detail?: string };
-            if (body.detail) detail = body.detail;
+            const body = (await res.json()) as { detail?: unknown };
+            if (typeof body.detail === 'string') {
+                detail = body.detail;
+            } else if (Array.isArray(body.detail) && body.detail.length > 0) {
+                const first = body.detail[0] as { msg?: string };
+                if (first?.msg) detail = first.msg;
+            }
         } catch {
             /* non-JSON error body */
         }
-        throw new Error(detail);
+        const retryRaw = res.headers.get('Retry-After');
+        throw new ApiError(detail, res.status, retryRaw ? Number(retryRaw) : undefined);
     }
     if (res.status === 204) {
         return undefined as T;

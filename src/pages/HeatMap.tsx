@@ -8,16 +8,18 @@ import { useBentoFx } from '../components/common/BentoCard';
 /**
  * Fixed-height map workspace: the page never scrolls — the map fills the
  * available height and only the inspector panel scrolls internally.
- * Height = 100vh minus the app topbar + main content padding. Both cards
- * are glassmorphism panels with the app-wide bento border glow / spotlight.
+ * Height = 100vh minus the app frame: 12px outer top padding + topbar
+ * height + 20px topbar bottom margin + 12px outer bottom padding.
+ * Both cards are glassmorphism panels with the app-wide bento spotlight
+ * border glow; only the map card skips the star particles.
  */
 export default function HeatMap() {
     const [inspectorOpen, setInspectorOpen] = useState(true);
-    const mapCardFx = useBentoFx();
+    const mapCardFx = useBentoFx({ particleCount: 0 });
 
     return (
         <Page>
-            <div className="flex h-[calc(100vh-231px)] min-h-0 gap-[18px]">
+            <div className="flex h-[calc(100vh-160px)] min-h-0 gap-[18px]">
                 {/* Map card */}
                 <div
                     ref={mapCardFx.ref}
@@ -34,8 +36,8 @@ export default function HeatMap() {
                             LIVE
                         </span>
                     </div>
-                    <div className="relative min-h-0 flex-1">
-                        <MapView className="h-full w-full">
+                    <div className="relative min-h-0 flex-1 p-[14px]">
+                        <MapView className="h-full w-full rounded-[18px]">
                             <HeatLegend />
                         </MapView>
                     </div>

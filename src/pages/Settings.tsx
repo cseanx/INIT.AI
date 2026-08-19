@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Page from '../components/layout/Page';
 import PanelHead from '../components/common/PanelHead';
 import Card from '../components/common/Card';
@@ -5,6 +6,7 @@ import ToggleRow from '../components/settings/ToggleRow';
 import Switch from '../components/settings/Switch';
 import ThemePicker from '../components/settings/ThemePicker';
 import AccentPicker from '../components/settings/AccentPicker';
+import MenuSelect from '../components/settings/MenuSelect';
 import { usePreferences } from '../preferences/PreferencesContext';
 
 const SUBHEAD_CLASSES =
@@ -104,6 +106,13 @@ function SessionItem({
 
 export default function Settings() {
     const { preferences, setSidebarCollapsed } = usePreferences();
+    const [role, setRole] = useState('admin');
+
+    const ROLE_OPTIONS = [
+        { value: 'planner', label: 'Planner' },
+        { value: 'admin', label: 'Admin' },
+        { value: 'analyst', label: 'Analyst' },
+    ];
 
     return (
         <Page>
@@ -134,11 +143,7 @@ export default function Settings() {
                     </div>
                     <div className="flex flex-col gap-2">
                         <label className="text-[13px] text-[#999]">Role</label>
-                        <select className={FIELD_CLASSES}>
-                            <option className="bg-[#111] text-white">Planner</option>
-                            <option selected className="bg-[#111] text-white">Admin</option>
-                            <option className="bg-[#111] text-white">Analyst</option>
-                        </select>
+                        <MenuSelect value={role} options={ROLE_OPTIONS} onChange={setRole} />
                     </div>
                 </div>
                 <div className="mt-[22px] flex justify-end border-t border-white/6 pt-5">
