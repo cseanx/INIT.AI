@@ -430,7 +430,7 @@ nav a span,
 }
 
 .sidebar.collapsed .account-trigger {
-    padding: 5px; /* 5 + 36px avatar + 5 = 46px content box (48 - 2px border) */
+    padding: 9px 5px; /* 9px vertical keeps 56px height (same as expanded), 5px horizontal centers 36px avatar in 48px */
     gap: 0;
 }
 
