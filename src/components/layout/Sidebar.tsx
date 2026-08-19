@@ -9,7 +9,7 @@ interface SidebarProps {
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     return (
         <aside
-            className={`sidebar m-[18px] flex w-[230px] shrink-0 flex-col overflow-hidden rounded-[30px] border border-white/8 bg-white/5 p-[18px] backdrop-blur-[25px] transition-[width,padding] duration-[.35s] ease-[cubic-bezier(0.32,0.72,0,1)] ${collapsed ? 'collapsed' : ''}`}
+            className={`sidebar m-[18px] flex w-[230px] shrink-0 flex-col overflow-clip rounded-[30px] border border-white/8 bg-white/5 p-[18px] backdrop-blur-[25px] transition-[width,padding] duration-[.35s] ease-[cubic-bezier(0.32,0.72,0,1)] ${collapsed ? 'collapsed' : ''}`}
             id="sidebar"
         >
             <div className="sidebar-top flex flex-col gap-[25px]">

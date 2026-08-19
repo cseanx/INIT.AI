@@ -201,6 +201,56 @@
 }
 
 /* ==========================
+   NAV TOOLTIP
+   Appears to the right of a nav icon when the sidebar is collapsed.
+   The sidebar must clip children at its rounded edge, so it uses
+   overflow: clip + overflow-clip-margin to let tooltips escape.
+   ========================== */
+
+.sidebar {
+    z-index: 40;
+    overflow: clip;
+    overflow-clip-margin: 320px;
+}
+
+.nav-tooltip {
+    position: absolute;
+    left: calc(100% + 14px);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    background: rgba(16, 16, 16, .95);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .45);
+    backdrop-filter: blur(20px);
+    transition: opacity .15s ease, visibility .15s ease;
+}
+
+.sidebar.collapsed nav a:hover .nav-tooltip,
+.sidebar.collapsed .sidebar-bottom a:hover .nav-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+[data-theme='light'] .nav-tooltip {
+    background: rgba(255, 255, 255, .98);
+    border-color: rgba(20, 25, 35, .14);
+    color: #33363d;
+    box-shadow: 0 12px 30px rgba(20, 25, 35, .18);
+}
+
+/* ==========================
    SIDEBAR LABELS
    Text labels clip smoothly via max-width (animatable) instead of width
    (auto -> 0 is not animatable, which made them pop in/out instantly).
