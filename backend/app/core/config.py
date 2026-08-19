@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     # *.vercel.app); use "none" for cross-site setups (e.g. Vercel + Render).
     session_cookie_samesite: str = "lax"
 
+    # Login attempt guard: lock out an IP + email after too many failures,
+    # so repeated wrong logins stop burning expensive Argon2 verifications.
+    login_max_attempts: int = 5
+    login_window_seconds: int = 900
+    login_lockout_seconds: int = 30
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

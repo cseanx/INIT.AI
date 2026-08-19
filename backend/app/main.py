@@ -1,8 +1,18 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import api_routers
 from app.core.config import settings
+from app.db.base import Base
+from app.db.session import engine
+
+# Ensure every table the app needs exists in the configured database.
+# create_all is idempotent — it only creates tables that are missing — so
+# fresh deployments (e.g. a newly provisioned database) come up without
+# requiring a manual migration step.
+Base.metadata.create_all(engine)
 
 app = FastAPI(title="INIT.AI API", version="0.1.0")
 
