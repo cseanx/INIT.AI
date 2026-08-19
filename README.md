@@ -180,6 +180,9 @@ Instead of storing the entire dataset on-chain, INIT.AI stores a **cryptographic
 
 ## Product Demo
 
+> **Product Link**
+> [INIT.AI Vercel Deployment](init-ai-ebon.vercel.app)
+
 > **Demo Video:**
 > W.I.P
 
