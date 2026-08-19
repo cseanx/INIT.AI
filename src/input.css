@@ -368,6 +368,11 @@
 
 .logo-text {
     max-width: 200px;
+    font-weight: 500;
+}
+
+.topbar h1 {
+    font-weight: 700;
 }
 
 nav a span,
