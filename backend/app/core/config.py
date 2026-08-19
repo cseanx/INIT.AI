@@ -16,10 +16,12 @@ class Settings(BaseSettings):
     # Session cookie
     session_cookie_name: str = "initai_session"
     session_ttl_days: int = 7
-    session_cookie_secure: bool = False  # set True behind HTTPS (production)
-    # "lax" works when the frontend and API share a site (e.g. both on
-    # *.vercel.app); use "none" for cross-site setups (e.g. Vercel + Render).
-    session_cookie_samesite: str = "lax"
+    # Frontend and API live on different sites (init-ai-ebon.vercel.app vs
+    # backend-phi-gray-27.vercel.app), so the cookie must be SameSite=None +
+    # Secure — "lax" is silently dropped by browsers on cross-site fetches,
+    # which made every refresh log the user out.
+    session_cookie_secure: bool = True
+    session_cookie_samesite: str = "none"
 
     # Login attempt guard: lock out an IP + email after too many failures,
     # so repeated wrong logins stop burning expensive Argon2 verifications.

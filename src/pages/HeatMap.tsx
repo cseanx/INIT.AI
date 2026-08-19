@@ -26,15 +26,10 @@ export default function HeatMap() {
                     style={mapCardFx.style}
                     className={`${mapCardFx.className} flex min-w-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-white/8 bg-white/5 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,.35)]`}
                 >
-                    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/8 px-[20px] py-[13px]">
-                        <h3 className="flex items-center gap-[9px] text-[15px] font-semibold">
-                            <i className="fa-solid fa-satellite text-accent"></i>
-                            Philippines — Heat Map
+                    <div className="flex shrink-0 items-center justify-between border-b border-white/8 px-[20px] py-[13px]">
+                        <h3 className="text-[15px] font-semibold">
+                            Philippines - Heat Map
                         </h3>
-                        <span className="flex items-center gap-[7px] rounded-full border border-white/8 bg-white/[.04] px-[11px] py-[5px] text-[10.5px] font-semibold tracking-[.08em] text-[#aaa]">
-                            <span className="h-[6px] w-[6px] rounded-full bg-mint shadow-[0_0_8px_#00ff84] animate-status-pulse"></span>
-                            LIVE
-                        </span>
                     </div>
                     <div className="relative min-h-0 flex-1 p-[14px]">
                         <MapView className="h-full w-full rounded-[18px]">
