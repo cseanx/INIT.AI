@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import type { ChartConfiguration } from 'chart.js';
-import type { AccentName, ResolvedTheme } from '../../types';
+import type { ResolvedTheme } from '../../types';
 import { barangays } from '../../data/mockData';
 import { usePreferences } from '../../preferences/PreferencesContext';
 import { baseChartOptions, chartTheme } from '../../utils/chartTheme';
@@ -161,9 +161,9 @@ function Accordion({
     );
 }
 
-function useSparklineConfig(resolvedTheme: ResolvedTheme, accent: AccentName) {
+function useSparklineConfig(resolvedTheme: ResolvedTheme) {
     return useMemo<ChartConfiguration<'line'>>(() => {
-        const th = chartTheme(resolvedTheme, accent);
+        const th = chartTheme(resolvedTheme);
         return {
             type: 'line',
             data: {
@@ -205,7 +205,7 @@ function useSparklineConfig(resolvedTheme: ResolvedTheme, accent: AccentName) {
                 },
             },
         };
-    }, [resolvedTheme, accent]);
+    }, [resolvedTheme]);
 }
 
 const PRIMARY_BTN_CLASSES =
@@ -223,8 +223,8 @@ export default function InspectorPanel({
 }: {
     onToggle: () => void;
 }) {
-    const { resolvedTheme, preferences } = usePreferences();
-    const sparklineConfig = useSparklineConfig(resolvedTheme, preferences.accent);
+    const { resolvedTheme } = usePreferences();
+    const sparklineConfig = useSparklineConfig(resolvedTheme);
     const risk = heatRisk(SELECTED.surfaceTemp);
     const bentoFx = useBentoFx();
 

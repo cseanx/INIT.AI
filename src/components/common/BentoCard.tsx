@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { gsap } from 'gsap';
-import { usePreferences } from '../../preferences/PreferencesContext';
 import './BentoCard.css';
 
 const DEFAULT_PARTICLE_COUNT = 12;
@@ -83,8 +82,7 @@ export function useBentoFx(options: BentoFxOptions = {}) {
         disableAnimations = false,
     } = options;
 
-    const { accentGlow } = usePreferences();
-    const activeGlow = glowColor ?? accentGlow ?? DEFAULT_GLOW_COLOR;
+    const activeGlow = glowColor ?? DEFAULT_GLOW_COLOR;
 
     const ref = useRef<HTMLDivElement | null>(null);
     const particlesRef = useRef<HTMLDivElement[]>([]);
@@ -407,8 +405,7 @@ export const BentoSection = ({
     enableSpotlight = true,
     disableAnimations = false,
 }: BentoSectionProps) => {
-    const { accentGlow } = usePreferences();
-    const activeGlow = glowColor ?? accentGlow ?? DEFAULT_GLOW_COLOR;
+    const activeGlow = glowColor ?? DEFAULT_GLOW_COLOR;
     const sectionRef = useRef<HTMLDivElement | null>(null);
     const isMobile = useMobileDetection();
     const shouldDisableAnimations = disableAnimations || isMobile;

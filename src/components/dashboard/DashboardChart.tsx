@@ -7,9 +7,9 @@ import ChartCanvas from '../common/ChartCanvas';
 
 /** Canopy % vs surface temp scatter for the dashboard panel. */
 export default function DashboardChart({ data }: { data: Barangay[] }) {
-    const { resolvedTheme, preferences } = usePreferences();
+    const { resolvedTheme } = usePreferences();
     const config = useMemo<ChartConfiguration<'scatter'>>(() => {
-        const th = chartTheme(resolvedTheme, preferences.accent);
+        const th = chartTheme(resolvedTheme);
         return {
             type: 'scatter',
             data: {
@@ -39,7 +39,7 @@ export default function DashboardChart({ data }: { data: Barangay[] }) {
                 },
             },
         };
-    }, [data, resolvedTheme, preferences.accent]);
+    }, [data, resolvedTheme]);
 
     return <ChartCanvas id="dashMiniChart" config={config} />;
 }

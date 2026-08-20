@@ -39,8 +39,6 @@ def update_preferences(
     pref = _get_or_create(db, user)
     if body.theme is not None:
         pref.theme = body.theme
-    if body.accent is not None:
-        pref.accent = body.accent
     if body.sidebar_collapsed is not None:
         pref.sidebar_collapsed = body.sidebar_collapsed
     db.commit()

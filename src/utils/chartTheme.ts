@@ -1,22 +1,16 @@
 /* Shared Chart.js palette. Dark matches the app's dark glass theme; light
-   adapts the same accents for light backgrounds. `brand` follows the user's
-   accent color (used by the dashboard scatter and canopy trend line); the
-   red/orange/yellow/green/blue data scale stays semantic so heat/severity
-   charts keep their meaning under any accent. */
-import type { AccentName } from '../types';
-import { ACCENTS } from './accent';
+   adapts the same accents for light backgrounds. `brand` is the INIT.AI red
+   (used by the dashboard scatter, inspector sparkline, and canopy trend
+   line); the red/orange/yellow/green/blue data scale stays semantic so
+   heat/severity charts keep their meaning. */
 
-export function chartTheme(
-    theme: 'dark' | 'light' = 'dark',
-    accent: AccentName = 'sunset',
-) {
-    const palette = ACCENTS[accent] ?? ACCENTS.sunset;
+export function chartTheme(theme: 'dark' | 'light' = 'dark') {
     return {
         grid: theme === 'light' ? 'rgba(15,20,30,.08)' : 'rgba(255,255,255,.06)',
         text: theme === 'light' ? '#5a5f69' : '#888',
         axis: theme === 'light' ? '#3a3f47' : '#ddd',
-        brand: palette.primary,
-        brandRgb: palette.glow,
+        brand: '#ff2d55',
+        brandRgb: '255, 45, 85',
         red: '#ff2d55',
         orange: '#ff8c42',
         yellow: '#ffd23f',

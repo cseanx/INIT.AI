@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { ChartConfiguration } from 'chart.js';
-import type { AccentName, CanopySnapshot, ResolvedTheme } from '../../types';
+import type { CanopySnapshot, ResolvedTheme } from '../../types';
 import { baseChartOptions, chartTheme } from '../../utils/chartTheme';
 import { usePreferences } from '../../preferences/PreferencesContext';
 import ChartCanvas from '../common/ChartCanvas';
@@ -8,10 +8,9 @@ import ChartCanvas from '../common/ChartCanvas';
 function useBarConfig(
     data: CanopySnapshot,
     resolvedTheme: ResolvedTheme,
-    accent: AccentName,
 ) {
     return useMemo<ChartConfiguration<'bar'>>(() => {
-        const th = chartTheme(resolvedTheme, accent);
+        const th = chartTheme(resolvedTheme);
         return {
             type: 'bar',
             data: {
@@ -50,16 +49,15 @@ function useBarConfig(
                 },
             },
         };
-    }, [data, resolvedTheme, accent]);
+    }, [data, resolvedTheme]);
 }
 
 function useLineConfig(
     data: CanopySnapshot,
     resolvedTheme: ResolvedTheme,
-    accent: AccentName,
 ) {
     return useMemo<ChartConfiguration<'line'>>(() => {
-        const th = chartTheme(resolvedTheme, accent);
+        const th = chartTheme(resolvedTheme);
         return {
             type: 'line',
             data: {
@@ -93,16 +91,15 @@ function useLineConfig(
                 },
             },
         };
-    }, [data, resolvedTheme, accent]);
+    }, [data, resolvedTheme]);
 }
 
 function useDoughnutConfig(
     data: CanopySnapshot,
     resolvedTheme: ResolvedTheme,
-    accent: AccentName,
 ) {
     return useMemo<ChartConfiguration<'doughnut'>>(() => {
-        const th = chartTheme(resolvedTheme, accent);
+        const th = chartTheme(resolvedTheme);
         return {
             type: 'doughnut',
             data: {
@@ -144,20 +141,20 @@ function useDoughnutConfig(
                 },
             },
         };
-    }, [data, resolvedTheme, accent]);
+    }, [data, resolvedTheme]);
 }
 
 export function CanopyBarChart({ data }: { data: CanopySnapshot }) {
-    const { resolvedTheme, preferences } = usePreferences();
-    return <ChartCanvas id="canopyBarChart" config={useBarConfig(data, resolvedTheme, preferences.accent)} />;
+    const { resolvedTheme } = usePreferences();
+    return <ChartCanvas id="canopyBarChart" config={useBarConfig(data, resolvedTheme)} />;
 }
 
 export function CanopyTrendChart({ data }: { data: CanopySnapshot }) {
-    const { resolvedTheme, preferences } = usePreferences();
-    return <ChartCanvas id="canopyLineChart" config={useLineConfig(data, resolvedTheme, preferences.accent)} />;
+    const { resolvedTheme } = usePreferences();
+    return <ChartCanvas id="canopyLineChart" config={useLineConfig(data, resolvedTheme)} />;
 }
 
 export function LandCoverChart({ data }: { data: CanopySnapshot }) {
-    const { resolvedTheme, preferences } = usePreferences();
-    return <ChartCanvas id="landCoverChart" config={useDoughnutConfig(data, resolvedTheme, preferences.accent)} />;
+    const { resolvedTheme } = usePreferences();
+    return <ChartCanvas id="landCoverChart" config={useDoughnutConfig(data, resolvedTheme)} />;
 }

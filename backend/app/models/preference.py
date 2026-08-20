@@ -21,7 +21,6 @@ class UserPreference(Base):
         ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True
     )
     theme: Mapped[str] = mapped_column(String(20), server_default="system")
-    accent: Mapped[str] = mapped_column(String(20), server_default="sunset")
     sidebar_collapsed: Mapped[bool] = mapped_column(
         Boolean(), server_default=text("false")
     )

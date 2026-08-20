@@ -5,7 +5,6 @@ import Card from '../components/common/Card';
 import ToggleRow from '../components/settings/ToggleRow';
 import Switch from '../components/settings/Switch';
 import ThemePicker from '../components/settings/ThemePicker';
-import AccentPicker from '../components/settings/AccentPicker';
 import MenuSelect from '../components/settings/MenuSelect';
 import { usePreferences } from '../preferences/PreferencesContext';
 
@@ -169,10 +168,6 @@ export default function Settings() {
                 <div className="mb-6 border-b border-white/6 pb-6">
                     <span className={SUBHEAD_CLASSES}>Theme</span>
                     <ThemePicker />
-                </div>
-                <div className="mb-6 border-b border-white/6 pb-6">
-                    <span className={SUBHEAD_CLASSES}>Accent Color</span>
-                    <AccentPicker />
                 </div>
                 <div className="mb-0 border-b-0 pb-0">
                     <div className="flex items-center justify-between gap-5 border-b border-white/6 p-4 last:border-b-0 last:pb-0">

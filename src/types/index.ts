@@ -8,11 +8,9 @@ export type IconTone = 'red' | 'orange' | 'green' | 'blue';
 
 export type ThemePreference = 'system' | 'dark' | 'light';
 export type ResolvedTheme = 'dark' | 'light';
-export type AccentName = 'sunset' | 'ocean' | 'canopy' | 'amber' | 'violet';
 
 export interface UserPreferences {
     theme: ThemePreference;
-    accent: AccentName;
     sidebar_collapsed: boolean;
 }
 

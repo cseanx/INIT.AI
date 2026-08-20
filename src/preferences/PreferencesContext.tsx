@@ -7,14 +7,12 @@ import {
     useState,
     type ReactNode,
 } from 'react';
-import type { AccentName, ResolvedTheme, ThemePreference, UserPreferences } from '../types';
+import type { ResolvedTheme, ThemePreference, UserPreferences } from '../types';
 import { useAuth } from '../auth/AuthContext';
 import { api } from '../services/api';
-import { ACCENTS } from '../utils/accent';
 
 const DEFAULT_PREFERENCES: UserPreferences = {
     theme: 'system',
-    accent: 'sunset',
     sidebar_collapsed: false,
 };
 
@@ -27,7 +25,6 @@ function loadStoredPreferences(): UserPreferences {
         const stored = JSON.parse(raw) as Partial<UserPreferences>;
         return {
             theme: stored.theme ?? DEFAULT_PREFERENCES.theme,
-            accent: stored.accent ?? DEFAULT_PREFERENCES.accent,
             sidebar_collapsed: stored.sidebar_collapsed ?? DEFAULT_PREFERENCES.sidebar_collapsed,
         };
     } catch {
@@ -39,9 +36,7 @@ interface PreferencesContextValue {
     preferences: UserPreferences;
     ready: boolean;
     resolvedTheme: ResolvedTheme;
-    accentGlow: string;
     setTheme: (theme: ThemePreference) => void;
-    setAccent: (accent: AccentName) => void;
     setSidebarCollapsed: (collapsed: boolean) => void;
 }
 
@@ -71,10 +66,9 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() =>
         resolveTheme(preferences.theme),
     );
-    const accentGlow = ACCENTS[preferences.accent]?.glow ?? ACCENTS.sunset.glow;
 
     // Cache locally so a refresh (login page included) applies the saved
-    // theme/accent instantly instead of flashing the defaults.
+    // theme instantly instead of flashing the default.
     useEffect(() => {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
@@ -119,29 +113,9 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         applyTheme(resolvedTheme);
     }, [resolvedTheme]);
 
-    // Push the accent palette onto the document root as CSS variables, so
-    // every Tailwind token (--color-primary/accent/orange) and --accent-glow
-    // follows the chosen accent color.
-    useEffect(() => {
-        const root = document.documentElement;
-        const palette = ACCENTS[preferences.accent] ?? ACCENTS.sunset;
-        root.style.setProperty('--color-primary', palette.primary);
-        root.style.setProperty('--color-accent', palette.secondary);
-        root.style.setProperty('--color-orange', palette.orange);
-        root.style.setProperty('--accent-glow', palette.glow);
-        root.dataset.accent = preferences.accent;
-    }, [preferences.accent]);
-
     const setTheme = useCallback((theme: ThemePreference) => {
         setPreferences((prev) => ({ ...prev, theme }));
         api.preferences.update({ theme }).catch(() => {
-            /* offline — local value still applies for this session */
-        });
-    }, []);
-
-    const setAccent = useCallback((accent: AccentName) => {
-        setPreferences((prev) => ({ ...prev, accent }));
-        api.preferences.update({ accent }).catch(() => {
             /* offline — local value still applies for this session */
         });
     }, []);
@@ -158,12 +132,10 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
             preferences,
             ready,
             resolvedTheme,
-            accentGlow,
             setTheme,
-            setAccent,
             setSidebarCollapsed,
         }),
-        [preferences, ready, resolvedTheme, accentGlow, setTheme, setAccent, setSidebarCollapsed],
+        [preferences, ready, resolvedTheme, setTheme, setSidebarCollapsed],
     );
 
     return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
