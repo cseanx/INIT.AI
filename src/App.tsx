@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import DashboardLayout from './components/layout/DashboardLayout';
 import RequireAuth from './auth/RequireAuth';
 
@@ -36,6 +37,7 @@ export default function App() {
                 <Route path="/settings" element={<ProtectedLayout />} />
                 <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
+            <SpeedInsights />
         </Suspense>
     );
 }
