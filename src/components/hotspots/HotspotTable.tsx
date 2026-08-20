@@ -6,8 +6,6 @@ const TH_CLASSES =
 const TD_CLASSES = 'border-b border-white/5 p-[14px]';
 
 export default function HotspotTable({ hotspots }: { hotspots: Barangay[] }) {
-    const sorted = [...hotspots].sort((a, b) => b.temp - a.temp);
-
     return (
         <div className="table-wrap overflow-x-auto">
             <table className="data-table w-full border-collapse text-[13.5px]" id="hotspotsTable">
@@ -22,7 +20,7 @@ export default function HotspotTable({ hotspots }: { hotspots: Barangay[] }) {
                     </tr>
                 </thead>
                 <tbody>
-                    {sorted.map((b) => {
+                    {hotspots.map((b) => {
                         const trendUp = b.trend >= 0;
                         return (
                             <tr
