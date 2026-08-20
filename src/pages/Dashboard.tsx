@@ -50,7 +50,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="relative z-10 flex w-[45%] min-w-0 justify-end">
-                    <div className="relative h-[340px] w-full max-w-[420px] min-w-[280px] overflow-hidden rounded-[24px] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,.5)]">
+                    <div className="preview-frame relative h-[340px] w-full max-w-[420px] min-w-[280px] overflow-hidden rounded-[24px] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,.5)]">
                         <div className="thermal-visual absolute inset-0 bg-[#0a1220]">
                             <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
                                 <img src="/assets/images/urban1.png" alt="" className="block h-full w-full object-cover saturate-[1.1] brightness-[.85]" />

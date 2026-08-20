@@ -663,6 +663,25 @@ html[data-theme='light'] {
     background: var(--color-base);
 }
 
+/* The cards/topbar carry heavy black drop shadows tuned for a dark page;
+   in light mode they overlap and clash with the bento hover glow. Swap to
+   a soft shadow, and keep the hover glow on TOP of it (no shadow swap on
+   hover — that swap was what flickered). */
+[data-theme='light'] .topbar,
+[data-theme='light'] .bento-card {
+    box-shadow: 0 8px 28px rgba(20, 25, 35, .08);
+}
+
+[data-theme='light'] .bento-card:hover {
+    box-shadow:
+        0 8px 28px rgba(20, 25, 35, .08),
+        0 0 24px rgba(var(--glow-color), .10);
+}
+
+[data-theme='light'] .preview-frame {
+    box-shadow: 0 8px 24px rgba(20, 25, 35, .10);
+}
+
 /* Gradient CTA buttons (bg-gradient-to-r from-primary to-accent) keep white
    text — dark ink would clash with the pink gradient. */
 [data-theme='light'] .from-primary {
