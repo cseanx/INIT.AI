@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import DashboardLayout from './components/layout/DashboardLayout';
 import RequireAuth from './auth/RequireAuth';
 
@@ -23,19 +24,22 @@ function ProtectedLayout() {
 
 export default function App() {
     return (
-        <Suspense fallback={<PageLoader />}>
-            <Routes>
-                <Route path="/" element={<Navigate to="/login" replace />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/dashboard" element={<ProtectedLayout />} />
-                <Route path="/heatmap" element={<ProtectedLayout />} />
-                <Route path="/hotspots" element={<ProtectedLayout />} />
-                <Route path="/canopy" element={<ProtectedLayout />} />
-                <Route path="/mitigation" element={<ProtectedLayout />} />
-                <Route path="/reports" element={<ProtectedLayout />} />
-                <Route path="/settings" element={<ProtectedLayout />} />
-                <Route path="*" element={<Navigate to="/login" replace />} />
-            </Routes>
-        </Suspense>
+        <>
+            <Suspense fallback={<PageLoader />}>
+                <Routes>
+                    <Route path="/" element={<Navigate to="/login" replace />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/dashboard" element={<ProtectedLayout />} />
+                    <Route path="/heatmap" element={<ProtectedLayout />} />
+                    <Route path="/hotspots" element={<ProtectedLayout />} />
+                    <Route path="/canopy" element={<ProtectedLayout />} />
+                    <Route path="/mitigation" element={<ProtectedLayout />} />
+                    <Route path="/reports" element={<ProtectedLayout />} />
+                    <Route path="/settings" element={<ProtectedLayout />} />
+                    <Route path="*" element={<Navigate to="/login" replace />} />
+                </Routes>
+            </Suspense>
+            <SpeedInsights />
+        </>
     );
 }
