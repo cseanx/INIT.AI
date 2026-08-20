@@ -28,11 +28,14 @@ const PAGES: Record<string, LazyExoticComponent<ComponentType>> = {
     canopy: lazy(() => import('../../pages/Canopy')),
     mitigation: lazy(() => import('../../pages/Mitigation')),
     reports: lazy(() => import('../../pages/Reports')),
+    'reports-new': lazy(() => import('../../pages/CreateReport')),
+    'report-edit': lazy(() => import('../../pages/ReportEditor')),
     settings: lazy(() => import('../../pages/Settings')),
 };
 
 function pageKey(pathname: string): string {
-    return pathname.split('/')[1] ?? 'dashboard';
+    const parts = pathname.split('/').filter(Boolean);
+    return parts.length >= 2 ? `${parts[0]}-${parts[1]}` : (parts[0] ?? 'dashboard');
 }
 
 /**

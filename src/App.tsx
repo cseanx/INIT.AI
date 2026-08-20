@@ -33,6 +33,8 @@ export default function App() {
                 <Route path="/canopy" element={<ProtectedLayout />} />
                 <Route path="/mitigation" element={<ProtectedLayout />} />
                 <Route path="/reports" element={<ProtectedLayout />} />
+                <Route path="/reports/new" element={<ProtectedLayout />} />
+                <Route path="/report/edit" element={<ProtectedLayout />} />
                 <Route path="/settings" element={<ProtectedLayout />} />
                 <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>

@@ -83,7 +83,7 @@ export default function HotspotFilter({
             {open ? (
                 <div
                     role="menu"
-                    className="absolute right-0 top-full z-50 mt-2 flex w-[240px] flex-col gap-0.5 rounded-[14px] border border-white/10 bg-[#101010]/95 p-[10px] shadow-[0_16px_40px_rgba(0,0,0,.55)] backdrop-blur-2xl"
+                    className="hotspot-filter-menu absolute right-0 top-full z-50 mt-2 flex w-[240px] flex-col gap-0.5 rounded-[14px] border border-white/10 bg-[#101010]/95 p-[10px] shadow-[0_16px_40px_rgba(0,0,0,.55)] backdrop-blur-2xl"
                 >
                     <SectionLabel>Severity</SectionLabel>
                     <div className="mb-[8px] flex flex-wrap gap-[6px]">

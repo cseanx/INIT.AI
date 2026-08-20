@@ -706,7 +706,9 @@ html[data-theme='light'] {
 
 /* Floating dropdowns switch to a light surface in light mode. */
 [data-theme='light'] .account-menu,
-[data-theme='light'] .city-menu {
+[data-theme='light'] .city-menu,
+[data-theme='light'] .menu-select-menu,
+[data-theme='light'] .hotspot-filter-menu {
     --color-white: #181a20;
     background-color: rgba(255, 255, 255, .98);
     border-color: rgba(20, 25, 35, .14);
@@ -714,7 +716,9 @@ html[data-theme='light'] {
 }
 
 [data-theme='light'] .account-menu .text-\[\#ddd\],
-[data-theme='light'] .city-menu .text-\[\#ddd\] {
+[data-theme='light'] .city-menu .text-\[\#ddd\],
+[data-theme='light'] .menu-select-menu .text-\[\#ddd\],
+[data-theme='light'] .hotspot-filter-menu .text-\[\#ddd\] {
     color: #33363d;
 }
 
@@ -746,7 +750,8 @@ html[data-theme='light'] {
     color: #565b66;
 }
 
-[data-theme='light'] .text-\[\#888\] {
+[data-theme='light'] .text-\[\#888\],
+[data-theme='light'] .text-\[\#777\] {
     color: #5a5f69;
 }
 

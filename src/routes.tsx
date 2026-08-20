@@ -67,8 +67,26 @@ export const SETTINGS_ROUTE: RouteMeta = {
     sub: 'Manage your profile, notifications, and preferences',
 };
 
+export const CREATE_REPORT_ROUTE: RouteMeta = {
+    path: '/reports/new',
+    label: 'Create Report',
+    icon: 'fa-file-circle-plus',
+    title: 'Create Report',
+    sub: 'Compose a new report from INIT.AI datasets',
+};
+
+export const REPORT_EDIT_ROUTE: RouteMeta = {
+    path: '/report/edit',
+    label: 'Report Editor',
+    icon: 'fa-pen-to-square',
+    title: 'Report Editor',
+    sub: 'Review and refine the generated report',
+};
+
 export function metaFor(pathname: string): RouteMeta {
-    const meta = [...ROUTES, SETTINGS_ROUTE].find((r) => r.path === pathname);
+    const meta = [...ROUTES, SETTINGS_ROUTE, CREATE_REPORT_ROUTE, REPORT_EDIT_ROUTE].find(
+        (r) => r.path === pathname,
+    );
     return meta ?? ROUTES[0];
 }
 

@@ -93,12 +93,103 @@ export interface CanopySnapshot {
 
 export type ReportStatus = 'ready' | 'processing';
 
+/** A report as stored by the backend (or, when offline, in localStorage).
+ *  `date` is the formatted generated-on date; `area` is the display string
+ *  produced by the report builder (legacy rows fall back to the barangay). */
 export interface Report {
+    id: number | string;
     title: string;
     type: string;
-    area: string;
-    date: string;
     status: ReportStatus;
+    date: string;
+    area: string | null;
+
+    city: string | null;
+    coverage: string | null;
+    periodStart: string | null;
+    periodEnd: string | null;
+    preparedBy: string | null;
+    autoPriorityAreas: boolean;
+    datasets: ReportDatasetKey[];
+    areas: string[];
+    sections: ReportSectionKey[];
+    recommendations: string;
+
+    avgSurfaceTemp: number | null;
+    peakTemp: number | null;
+    peakArea: string | null;
+    criticalCount: number | null;
+    highCount: number | null;
+    moderateCount: number | null;
+    avgCanopy: number | null;
+    mitigationProjects: number | null;
+
+    generatedAt?: string | null;
+}
+
+/** Payload sent to POST /api/reports — everything except the server id/date. */
+export type ReportPayload = Omit<Report, 'id' | 'date'>;
+
+/* ---------- Report builder / drafts ---------- */
+
+export type ReportType =
+    | 'Heat Assessment'
+    | 'Hotspot Report'
+    | 'Canopy Assessment'
+    | 'Mitigation Report'
+    | 'Monthly Summary'
+    | 'Quarterly Summary'
+    | 'Custom';
+
+export type ReportCoverage = 'Entire city' | 'District' | 'Barangay';
+
+export type ReportDatasetKey =
+    | 'lst'
+    | 'hotspots'
+    | 'canopy'
+    | 'landcover'
+    | 'trends'
+    | 'mitigation';
+
+export type ReportSectionKey =
+    | 'summary'
+    | 'heat'
+    | 'hotspots'
+    | 'canopy'
+    | 'mitigation'
+    | 'maps'
+    | 'charts'
+    | 'methodology'
+    | 'sources';
+
+export interface ReportDraft {
+    id: string;
+    title: string;
+    type: ReportType;
+    city: string;
+    coverage: ReportCoverage;
+    periodStart: string;
+    periodEnd: string;
+    preparedBy: string;
+    datasets: ReportDatasetKey[];
+    areas: string[];
+    autoPriorityAreas: boolean;
+    sections: ReportSectionKey[];
+    recommendations: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+/** Computed numbers derived exclusively from existing INIT.AI datasets. */
+export interface ReportSummaryData {
+    avgSurfaceTemp: number;
+    peakTemp: number;
+    peakArea: string;
+    criticalCount: number;
+    highCount: number;
+    moderateCount: number;
+    avgCanopy: number;
+    mitigationProjects: number;
 }
 
 export type MitigationStatus = 'Proposed' | 'In Progress' | 'Planned';

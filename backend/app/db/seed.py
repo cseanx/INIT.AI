@@ -66,11 +66,96 @@ MITIGATION_PROJECTS = [
 ]
 
 REPORTS = [
-    ("Q3 Urban Heat Island Summary", "Quarterly", "Quezon City (All Districts)", "ready"),
-    ("Payatas Priority Zone Deep Dive", "Hotspot Brief", "Payatas", "ready"),
-    ("Canopy Loss Assessment 2021–2026", "Canopy", "City-wide", "ready"),
-    ("Mitigation Impact Projection", "Mitigation", "6 Priority Barangays", "processing"),
-    ("August Satellite Pass Summary", "Monthly", "Quezon City (All Districts)", "processing"),
+    {
+        "title": "Q3 Urban Heat Island Summary",
+        "type": "Quarterly",
+        "area": "Quezon City (All Areas)",
+        "city": "Quezon City",
+        "coverage": "Entire city",
+        "period_start": "2026-07-01",
+        "period_end": "2026-07-31",
+        "prepared_by": "Juan Dela Cruz",
+        "auto_priority_areas": False,
+        "datasets": ["lst", "hotspots", "trends"],
+        "areas": ["Payatas", "Batasan Hills", "Commonwealth"],
+        "sections": ["summary", "heat", "hotspots", "charts", "methodology"],
+        "recommendations": "Prioritize urban tree planting in Payatas, Batasan Hills and Commonwealth.",
+        "avg_surface_temp": 36.5, "peak_temp": 41.2, "peak_area": "Payatas",
+        "critical_count": 2, "high_count": 4, "moderate_count": 7,
+        "avg_canopy": 21.8, "mitigation_projects": 4,
+    },
+    {
+        "title": "Payatas Priority Zone Deep Dive",
+        "type": "Hotspot Brief",
+        "area": "Payatas",
+        "city": "Quezon City",
+        "coverage": "Barangay",
+        "period_start": "2026-06-01",
+        "period_end": "2026-06-30",
+        "prepared_by": "Maria Santos",
+        "auto_priority_areas": False,
+        "datasets": ["lst", "hotspots", "canopy"],
+        "areas": ["Payatas"],
+        "sections": ["summary", "hotspots", "canopy", "mitigation"],
+        "recommendations": "Fast-track tree planting along arterial roads in Payatas.",
+        "avg_surface_temp": 38.2, "peak_temp": 41.2, "peak_area": "Payatas",
+        "critical_count": 1, "high_count": 1, "moderate_count": 2,
+        "avg_canopy": 12.0, "mitigation_projects": 1,
+    },
+    {
+        "title": "Canopy Loss Assessment 2021\u20132026",
+        "type": "Canopy",
+        "area": "City-wide",
+        "city": "Quezon City",
+        "coverage": "Entire city",
+        "period_start": "2021-01-01",
+        "period_end": "2025-12-31",
+        "prepared_by": "Maria Santos",
+        "auto_priority_areas": False,
+        "datasets": ["canopy", "landcover"],
+        "areas": [],
+        "sections": ["summary", "canopy", "maps", "charts", "methodology", "sources"],
+        "recommendations": "Address canopy deficits in low-cover barangays.",
+        "avg_surface_temp": 36.5, "peak_temp": 41.2, "peak_area": "Payatas",
+        "critical_count": 2, "high_count": 4, "moderate_count": 7,
+        "avg_canopy": 21.8, "mitigation_projects": 4,
+    },
+    {
+        "title": "Mitigation Impact Projection",
+        "type": "Mitigation",
+        "area": "6 Priority Barangays",
+        "city": "Quezon City",
+        "coverage": "District",
+        "period_start": "2026-01-01",
+        "period_end": "2026-12-31",
+        "prepared_by": "Ramon Reyes",
+        "auto_priority_areas": True,
+        "datasets": ["lst", "hotspots", "mitigation"],
+        "areas": [],
+        "sections": ["summary", "mitigation", "charts"],
+        "recommendations": "",
+        "avg_surface_temp": 36.5, "peak_temp": 41.2, "peak_area": "Payatas",
+        "critical_count": 2, "high_count": 4, "moderate_count": 7,
+        "avg_canopy": 21.8, "mitigation_projects": 4,
+    },
+    {
+        "title": "August Satellite Pass Summary",
+        "type": "Monthly",
+        "area": "Quezon City (All Areas)",
+        "city": "Quezon City",
+        "coverage": "Entire city",
+        "period_start": "2026-08-01",
+        "period_end": "2026-08-31",
+        "prepared_by": "Juan Dela Cruz",
+        "auto_priority_areas": False,
+        "datasets": ["lst", "trends"],
+        "areas": [],
+        "sections": ["summary", "heat", "charts", "sources"],
+        "recommendations": "",
+        "avg_surface_temp": 36.5, "peak_temp": 41.2, "peak_area": "Payatas",
+        "critical_count": 2, "high_count": 4, "moderate_count": 7,
+        "avg_canopy": 21.8, "mitigation_projects": 4,
+    },
 ]
 
 
@@ -125,18 +210,11 @@ def seed(db: Session) -> None:
             )
         )
 
-    for title, report_type, area, status in REPORTS:
+    for report_data in REPORTS:
         barangay_id = None
-        if area in barangay_by_name:
-            barangay_id = barangay_by_name[area].id
-        db.add(
-            Report(
-                title=title,
-                type=report_type,
-                barangay_id=barangay_id,
-                status=status,
-            )
-        )
+        if report_data["area"] in barangay_by_name:
+            barangay_id = barangay_by_name[report_data["area"]].id
+        db.add(Report(status="ready", barangay_id=barangay_id, **report_data))
 
     db.commit()
     print(

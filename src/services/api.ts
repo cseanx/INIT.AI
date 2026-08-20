@@ -6,6 +6,7 @@ import type {
     HeatSnapshot,
     MitigationProject,
     Report,
+    ReportPayload,
     UserPreferences,
 } from '../types';
 import {
@@ -15,6 +16,7 @@ import {
     mitigationProjects,
     reports,
 } from '../data/mockData';
+import { loadStoredReports } from '../reports/reportService';
 
 /* ==========================
    API SERVICE LAYER
@@ -52,6 +54,44 @@ function isBarangayArray(data: unknown): data is Barangay[] {
                 typeof b?.severity === 'string',
         )
     );
+}
+
+/** Normalize a backend report row into the frontend Report shape. The API
+ *  serializes camelCase (periodStart, preparedBy, …) but older deployments
+ *  emitted snake_case (period_start, …) — accept both so the UI never shows
+ *  blanks for periods/prepared-by/summary numbers. */
+function fromBackendReport(raw: unknown): Report {
+    const r = (raw ?? {}) as Record<string, unknown>;
+    const pick = (camel: string, snake: string): unknown => r[camel] ?? r[snake];
+    const asStr = (v: unknown): string | null => (v == null ? null : String(v));
+    const asNum = (v: unknown): number | null => (v == null ? null : Number(v));
+    return {
+        id: (r.id as Report['id']) ?? crypto.randomUUID(),
+        title: asStr(pick('title', 'title')) ?? 'Untitled report',
+        type: asStr(pick('type', 'type')) ?? 'Report',
+        status: ((pick('status', 'status') as Report['status']) ?? 'ready'),
+        date: asStr(pick('date', 'date')) ?? '',
+        area: asStr(pick('area', 'area')),
+        city: asStr(pick('city', 'city')),
+        coverage: asStr(pick('coverage', 'coverage')),
+        periodStart: asStr(pick('periodStart', 'period_start')),
+        periodEnd: asStr(pick('periodEnd', 'period_end')),
+        preparedBy: asStr(pick('preparedBy', 'prepared_by')),
+        autoPriorityAreas: (pick('autoPriorityAreas', 'auto_priority_areas') as boolean | undefined) ?? false,
+        datasets: Array.isArray(pick('datasets', 'datasets')) ? (pick('datasets', 'datasets') as Report['datasets']) : [],
+        sections: Array.isArray(pick('sections', 'sections')) ? (pick('sections', 'sections') as Report['sections']) : [],
+        areas: Array.isArray(pick('areas', 'areas')) ? (pick('areas', 'areas') as string[]) : [],
+        recommendations: asStr(pick('recommendations', 'recommendations')) ?? '',
+        avgSurfaceTemp: asNum(pick('avgSurfaceTemp', 'avg_surface_temp')),
+        peakTemp: asNum(pick('peakTemp', 'peak_temp')),
+        peakArea: asStr(pick('peakArea', 'peak_area')),
+        criticalCount: asNum(pick('criticalCount', 'critical_count')),
+        highCount: asNum(pick('highCount', 'high_count')),
+        moderateCount: asNum(pick('moderateCount', 'moderate_count')),
+        avgCanopy: asNum(pick('avgCanopy', 'avg_canopy')),
+        mitigationProjects: asNum(pick('mitigationProjects', 'mitigation_projects')),
+        generatedAt: asStr(pick('generatedAt', 'generated_at')),
+    };
 }
 
 function isHeatSnapshot(data: unknown): data is HeatSnapshot {
@@ -96,8 +136,9 @@ function isReportArray(data: unknown): data is Report[] {
         data.every(
             (r) =>
                 typeof r?.title === 'string' &&
-                typeof r?.area === 'string' &&
+                typeof r?.type === 'string' &&
                 typeof r?.date === 'string' &&
+                (r.id as unknown) != null &&
                 (r.status === 'ready' || r.status === 'processing'),
         )
     );
@@ -177,8 +218,34 @@ export const api = {
         fromApi('/api/canopy', canopySnapshot, isCanopySnapshot),
     getMitigation: (): Promise<MitigationProject[]> =>
         fromApi('/api/mitigation', mitigationProjects, isMitigationProjectArray),
-    getReports: (): Promise<Report[]> =>
-        fromApi('/api/reports', reports, isReportArray),
+getReports: async (): Promise<Report[]> => {
+        const remote = await fromApi('/api/reports', reports, isReportArray);
+        const local = loadStoredReports();
+        return local.length
+            ? [...local, ...remote.map(fromBackendReport)]
+            : remote.map(fromBackendReport);
+    },
+    getReport: async (id: number | string): Promise<Report> =>
+        fromBackendReport(await authFetch<unknown>(`/api/reports/${id}`)),
+
+    reports: {
+        create: async (payload: ReportPayload): Promise<Report> =>
+            fromBackendReport(
+                await authFetch<unknown>('/api/reports', {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                }),
+            ),
+        update: async (id: number, patch: Partial<ReportPayload>): Promise<Report> =>
+            fromBackendReport(
+                await authFetch<unknown>(`/api/reports/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(patch),
+                }),
+            ),
+        remove: (id: number): Promise<void> =>
+            authFetch<void>(`/api/reports/${id}`, { method: 'DELETE' }),
+    },
 
     auth: {
         login: (email: string, password: string): Promise<AuthUser> =>
