@@ -214,36 +214,19 @@ const SECONDARY_BTN_CLASSES =
     'w-full cursor-pointer rounded-[14px] border border-white/[.14] bg-white/5 p-[13px_20px] text-center text-[13.5px] font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/9';
 
 /**
- * Collapsible right-hand inspector / telemetry panel for the heat map.
- * Pinned header and footer; only the middle content scrolls. Frontend-only.
+ * Right-hand inspector / telemetry panel for the heat map. Stays mounted —
+ * the parent clips it with an animated width while collapsed. Pinned header
+ * and footer; only the middle content scrolls. Frontend-only.
  */
 export default function InspectorPanel({
-    open,
     onToggle,
 }: {
-    open: boolean;
     onToggle: () => void;
 }) {
     const { resolvedTheme, preferences } = usePreferences();
     const sparklineConfig = useSparklineConfig(resolvedTheme, preferences.accent);
     const risk = heatRisk(SELECTED.surfaceTemp);
     const bentoFx = useBentoFx();
-
-    if (!open) {
-        return (
-            <button
-                type="button"
-                onClick={onToggle}
-                title="Open inspector panel"
-                className="group flex h-full w-full flex-col items-center justify-center gap-[16px] rounded-[28px] border border-white/8 bg-white/5 text-[#888] backdrop-blur-2xl transition duration-200 hover:bg-white/8 hover:text-accent"
-            >
-                <i className="fa-solid fa-angles-right text-[16px]"></i>
-                <span className="rotate-180 text-[10px] font-semibold uppercase tracking-[.18em] [writing-mode:vertical-rl]">
-                    Inspector
-                </span>
-            </button>
-        );
-    }
 
     return (
         <div
@@ -253,10 +236,7 @@ export default function InspectorPanel({
         >
             {/* Pinned header */}
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/8 p-[15px_18px]">
-                <h3 className="flex items-center gap-[9px] text-[14.5px] font-semibold">
-                    <i className="fa-solid fa-satellite-dish text-accent"></i>
-                    Inspector
-                </h3>
+                <h3 className="text-[14.5px] font-semibold">Inspector</h3>
                 <button
                     type="button"
                     onClick={onToggle}
@@ -373,43 +353,43 @@ export default function InspectorPanel({
                         </button>
                     ))}
                 </Accordion>
-            </div>
 
-            {/* Pinned footer */}
-            <footer className="flex shrink-0 flex-col gap-[10px] border-t border-white/8 bg-white/[.02] p-[16px]">
-                <h4 className="flex items-center gap-[8px] text-[10.5px] font-semibold uppercase tracking-[.14em] text-[#888]">
-                    <i className="fa-solid fa-lightbulb text-[11px] text-accent"></i>
-                    Recommended Actions
-                </h4>
-                {RECOMMENDATIONS.map((rec) => (
-                    <div
-                        key={rec.text}
-                        className="flex items-start gap-[10px] rounded-[12px] border border-white/6 bg-white/[.03] p-[11px_12px]"
-                    >
-                        <span className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[9px] bg-[rgba(var(--accent-glow),.15)] text-[12px] text-accent">
-                            <i className={`fa-solid ${rec.icon}`}></i>
-                        </span>
-                        <div className="min-w-0">
-                            <strong className="block text-[12.5px] font-semibold leading-snug">
-                                {rec.text}
-                            </strong>
-                            <small className="mt-[3px] block text-[11px] text-[#888]">
-                                {rec.note}
-                            </small>
+                {/* Recommended actions */}
+                <div className="rounded-[16px] border border-white/6 bg-white/[.03] p-[14px]">
+                    <h4 className="mb-[10px] flex items-center gap-[8px] text-[10.5px] font-semibold uppercase tracking-[.14em] text-[#888]">
+                        <i className="fa-solid fa-lightbulb text-[11px] text-accent"></i>
+                        Recommended Actions
+                    </h4>
+                    {RECOMMENDATIONS.map((rec) => (
+                        <div
+                            key={rec.text}
+                            className="flex items-start gap-[10px] rounded-[12px] border border-white/6 bg-white/[.03] p-[11px_12px]"
+                        >
+                            <span className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[9px] bg-[rgba(var(--accent-glow),.15)] text-[12px] text-accent">
+                                <i className={`fa-solid ${rec.icon}`}></i>
+                            </span>
+                            <div className="min-w-0">
+                                <strong className="block text-[12.5px] font-semibold leading-snug">
+                                    {rec.text}
+                                </strong>
+                                <small className="mt-[3px] block text-[11px] text-[#888]">
+                                    {rec.note}
+                                </small>
+                            </div>
                         </div>
+                    ))}
+                    <div className="mt-[12px] flex flex-col gap-[10px]">
+                        <button type="button" className={PRIMARY_BTN_CLASSES}>
+                            <i className="fa-solid fa-file-lines mr-[8px]"></i>
+                            Generate Heat Report
+                        </button>
+                        <button type="button" className={SECONDARY_BTN_CLASSES}>
+                            <i className="fa-solid fa-bullseye mr-[8px]"></i>
+                            View Mitigation Plan
+                        </button>
                     </div>
-                ))}
-                <div className="mt-[4px] flex flex-col gap-[10px]">
-                    <button type="button" className={PRIMARY_BTN_CLASSES}>
-                        <i className="fa-solid fa-file-lines mr-[8px]"></i>
-                        Generate Heat Report
-                    </button>
-                    <button type="button" className={SECONDARY_BTN_CLASSES}>
-                        <i className="fa-solid fa-bullseye mr-[8px]"></i>
-                        View Mitigation Plan
-                    </button>
                 </div>
-            </footer>
+            </div>
         </div>
     );
 }

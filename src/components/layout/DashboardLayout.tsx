@@ -52,7 +52,7 @@ function PageSlot({ active, children }: { active: boolean; children: ReactNode }
     }, [active]);
 
     return (
-        <div ref={ref} className={active ? undefined : 'hidden'}>
+        <div ref={ref} className={`flex min-h-0 flex-1 flex-col ${active ? '' : 'hidden'}`}>
             {children}
         </div>
     );
@@ -84,9 +84,9 @@ export default function DashboardLayout() {
             />
             <main
                 ref={mainRef}
-                className="main-content min-w-0 flex-1 overflow-y-auto"
+                className="main-content flex min-w-0 flex-1 flex-col overflow-y-auto"
             >
-                <BentoSection>
+                <BentoSection className="flex min-h-0 flex-1 flex-col">
                     <Topbar />
                     {Object.entries(PAGES).map(([key, Page]) => {
                         if (!visited.has(key)) return null;

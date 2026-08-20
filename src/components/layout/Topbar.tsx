@@ -13,7 +13,7 @@ export default function Topbar() {
     return (
         <header
             ref={ref}
-            className={`${bentoClassName} topbar relative z-20 mb-5 flex items-center justify-between rounded-[24px] border border-white/8 bg-white/5 p-[22px_28px] backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,.35)]`}
+            className={`${bentoClassName} topbar relative z-20 mb-5 flex shrink-0 items-center justify-between rounded-[24px] border border-white/8 bg-white/5 p-[22px_28px] backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,.35)]`}
             style={{ ...style, overflow: 'visible' }}
         >
             <div>

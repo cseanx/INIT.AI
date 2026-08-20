@@ -18,8 +18,8 @@ export default function HeatMap() {
     const mapCardFx = useBentoFx({ particleCount: 0 });
 
     return (
-        <Page>
-            <div className="flex h-[calc(100vh-160px)] min-h-0 gap-[18px]">
+        <Page className="h-full min-h-0">
+            <div className="flex h-full min-h-0 gap-[18px]">
                 {/* Map card */}
                 <div
                     ref={mapCardFx.ref}
@@ -39,15 +39,31 @@ export default function HeatMap() {
                 </div>
 
                 {/* Inspector card */}
-                <div
-                    className={`shrink-0 overflow-hidden transition-[width] duration-300 ease-out ${
-                        inspectorOpen ? 'w-[340px] min-w-[340px]' : 'w-[44px] min-w-0'
-                    }`}
-                >
-                    <InspectorPanel
-                        open={inspectorOpen}
-                        onToggle={() => setInspectorOpen(!inspectorOpen)}
-                    />
+                <div className="flex shrink-0 overflow-hidden rounded-[28px]">
+                    <div
+                        className={`h-full min-w-0 overflow-hidden transition-[width,opacity] duration-[.35s] ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                            inspectorOpen ? 'w-[340px] opacity-100' : 'w-0 opacity-0'
+                        }`}
+                    >
+                        <div className="h-full w-[340px] shrink-0">
+                            <InspectorPanel
+                                onToggle={() => setInspectorOpen(!inspectorOpen)}
+                            />
+                        </div>
+                    </div>
+                    {!inspectorOpen && (
+                        <button
+                            type="button"
+                            onClick={() => setInspectorOpen(true)}
+                            title="Open inspector panel"
+                            className="flex w-[44px] shrink-0 cursor-pointer flex-col items-center justify-center gap-[16px] rounded-[28px] border border-white/8 bg-white/5 text-[#888] backdrop-blur-2xl transition duration-200 hover:bg-white/8 hover:text-accent"
+                        >
+                            <i className="fa-solid fa-angles-right text-[16px]"></i>
+                            <span className="rotate-180 text-[10px] font-semibold uppercase tracking-[.18em] [writing-mode:vertical-rl]">
+                                Inspector
+                            </span>
+                        </button>
+                    )}
                 </div>
             </div>
         </Page>
