@@ -17,7 +17,9 @@ const TRAVEL_LIMITS: [[number, number], [number, number]] = [
     [130.5, 23.5],
 ];
 
-/** Clean satellite basemap (Esri World Imagery — no API key required). */
+/** Clean satellite basemap (Esri World Imagery — no API key required) with
+ *  a place/boundary label reference layer rendered above the imagery so
+ *  geographic names stay readable over the photos. */
 const SATELLITE_STYLE: StyleSpecification = {
     version: 8,
     sources: {
@@ -30,12 +32,26 @@ const SATELLITE_STYLE: StyleSpecification = {
             maxzoom: 19,
             attribution: '© Esri, Maxar, Earthstar Geographics',
         },
+        esriLabels: {
+            type: 'raster',
+            tiles: [
+                'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+            ],
+            tileSize: 256,
+            maxzoom: 19,
+            attribution: '© Esri',
+        },
     },
     layers: [
         {
             id: 'satellite-basemap',
             type: 'raster',
             source: 'esri',
+        },
+        {
+            id: 'place-labels',
+            type: 'raster',
+            source: 'esriLabels',
         },
     ],
 };
