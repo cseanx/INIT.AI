@@ -1,7 +1,14 @@
-import { useEffect, useRef, type ReactNode } from 'react';
-import { Map as MapLibreMap, NavigationControl } from 'maplibre-gl';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Map as MapLibreMap } from 'maplibre-gl';
 import type { StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import MapLayersPanel from './MapLayersPanel';
+import {
+    MAP_LAYERS,
+    applyLayerVisibility,
+    defaultLayerState,
+    type MapLayerDef,
+} from './layers';
 
 /**
  * Philippines travel box. The camera cannot leave this area (with a little
@@ -61,16 +68,27 @@ interface MapViewProps {
     children?: ReactNode;
 }
 
+const CTRL_BTN_CLASSES =
+    'map-ctrl-btn flex h-[30px] w-[30px] cursor-pointer items-center justify-center border-none bg-transparent text-[12.5px] transition duration-200';
+
 /**
  * Large interactive MapLibre GL map for the Heat Map page.
  *
  * The instance is created once on mount and destroyed on unmount. Because
  * routed pages stay mounted (hidden with CSS), the map listens for the
  * bubbling `page-visible` event to resize itself when its page reappears.
+ *
+ * A compact React control stack (zoom, reset-to-Philippines, layers) floats
+ * top-right; layer visibility is driven by the registry in layers.ts so
+ * future backend layers plug in without UI changes.
  */
 export default function MapView({ className = '', children }: MapViewProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
+    const controlsRef = useRef<HTMLDivElement>(null);
+    const [mapReady, setMapReady] = useState(false);
+    const [layersOpen, setLayersOpen] = useState(false);
+    const [layerState, setLayerState] = useState<Record<string, boolean>>(defaultLayerState);
 
     useEffect(() => {
         const container = containerRef.current;
@@ -88,14 +106,44 @@ export default function MapView({ className = '', children }: MapViewProps) {
             trackResize: true,
         });
 
-        map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
+        map.on('load', () => setMapReady(true));
         mapRef.current = map;
 
         return () => {
             map.remove();
             mapRef.current = null;
+            setMapReady(false);
         };
     }, []);
+
+    // Push layer visibility onto the map whenever a toggle changes (and
+    // once the style has loaded). Missing/future layers resolve to no-ops.
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!mapReady || !map) return;
+        for (const layer of MAP_LAYERS) {
+            applyLayerVisibility(map, layer, layerState[layer.id] ?? true);
+        }
+    }, [layerState, mapReady]);
+
+    // Close the layers panel on outside click / Escape.
+    useEffect(() => {
+        if (!layersOpen) return;
+        function onDocumentClick(e: MouseEvent) {
+            if (controlsRef.current && !controlsRef.current.contains(e.target as Node)) {
+                setLayersOpen(false);
+            }
+        }
+        function onKeyDown(e: KeyboardEvent) {
+            if (e.key === 'Escape') setLayersOpen(false);
+        }
+        document.addEventListener('click', onDocumentClick);
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('click', onDocumentClick);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    }, [layersOpen]);
 
     // Resize when the containing page becomes visible again (page switches).
     useEffect(() => {
@@ -115,8 +163,67 @@ export default function MapView({ className = '', children }: MapViewProps) {
         return () => document.removeEventListener('page-visible', onPageVisible);
     }, []);
 
+    function resetView() {
+        mapRef.current?.fitBounds(PHILIPPINES_BOUNDS, { padding: 36, duration: 600 });
+    }
+
+    function handleToggle(layer: MapLayerDef, visible: boolean) {
+        setLayerState((prev) => ({ ...prev, [layer.id]: visible }));
+        const map = mapRef.current;
+        if (map) applyLayerVisibility(map, layer, visible);
+    }
+
     return (
         <div ref={containerRef} className={`map-view relative overflow-hidden ${className}`}>
+            {/* Compact control stack: zoom / reset / layers */}
+            <div
+                ref={controlsRef}
+                className="absolute right-[12px] top-[12px] z-20 flex flex-col items-end gap-[8px]"
+            >
+                <div className="maplibregl-ctrl-group flex flex-col overflow-hidden">
+                    <button
+                        type="button"
+                        className={CTRL_BTN_CLASSES}
+                        title="Zoom in"
+                        aria-label="Zoom in"
+                        onClick={() => mapRef.current?.zoomIn()}
+                    >
+                        <i className="fa-solid fa-plus"></i>
+                    </button>
+                    <button
+                        type="button"
+                        className={CTRL_BTN_CLASSES}
+                        title="Zoom out"
+                        aria-label="Zoom out"
+                        onClick={() => mapRef.current?.zoomOut()}
+                    >
+                        <i className="fa-solid fa-minus"></i>
+                    </button>
+                    <button
+                        type="button"
+                        className={CTRL_BTN_CLASSES}
+                        title="Reset view to the Philippines"
+                        aria-label="Reset view to the Philippines"
+                        onClick={resetView}
+                    >
+                        <i className="fa-solid fa-location-crosshairs"></i>
+                    </button>
+                    <button
+                        type="button"
+                        className={`${CTRL_BTN_CLASSES} ${layersOpen ? 'active' : ''}`}
+                        title="Map layers"
+                        aria-label="Map layers"
+                        aria-haspopup="dialog"
+                        aria-expanded={layersOpen}
+                        onClick={() => setLayersOpen((o) => !o)}
+                    >
+                        <i className="fa-solid fa-layer-group"></i>
+                    </button>
+                </div>
+
+                {layersOpen ? <MapLayersPanel state={layerState} onToggle={handleToggle} /> : null}
+            </div>
+
             {children}
         </div>
     );

@@ -360,6 +360,66 @@
     color: rgba(255, 255, 255, .75);
 }
 
+/* Custom React control stack (zoom / reset / layers) reuses the library's
+   glass group styling above; only the FA glyph coloring differs. */
+.map-view .map-ctrl-btn {
+    color: rgba(255, 255, 255, .82);
+}
+
+.map-view .map-ctrl-btn:hover {
+    color: #fff;
+}
+
+.map-view .map-ctrl-btn.active {
+    color: var(--color-accent);
+}
+
+/* Light mode: flip the control stack to light glass with dark ink (the
+   satellite imagery itself stays a dark photo — only the chrome adapts). */
+[data-theme='light'] .map-view .maplibregl-ctrl-group {
+    background: rgba(255, 255, 255, .92);
+    border-color: rgba(20, 25, 35, .16);
+    box-shadow: 0 10px 30px rgba(20, 25, 35, .18);
+}
+
+[data-theme='light'] .map-view .maplibregl-ctrl-group button + button {
+    border-top-color: rgba(20, 25, 35, .1);
+}
+
+[data-theme='light'] .map-view .maplibregl-ctrl-group button:hover {
+    background: rgba(20, 25, 35, .08);
+}
+
+[data-theme='light'] .map-view .maplibregl-ctrl-group button:active {
+    background: rgba(20, 25, 35, .14);
+}
+
+[data-theme='light'] .map-view .maplibregl-ctrl-group button .maplibregl-ctrl-icon,
+[data-theme='light'] .map-view .maplibregl-ctrl-attrib summary.maplibregl-ctrl-attrib-button {
+    filter: none;
+    opacity: .8;
+}
+
+[data-theme='light'] .map-view .maplibregl-ctrl.maplibregl-ctrl-attrib {
+    background-color: rgba(255, 255, 255, .92);
+    border-color: rgba(20, 25, 35, .16);
+    color: rgba(20, 25, 35, .6);
+    box-shadow: 0 10px 30px rgba(20, 25, 35, .14);
+}
+
+[data-theme='light'] .map-view .maplibregl-ctrl-attrib a,
+[data-theme='light'] .map-view .maplibregl-ctrl-attrib a:hover {
+    color: rgba(20, 25, 35, .8);
+}
+
+[data-theme='light'] .map-view .map-ctrl-btn {
+    color: #33363d;
+}
+
+[data-theme='light'] .map-view .map-ctrl-btn:hover {
+    color: #181a20;
+}
+
 /* ==========================
    SIDEBAR LABELS
    Text labels clip smoothly via max-width (animatable) instead of width
@@ -708,7 +768,8 @@ html[data-theme='light'] {
 [data-theme='light'] .account-menu,
 [data-theme='light'] .city-menu,
 [data-theme='light'] .menu-select-menu,
-[data-theme='light'] .hotspot-filter-menu {
+[data-theme='light'] .hotspot-filter-menu,
+[data-theme='light'] .map-layers-menu {
     --color-white: #181a20;
     background-color: rgba(255, 255, 255, .98);
     border-color: rgba(20, 25, 35, .14);
@@ -753,6 +814,10 @@ html[data-theme='light'] {
 [data-theme='light'] .text-\[\#888\],
 [data-theme='light'] .text-\[\#777\] {
     color: #5a5f69;
+}
+
+[data-theme='light'] .text-\[\#666\] {
+    color: #6b707a;
 }
 
 [data-theme='light'] .text-\[\#b4b4b4\] {
