@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import Page from '../components/layout/Page';
 import MapView from '../components/map/MapView';
 import HeatLegend from '../components/map/HeatLegend';
+import LstLegend from '../components/map/LstLegend';
 import InspectorPanel from '../components/inspector/InspectorPanel';
 import { useBentoFx } from '../components/common/BentoCard';
 
@@ -15,7 +16,13 @@ import { useBentoFx } from '../components/common/BentoCard';
  */
 export default function HeatMap() {
     const [inspectorOpen, setInspectorOpen] = useState(true);
+    const [lstActive, setLstActive] = useState(false);
     const mapCardFx = useBentoFx({ particleCount: 0 });
+
+    // MapView reports toggle changes so the legend can follow the LST layer.
+    const handleLayerStateChange = useCallback((state: Record<string, boolean>) => {
+        setLstActive(state.lst ?? false);
+    }, []);
 
     return (
         <Page className="h-full min-h-0">
@@ -32,8 +39,8 @@ export default function HeatMap() {
                         </h3>
                     </div>
                     <div className="relative min-h-0 flex-1 p-[14px]">
-                        <MapView className="h-full w-full rounded-[18px]">
-                            <HeatLegend />
+                        <MapView className="h-full w-full rounded-[18px]" onLayerStateChange={handleLayerStateChange}>
+                            {lstActive ? <LstLegend /> : <HeatLegend />}
                         </MapView>
                     </div>
                 </div>

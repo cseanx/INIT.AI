@@ -420,6 +420,90 @@
     color: #181a20;
 }
 
+/* LST inspection popup — dark glass matching the map chrome. */
+.map-view .maplibregl-popup-content {
+    padding: 0;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(16, 16, 16, .94);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, .5);
+    overflow: hidden;
+}
+
+.map-view .maplibregl-popup-tip {
+    border-top-color: rgba(16, 16, 16, .94);
+    border-bottom-color: rgba(16, 16, 16, .94);
+    border-right-color: rgba(16, 16, 16, .94);
+    border-left-color: rgba(16, 16, 16, .94);
+}
+
+.lst-popup {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 12px 14px;
+}
+
+.lst-popup-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.lst-popup-sub {
+    font-size: 11px;
+    color: #999;
+}
+
+.lst-popup-temp {
+    margin-top: 3px;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--color-accent);
+}
+
+.lst-popup-temp.empty {
+    font-size: 13px;
+    font-weight: 600;
+    color: #888;
+}
+
+.lst-popup-meta {
+    font-size: 10.5px;
+    color: #777;
+}
+
+[data-theme='light'] .map-view .maplibregl-popup-content {
+    background: rgba(255, 255, 255, .97);
+    border-color: rgba(20, 25, 35, .16);
+    box-shadow: 0 14px 36px rgba(20, 25, 35, .18);
+}
+
+[data-theme='light'] .map-view .maplibregl-popup-tip {
+    border-top-color: rgba(255, 255, 255, .97);
+    border-bottom-color: rgba(255, 255, 255, .97);
+    border-right-color: rgba(255, 255, 255, .97);
+    border-left-color: rgba(255, 255, 255, .97);
+}
+
+[data-theme='light'] .lst-popup-title {
+    color: #181a20;
+}
+
+[data-theme='light'] .lst-popup-sub {
+    color: #565b66;
+}
+
+[data-theme='light'] .lst-popup-temp.empty {
+    color: #5a5f69;
+}
+
+[data-theme='light'] .lst-popup-meta {
+    color: #6b707a;
+}
+
 /* ==========================
    SIDEBAR LABELS
    Text labels clip smoothly via max-width (animatable) instead of width

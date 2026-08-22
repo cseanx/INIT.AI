@@ -3,6 +3,8 @@ import { Map as MapLibreMap } from 'maplibre-gl';
 import type { StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import MapLayersPanel from './MapLayersPanel';
+import { attachLSTLayer, bindLSTInteractions } from './lstLayer';
+import { loadLSTData } from './lstData';
 import {
     MAP_LAYERS,
     applyLayerVisibility,
@@ -66,6 +68,8 @@ const SATELLITE_STYLE: StyleSpecification = {
 interface MapViewProps {
     className?: string;
     children?: ReactNode;
+    /** Notifies the page when a layer toggle changes (e.g. to swap legends). */
+    onLayerStateChange?: (state: Record<string, boolean>) => void;
 }
 
 const CTRL_BTN_CLASSES =
@@ -82,10 +86,11 @@ const CTRL_BTN_CLASSES =
  * top-right; layer visibility is driven by the registry in layers.ts so
  * future backend layers plug in without UI changes.
  */
-export default function MapView({ className = '', children }: MapViewProps) {
+export default function MapView({ className = '', children, onLayerStateChange }: MapViewProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
     const controlsRef = useRef<HTMLDivElement>(null);
+    const lstCleanupRef = useRef<(() => void) | null>(null);
     const [mapReady, setMapReady] = useState(false);
     const [layersOpen, setLayersOpen] = useState(false);
     const [layerState, setLayerState] = useState<Record<string, boolean>>(defaultLayerState);
@@ -106,10 +111,33 @@ export default function MapView({ className = '', children }: MapViewProps) {
             trackResize: true,
         });
 
-        map.on('load', () => setMapReady(true));
+        // Attach the LST overlay once the style exists. Data loading is
+        // isolated in lstData.ts (mock today, FastAPI/PostGIS later); a
+        // failure here leaves the rest of the map fully functional.
+        async function initLayers() {
+            try {
+                const data = await loadLSTData();
+                if (!mapRef.current) return;
+                if (attachLSTLayer(mapRef.current, data)) {
+                    lstCleanupRef.current = bindLSTInteractions(mapRef.current);
+                }
+            } catch {
+                console.warn('INIT.AI map: LST layer unavailable — skipping.');
+            } finally {
+                // Ready only after LST attach attempts, so the visibility
+                // sync below sees the final layer set.
+                setMapReady(true);
+            }
+        }
+
+        map.on('load', () => {
+            void initLayers();
+        });
         mapRef.current = map;
 
         return () => {
+            lstCleanupRef.current?.();
+            lstCleanupRef.current = null;
             map.remove();
             mapRef.current = null;
             setMapReady(false);
@@ -117,14 +145,20 @@ export default function MapView({ className = '', children }: MapViewProps) {
     }, []);
 
     // Push layer visibility onto the map whenever a toggle changes (and
-    // once the style has loaded). Missing/future layers resolve to no-ops.
+    // once the style + runtime layers are loaded). Missing/future layers
+    // resolve to no-ops.
     useEffect(() => {
         const map = mapRef.current;
         if (!mapReady || !map) return;
         for (const layer of MAP_LAYERS) {
-            applyLayerVisibility(map, layer, layerState[layer.id] ?? true);
+            applyLayerVisibility(map, layer, layerState[layer.id] ?? false);
         }
     }, [layerState, mapReady]);
+
+    // Let the page react to toggle changes (legend swap etc.).
+    useEffect(() => {
+        onLayerStateChange?.(layerState);
+    }, [layerState, onLayerStateChange]);
 
     // Close the layers panel on outside click / Escape.
     useEffect(() => {

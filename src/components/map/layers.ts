@@ -50,8 +50,10 @@ export const MAP_LAYERS: MapLayerDef[] = [
         label: 'Land Surface Temperature',
         icon: 'fa-temperature-half',
         group: 'environmental',
-        available: false,
-        pendingNote: 'LST raster service is not connected yet.',
+        // Layers are attached at runtime by lstLayer.ts (mock data today,
+        // FastAPI/PostGIS later via lstData.ts).
+        styleLayers: ['lst-fill', 'lst-outline'],
+        available: true,
     },
     {
         id: 'ndvi',
@@ -79,9 +81,21 @@ export const MAP_LAYERS: MapLayerDef[] = [
     },
 ];
 
+/** Default visibility per layer. The basemap starts on; analytical overlays
+ *  start off so the map opens clean (consistent with dashboard behavior). */
+const LAYER_DEFAULTS: Record<string, boolean> = {
+    satellite: true,
+    lst: false,
+    ndvi: false,
+    barangays: false,
+    hotspots: false,
+};
+
 /** Default visibility for every registered layer. */
 export function defaultLayerState(): Record<string, boolean> {
-    return Object.fromEntries(MAP_LAYERS.map((layer) => [layer.id, true]));
+    return Object.fromEntries(
+        MAP_LAYERS.map((layer) => [layer.id, LAYER_DEFAULTS[layer.id] ?? false]),
+    );
 }
 
 /**
