@@ -3,7 +3,14 @@ import { Map as MapLibreMap } from 'maplibre-gl';
 import type { StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import MapLayersPanel from './MapLayersPanel';
-import { attachLSTLayer, bindLSTInteractions } from './lstLayer';
+import {
+    LST_SOURCE_ID,
+    bindLSTInteractions,
+    emptyLSTCollection,
+    lstFillLayerSpec,
+    lstOutlineLayerSpec,
+    pushLSTData,
+} from './lstLayer';
 import { loadLSTData } from './lstData';
 import {
     MAP_LAYERS,
@@ -28,7 +35,12 @@ const TRAVEL_LIMITS: [[number, number], [number, number]] = [
 
 /** Clean satellite basemap (Esri World Imagery — no API key required) with
  *  a place/boundary label reference layer rendered above the imagery so
- *  geographic names stay readable over the photos. */
+ *  geographic names stay readable over the photos.
+ *
+ *  The LST source + layers are declared here (seeded empty) so they exist
+ *  from style load — the Layers-panel toggle always finds them. Data is
+ *  pushed in by initLayers() from lstData.ts (mock today; GEE→FastAPI later).
+ *  Order: basemap → LST fill → LST outline → labels (labels stay on top). */
 const SATELLITE_STYLE: StyleSpecification = {
     version: 8,
     sources: {
@@ -50,6 +62,10 @@ const SATELLITE_STYLE: StyleSpecification = {
             maxzoom: 19,
             attribution: '© Esri',
         },
+        [LST_SOURCE_ID]: {
+            type: 'geojson',
+            data: emptyLSTCollection(),
+        },
     },
     layers: [
         {
@@ -57,6 +73,8 @@ const SATELLITE_STYLE: StyleSpecification = {
             type: 'raster',
             source: 'esri',
         },
+        lstFillLayerSpec(),
+        lstOutlineLayerSpec(),
         {
             id: 'place-labels',
             type: 'raster',
@@ -111,26 +129,29 @@ export default function MapView({ className = '', children, onLayerStateChange }
             trackResize: true,
         });
 
-        // Attach the LST overlay once the style exists. Data loading is
-        // isolated in lstData.ts (mock today, FastAPI/PostGIS later); a
-        // failure here leaves the rest of the map fully functional.
+        // The LST layers already exist in the style; only the data is
+        // fetched at runtime (isolated in lstData.ts — mock today,
+        // Google Earth Engine → FastAPI later). A failure here leaves the
+        // rest of the map fully functional; the toggle simply shows the
+        // empty source until data arrives.
         async function initLayers() {
             try {
                 const data = await loadLSTData();
                 if (!mapRef.current) return;
-                if (attachLSTLayer(mapRef.current, data)) {
-                    lstCleanupRef.current = bindLSTInteractions(mapRef.current);
-                }
+                pushLSTData(mapRef.current, data);
             } catch {
-                console.warn('INIT.AI map: LST layer unavailable — skipping.');
-            } finally {
-                // Ready only after LST attach attempts, so the visibility
-                // sync below sees the final layer set.
-                setMapReady(true);
+                console.warn('INIT.AI map: LST data unavailable — layer stays empty.');
             }
         }
 
+        // Debug instrumentation removed — see layers.ts registry for the
+        // layer contract. The map handle stays available for debugging:
+        const dbg = window as unknown as Record<string, unknown>;
+        dbg.__initaiMap = map;
+
         map.on('load', () => {
+            setMapReady(true);
+            lstCleanupRef.current = bindLSTInteractions(map);
             void initLayers();
         });
         mapRef.current = map;

@@ -1,96 +1,98 @@
-import { Map as MapLibreMap, Popup } from 'maplibre-gl';
+import type {
+    FillLayerSpecification,
+    LineLayerSpecification,
+    Map as MapLibreMap,
+} from 'maplibre-gl';
+import { Popup } from 'maplibre-gl';
 import type { MapLayerMouseEvent } from 'maplibre-gl';
 import { LST_MAX_C, LST_MIN_C, type LSTCollection } from './lstData';
 
 /**
  * LST rendering module. Owns everything MapLibre-specific about the layer:
- * source registration, fill/outline paint, layer ordering, and hover/click
- * inspection. Data comes from lstData.ts (mock today, FastAPI/PostGIS later).
+ * source/style-layer specs, paint ramp, and hover/click inspection.
+ * Data comes exclusively from lstData.ts (bundled mock today; swap that
+ * single module over to Google Earth Engine → FastAPI → PostGIS later).
  *
- * Layer order: LST renders above the satellite basemap but below the
- * place-label reference layer (and any future hotspot markers/popups).
+ * The source + fill/outline layers are declared in MapView's base style
+ * (between the satellite imagery and the place labels) seeded with an
+ * EMPTY collection; real/mock data is pushed in at runtime via
+ * pushLSTData(). Declaring them up front means the existing Layers-panel
+ * toggle always targets layers that exist — no attach-timing races.
  */
 
-const SOURCE_ID = 'lst-source';
-const FILL_LAYER_ID = 'lst-fill';
-const OUTLINE_LAYER_ID = 'lst-outline';
-/** Everything LST-related inserts before this existing style layer. */
-const INSERT_BEFORE_LAYER_ID = 'place-labels';
+export const LST_SOURCE_ID = 'lst-source';
+export const LST_FILL_LAYER_ID = 'lst-fill';
+export const LST_OUTLINE_LAYER_ID = 'lst-outline';
 
-/** Same ramp as the HeatLegend: blue → cyan → green → yellow → orange → red. */
-function temperatureColorExpression(): unknown {
+/** Seed payload so the declared source starts out empty/invisible. */
+export function emptyLSTCollection(): LSTCollection {
+    return { type: 'FeatureCollection', features: [] };
+}
+
+/** Same ramp as the legend: blue → cyan → green → yellow → orange → red
+ *  across 25–45 °C. Cells without a numeric reading render transparent. */
+function temperatureRamp(): never {
     return [
-        'case',
-        ['==', ['typeof', ['get', 'temperature_c']], 'null'],
-        'rgba(0,0,0,0)',
-        [
-            'interpolate',
-            ['linear'],
-            ['to-number', ['get', 'temperature_c']],
-            LST_MIN_C,
-            '#3b82f6',
-            30,
-            '#00d4ff',
-            33,
-            '#00ff84',
-            36,
-            '#ffd23f',
-            40,
-            '#ff8c42',
-            LST_MAX_C,
-            '#ff2d55',
-        ],
-    ];
+        'interpolate',
+        ['linear'],
+        ['number', ['coalesce', ['get', 'temperature_c'], LST_MIN_C]],
+        LST_MIN_C,
+        '#3b82f6',
+        30,
+        '#00d4ff',
+        33,
+        '#00ff84',
+        36,
+        '#ffd23f',
+        40,
+        '#ff8c42',
+        LST_MAX_C,
+        '#ff2d55',
+    ] as never;
 }
 
-export function isLSTAttached(map: MapLibreMap): boolean {
-    return !!map.getSource(SOURCE_ID);
+export function lstFillLayerSpec(): FillLayerSpecification {
+    return {
+        id: LST_FILL_LAYER_ID,
+        type: 'fill',
+        source: LST_SOURCE_ID,
+        paint: {
+            // Cells lacking a reading stay fully transparent. NOTE: the
+            // empty branch must be an ['rgba', …] expression — a string
+            // literal would make `case` mix string/color types and the
+            // whole expression fails to parse (layer never renders).
+            'fill-color': [
+                'case',
+                ['==', ['typeof', ['get', 'temperature_c']], 'null'],
+                ['rgba', 0, 0, 0, 0],
+                temperatureRamp(),
+            ] as never,
+            // …and the rest stays translucent so satellite shows through.
+            'fill-opacity': 0.6,
+        },
+    };
 }
 
-/**
- * Register the LST source + layers. Idempotent. Returns false if the
- * insertion point is missing (style not loaded yet), in which case callers
- * may retry once the style layers exist.
- */
-export function attachLSTLayer(map: MapLibreMap, data: LSTCollection): boolean {
-    if (!map.getLayer(INSERT_BEFORE_LAYER_ID)) return false;
-    if (!isLSTAttached(map)) {
-        map.addSource(SOURCE_ID, {
-            type: 'geojson',
-            data: data as never,
-        });
-    }
-    if (!map.getLayer(FILL_LAYER_ID)) {
-        map.addLayer(
-            {
-                id: FILL_LAYER_ID,
-                type: 'fill',
-                source: SOURCE_ID,
-                paint: {
-                    'fill-color': temperatureColorExpression() as never,
-                    // Semi-transparent so the satellite imagery stays visible.
-                    'fill-opacity': 0.55,
-                },
-            },
-            INSERT_BEFORE_LAYER_ID,
-        );
-    }
-    if (!map.getLayer(OUTLINE_LAYER_ID)) {
-        map.addLayer(
-            {
-                id: OUTLINE_LAYER_ID,
-                type: 'line',
-                source: SOURCE_ID,
-                paint: {
-                    // Subtle light border so adjacent cells stay distinguishable.
-                    'line-color': 'rgba(255,255,255,.45)',
-                    'line-width': ['interpolate', ['linear'], ['zoom'], 5, 0.6, 10, 1.2],
-                },
-            },
-            INSERT_BEFORE_LAYER_ID,
-        );
-    }
-    return true;
+export function lstOutlineLayerSpec(): LineLayerSpecification {
+    return {
+        id: LST_OUTLINE_LAYER_ID,
+        type: 'line',
+        source: LST_SOURCE_ID,
+        paint: {
+            // Subtle light border so adjacent cells remain distinguishable.
+            'line-color': 'rgba(255,255,255,.45)',
+            'line-width': ['interpolate', ['linear'], ['zoom'], 5, 0.6, 10, 1.2] as never,
+        },
+    };
+}
+
+/** Push a (mock or future API) collection into the declared source. */
+export function pushLSTData(map: MapLibreMap, data: LSTCollection): void {
+    const source = map.getSource(LST_SOURCE_ID) as
+        | { setData: (d: LSTCollection) => void }
+        | undefined;
+    if (!source) return;
+    source.setData(data);
 }
 
 /** Format a temperature for display: `34.5°C`, or an em dash when absent. */
@@ -156,16 +158,16 @@ export function bindLSTInteractions(map: MapLibreMap): () => void {
         popup.remove();
     };
 
-    map.on('mouseenter', FILL_LAYER_ID, onEnter);
-    map.on('mousemove', FILL_LAYER_ID, show);
-    map.on('mouseleave', FILL_LAYER_ID, onLeave);
-    map.on('click', FILL_LAYER_ID, show);
+    map.on('mouseenter', LST_FILL_LAYER_ID, onEnter);
+    map.on('mousemove', LST_FILL_LAYER_ID, show);
+    map.on('mouseleave', LST_FILL_LAYER_ID, onLeave);
+    map.on('click', LST_FILL_LAYER_ID, show);
 
     return () => {
-        map.off('mouseenter', FILL_LAYER_ID, onEnter);
-        map.off('mousemove', FILL_LAYER_ID, show);
-        map.off('mouseleave', FILL_LAYER_ID, onLeave);
-        map.off('click', FILL_LAYER_ID, show);
+        map.off('mouseenter', LST_FILL_LAYER_ID, onEnter);
+        map.off('mousemove', LST_FILL_LAYER_ID, show);
+        map.off('mouseleave', LST_FILL_LAYER_ID, onLeave);
+        map.off('click', LST_FILL_LAYER_ID, show);
         popup.remove();
         map.getCanvas().style.cursor = '';
     };
