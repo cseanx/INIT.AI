@@ -5,8 +5,14 @@ from sqlalchemy.orm import Session, joinedload
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models import Barangay, Report, User
-from app.schemas.report import ReportCreate, ReportOut, ReportUpdate
+from app.schemas.report import (
+    ReportAttestationMessage,
+    ReportCreate,
+    ReportOut,
+    ReportUpdate,
+)
 from app.services.readings import fetch_all
+from app.services.report_hash import attestation_hash, canonical_json
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -34,6 +40,24 @@ def list_reports(
 @router.get("/{report_id}", response_model=ReportOut)
 def get_report(report_id: int, db: Session = Depends(get_db)) -> Report:
     return _get_report(db, report_id)
+
+
+@router.get(
+    "/{report_id}/attestation-message",
+    response_model=ReportAttestationMessage,
+)
+def get_attestation_message(report_id: int, db: Session = Depends(get_db)) -> ReportAttestationMessage:
+    """Server-authoritative Stellar attestation message for a report.
+
+    The hash covers report CONTENT only (no ids/timestamps added by the
+    database), so editing a report intentionally invalidates old proofs.
+    """
+    report = _get_report(db, report_id)
+    return ReportAttestationMessage(
+        report_id=str(report.id),
+        hash=attestation_hash(report),
+        canonical_payload=canonical_json(report),
+    )
 
 
 @router.post("", response_model=ReportOut, status_code=status.HTTP_201_CREATED)

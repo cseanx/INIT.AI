@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@creit.tech/stellar-wallets-kit": "^2.5.0",
+    "@stellar/stellar-sdk": "^17.0.0",
     "@vercel/speed-insights": "^2.0.0",
     "chart.js": "^4.5.1",
     "gsap": "^3.15.0",

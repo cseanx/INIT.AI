@@ -124,45 +124,64 @@ unknown-hash → `None`, duplicate-hash rejection, independence across
 hashes/submitters, authorization enforcement (fails without a signature), and
 an explicit single-signature mock test.
 
-## Deploy (Testnet)
+## Deployment (Stellar Testnet) — DONE
+
+| | |
+|---|---|
+| **Network** | Stellar Testnet (`--network testnet`, Soroban RPC `https://soroban-testnet.stellar.org`) |
+| **Contract ID** | `CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF` |
+| **Deployed** | 2026-08-24 · stellar-cli 27.1.0 · wasm32v1-none release build |
+| **Explorer** | https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF |
+| **Initiation tx** | https://stellar.expert/explorer/testnet/tx/bf9a285558eea50b89982bcdccad6ae44ea33cf90739a925cba402b4b8429375 |
+
+### Deploy command (as executed)
 
 ```bash
-# 1) Identity for the deploying/initiating account
+# Identity lives ONLY in ~/.config/stellar/identity/initai-deployer.toml.
+# Secrets are never committed or shared; only the public key is documented:
+#   GBBU32EB3VNOIGDS6GUJ6JWWONQ6NP73BRG6IVE5D4BV3LCTYEJJFAHY
+
 stellar keys generate initai-deployer --network testnet
-stellar keys address initai-deployer
+curl -s "https://friendbot.stellar.org?addr=$(stellar keys address initai-deployer)"
 
-# 2) Fund it from the Testnet friendbot faucet
-curl -s "https://friendbot.stellar.org?addr=<PUBKEY>"
-
-# 3) Install + deploy the WASM
 stellar contract deploy \
     --wasm target/wasm32v1-none/release/initai_spatial_attestation.wasm \
     --source initai-deployer \
     --network testnet
-#   → prints the deployed Contract ID (C…)
-
-# 4) Sanity-check on-chain
-stellar contract invoke \
-    --id <CONTRACT_ID> --network testnet \
-    --source initai-deployer \
-    -- total_attestations
-#   → 0
+# → CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF
 ```
 
-The resulting `CONTRACT_ID` is what INIT.AI's frontend uses
-(`VITE_STELLAR_CONTRACT_ID`); the flag `VITE_STELLAR_ENABLED` gates all
-Stellar code paths so the rest of the app runs unchanged without it.
+To redeploy an updated WASM, rerun `stellar contract deploy …` — you get a
+NEW contract id (Soroban deploys are immutable); update
+`VITE_STELLAR_CONTRACT_ID` accordingly.
 
-## Verify from the CLI
+## Invoke / test on-chain
+
+Reads are free and simulate without submitting:
 
 ```bash
-stellar contract invoke \
-    --id <CONTRACT_ID> --network testnet \
-    -- verify --hash <32-BYTE-HASH-Hex>
+CID=CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF
+
+stellar contract invoke --id $CID --network testnet -- total_attestations
+stellar contract invoke --id $CID --network testnet \
+    -- verify --hash aa…aa        # 64 hex chars
 ```
 
-Or read it programmatically with `@stellar/stellar-sdk`
-(`contractClient.verify({ hash })`) — which is what the INIT.AI UI does.
+Writes need a funded identity as signer (deployer shown here; the app will
+instead use the user's Freighter wallet):
+
+```bash
+DEPLOYER=$(stellar keys address initai-deployer)
+
+stellar contract invoke --id $CID --network testnet \
+    --source initai-deployer \
+    -- attest --submitter $DEPLOYER --hash <64-hex> --report_id "<report-id>"
+```
+
+Smoke test performed at deployment time (hash = 0xaa×32,
+`report_id="smoke-test"`): attest tx
+`bf9a285558eea50b89982bcdccad6ae44ea33cf90739a925cba402b4b8429375`,
+`verify` returned the full record, `total_attestations` → 1.
 
 ---
 
@@ -177,10 +196,87 @@ contracts/soroban/
 └── tests/            # reserved for cross-crate/integration tests
 ```
 
+## Report hashing (Phase 5) — server-authoritative
+
+The hash that goes on-chain is computed **by FastAPI from the stored
+database row**, so it can't drift from what's actually persisted:
+
+```
+GET /api/reports/{id}/attestation-message
+→ {
+    "reportId": "7",
+    "hash": "923ab672b27d2dbd805a…",          ← SHA-256, 64 hex chars
+    "canonicalPayload": "{\"area\":\"…\"…}"   ← exact bytes that were hashed
+  }
+```
+
+- **Canonical payload** = the frontend `ReportPayload` field set
+  (title/type/status/area/city/coverage/periodStart/periodEnd/preparedBy/
+  autoPriorityAreas/datasets/areas/sections/recommendations + the eight
+  dataset summary numbers + generatedAt), rebuilt key-for-key from the DB row
+  in `backend/app/services/report_hash.py`. Report `id` and DB timestamps are
+  excluded — proofs cover content only.
+- **Determinism rules** (matching browser `JSON.stringify`):
+  sorted keys · compact separators · raw UTF-8 (`ensure_ascii=False`) ·
+  integral floats normalized to ints so Python `36.0` ≡ JS `36`.
+- Editing a report changes its content → next hash differs → old on-chain
+  proof no longer matches (that is exactly the tamper-evidence working).
+- Tests: `backend/tests/test_report_hash.py` — determinism, content-change,
+  id-independence, float normalization, known-vector, unicode.
+  Run: `python tests/test_report_hash.py` from `backend/`.
+
+The frontend hook accepts this server hash directly
+(`useStellarAttestation().attest({ reportHash, reportRef })`); local hashing
+remains only as an offline fallback.
+
+## Frontend integration layer (Phase 4)
+
+Adapted to this repo's conventions — `src/services/` for plain logic,
+`src/hooks/` for React state:
+
+| File | Responsibility |
+|---|---|
+| `src/types/stellar.ts` | `ChainAttestation`, `AttestationPhase`, explorer helpers |
+| `src/services/stellar/client.ts` | Feature flag (`VITE_STELLAR_ENABLED` + contract id), Testnet RPC URL/passphrase, lazy `getServer()` |
+| `src/services/stellar/wallet.ts` | Freighter via StellarWalletsKit v2: connect / disconnect / address / network check / transaction signing |
+| `src/services/stellar/attestation.ts` | Canonical JSON → SHA-256 → Soroban `attest` invoke → confirmation polling → on-chain `verify` reads |
+| `src/hooks/useStellarWallet.ts` | Wallet session state (persisted address, connect/disconnect) |
+| `src/hooks/useStellarAttestation.ts` | Full flow state machine: `idle → hashing → connecting → signing → submitting → confirming → verified` |
+
+Usage sketch (Phase 5 wires this into ReportEditor):
+
+```ts
+const att = useStellarAttestation();
+await att.attest(buildReportPayload(report), String(report.id));
+// att.phase, att.result.txHash, att.chainRecord
+```
+
+Implementation notes:
+
+- Package is **`@creit.tech/stellar-wallets-kit`** (the kit moved off the old
+  `@creit-tech` scope); current version 2.5.0. Freighter ships as a subpath
+  export: `@creit.tech/stellar-wallets-kit/modules/freighter`.
+- On Windows, install with `npm i --ignore-scripts …` once: a nested Trezor
+  dependency runs a `yarn setup || true` postinstall that fails under cmd.exe.
+- Both Stellar packages are **dynamically imported**, so they never enter the
+  main bundle and can be dropped later without touching unrelated code.
+- Signing requires Freighter set to **Testnet**; the wallet service checks the
+  selected network before requesting signatures and surfaces an actionable
+  message otherwise.
+- Errors are humanized in one place (`normalizeWalletError`): declined
+  signature, missing/locked extension, network mismatch, unfunded account.
+
 ## Integration checklist (for Phases 3–4)
 
-- [ ] Frontend deps: `@stellar/stellar-sdk`, `@creit-tech/stellar-wallets-kit`
-- [ ] `.env`: `VITE_STELLAR_ENABLED=true`, `VITE_STELLAR_CONTRACT_ID=C…`
+- [x] **Deployed to Testnet** — contract id
+      `CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF`
+- [x] `.env` / `.env.example`: `VITE_STELLAR_ENABLED`, `VITE_STELLAR_CONTRACT_ID`
+      (no secrets in env — wallet keys stay in `~/.config/stellar/`)
+- [x] On-chain smoke test passed (attest → verify → total_attestations = 1)
+- [x] Frontend deps: `@stellar/stellar-sdk@17`, `@creit.tech/stellar-wallets-kit@2`
+- [x] Frontend layer: `services/stellar/*` + `hooks/useStellar*` (flag-gated, lazy-loaded)
+- [x] Backend hashing service + `GET /api/reports/{id}/attestation-message`
+      (server-authoritative hash, tested)
 - [ ] Backend columns: `stellar_hash`, `stellar_tx_hash`, `stellar_wallet`,
       `stellar_attested_at` on `reports` (+ migration 0008 / ensure.py sync)
 - [ ] Hash source: `buildReportPayload()` output serialized canonically

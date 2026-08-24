@@ -42,6 +42,20 @@ class ReportCreate(ReportBase):
     pass
 
 
+class ReportAttestationMessage(BaseModel):
+    """Everything the frontend needs to attest a report on Stellar.
+
+    `hash` is the server-authoritative SHA-256 of `canonical_payload` —
+    the frontend signs/invokes with this hash instead of recomputing one.
+    """
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    report_id: str
+    hash: str
+    canonical_payload: str
+
+
 class ReportUpdate(BaseModel):
     """Partial update — only provided fields are written."""
 
