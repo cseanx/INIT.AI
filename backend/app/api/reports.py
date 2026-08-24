@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
@@ -15,6 +17,10 @@ from app.schemas.report import (
 )
 from app.services.readings import fetch_all
 from app.services.report_hash import attestation_hash, canonical_json
+from app.services.stellar_verify import (
+    TransactionVerificationError,
+    verify_attest_transaction,
+)
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -104,6 +110,21 @@ def record_attestation(
             ),
         )
 
+    # Trust nothing: confirm on Testnet that this exact transaction exists,
+    # succeeded, and invoked attest() with this wallet, hash and report ref.
+    try:
+        horizon_meta = verify_attest_transaction(
+            body.tx_hash,
+            expected_contract_id=body.contract_id,
+            expected_hash_hex=body.report_hash,
+            expected_report_ref=str(report.id),
+            expected_wallet=body.wallet,
+        )
+    except TransactionVerificationError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
+
+    verification_meta = {**(body.meta or {}), **horizon_meta, "verified_at": datetime.now(timezone.utc).isoformat()}
+
     existing = db.scalar(
         select(ReportAttestation).where(ReportAttestation.stellar_hash == body.report_hash)
     )
@@ -119,7 +140,8 @@ def record_attestation(
         existing.network = body.network
         existing.wallet = body.wallet
         existing.status = "confirmed"
-        existing.meta = body.meta
+        existing.meta = verification_meta
+        existing.last_verified_at = datetime.now(timezone.utc)
         db.commit()
         db.refresh(existing)
         return existing
@@ -132,7 +154,7 @@ def record_attestation(
         network=body.network,
         wallet=body.wallet,
         status="confirmed",
-        meta=body.meta,
+        meta=verification_meta,
     )
     db.add(record)
     db.commit()

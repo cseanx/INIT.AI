@@ -320,6 +320,20 @@ Implementation notes:
 - SDK v17 exposes simulation output as singular `result.retval`.
 - An unknown hash parses to `null` → mapped to `none`, never an error.
 
+## Security model (Phase 10)
+
+| Rule | Enforcement |
+|---|---|
+| No private keys in source / env | Keys live only in Freighter (browser) or the local stellar-cli identity dir. Repo greps clean; frontend env carries only public values (`VITE_API_URL`, flag, contract ID). |
+| Testnet only | RPC URL + passphrase hardcoded to Testnet; schema validator rejects any `network ≠ "testnet"` (422). |
+| Authoritative hash from DB | `attestation_hash()` computes from the stored row — client content never influences it. Client-supplied hashes are *compared*, not trusted (409 on mismatch). |
+| No fabricated transactions | `POST …/attestation` verifies via Horizon that the tx exists, succeeded, invokes **this contract's** `attest` with exactly the claimed wallet + hash + report ref (pure-stdlib XDR param matching — see `services/stellar_verify.py`). Failures → 422. |
+| No stealing another report's proof | Hash uniqueness + per-report hash binding + wallet/ref/hash parameter match make cross-report reuse impossible. |
+| Auth follows existing system | Writes require the existing cookie session (`get_current_user`); reads stay public like other report GETs. |
+
+Verification metadata persisted per attestation:
+`meta = { source, horizon_ledger, verified_via: "horizon", verified_at }`.
+
 ## Integration checklist (for Phases 3–4)
 
 - [x] **Deployed to Testnet** — contract id

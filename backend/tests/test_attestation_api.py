@@ -43,7 +43,7 @@ VALID_BODY = {
 
 
 @pytest.fixture()
-def client():
+def client(monkeypatch):
     # One shared in-memory DB across all connections (TestClient opens new ones).
     engine = create_engine(
         "sqlite://",
@@ -82,6 +82,17 @@ def client():
 
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_current_user] = lambda: user
+
+    # Stub the Horizon verifier so API tests don't touch the network.
+    from app.api import reports as reports_module
+    from app.services import stellar_verify as sv
+
+    monkeypatch.setattr(
+        reports_module,
+        "verify_attest_transaction",
+        lambda *args, **kwargs: {"ledger": 1, "verified_via": "stub"},
+    )
+
     with TestClient(app) as test_client:
         # The authoritative hash for this stored row:
         VALID_BODY["reportHash"] = test_client.get("/api/reports/1/attestation-message").json()["hash"]
