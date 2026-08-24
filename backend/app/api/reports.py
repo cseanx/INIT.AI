@@ -4,9 +4,11 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import get_current_user
 from app.db.session import get_db
-from app.models import Barangay, Report, User
+from app.models import Barangay, Report, ReportAttestation, User
 from app.schemas.report import (
+    ReportAttestationCreate,
     ReportAttestationMessage,
+    ReportAttestationOut,
     ReportCreate,
     ReportOut,
     ReportUpdate,
@@ -58,6 +60,84 @@ def get_attestation_message(report_id: int, db: Session = Depends(get_db)) -> Re
         hash=attestation_hash(report),
         canonical_payload=canonical_json(report),
     )
+
+
+@router.get("/{report_id}/attestation", response_model=list[ReportAttestationOut])
+def list_attestations(report_id: int, db: Session = Depends(get_db)) -> list[ReportAttestation]:
+    _get_report(db, report_id)  # 404 guard
+    statement = (
+        select(ReportAttestation)
+        .where(ReportAttestation.report_id == report_id)
+        .order_by(ReportAttestation.created_at.desc())
+    )
+    return list(db.scalars(statement))
+
+
+@router.post(
+    "/{report_id}/attestation",
+    response_model=ReportAttestationOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def record_attestation(
+    report_id: int,
+    body: ReportAttestationCreate,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+) -> ReportAttestation:
+    """Persist an on-chain attestation after a confirmed Soroban invocation.
+
+    The submitted hash is checked against the server-authoritative content
+    hash — a mismatch (report edited after signing) is rejected with 409.
+    Re-submitting the same hash is an idempotent update; a new hash (report
+    was edited and re-attested) starts a new proof row.
+    """
+    report = _get_report(db, report_id)
+
+    expected = attestation_hash(report)
+    if body.report_hash != expected:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Report hash mismatch — the stored report content differs from "
+                f"what was signed. Expected {expected}. Re-open the report to "
+                "attest its current form."
+            ),
+        )
+
+    existing = db.scalar(
+        select(ReportAttestation).where(ReportAttestation.stellar_hash == body.report_hash)
+    )
+    if existing is not None:
+        if existing.report_id != report.id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This report hash is already attested under a different report.",
+            )
+        # Idempotent re-submit: refresh chain pointers/metadata.
+        existing.tx_hash = body.tx_hash
+        existing.contract_id = body.contract_id
+        existing.network = body.network
+        existing.wallet = body.wallet
+        existing.status = "confirmed"
+        existing.meta = body.meta
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    record = ReportAttestation(
+        report_id=report.id,
+        stellar_hash=body.report_hash,
+        tx_hash=body.tx_hash,
+        contract_id=body.contract_id,
+        network=body.network,
+        wallet=body.wallet,
+        status="confirmed",
+        meta=body.meta,
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
 
 
 @router.post("", response_model=ReportOut, status_code=status.HTTP_201_CREATED)

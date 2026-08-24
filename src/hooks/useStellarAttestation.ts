@@ -107,7 +107,8 @@ export function useStellarAttestation(): UseStellarAttestation {
                 setResult(res);
                 return res;
             } catch (err) {
-                setError(err instanceof Error ? err.message : String(err));
+                const { normalizeWalletError } = await import('../services/stellar/wallet');
+                setError(normalizeWalletError(err).message);
                 setPhase('idle');
                 return null;
             }

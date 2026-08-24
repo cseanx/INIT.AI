@@ -44,6 +44,39 @@ export interface StellarWalletState {
     connecting: boolean;
 }
 
+/** Off-chain persisted attestation record (from FastAPI). */
+export interface ReportAttestationRecord {
+    id: number;
+    reportId: number;
+    /** SHA-256 hex of the canonical payload at attestation time. */
+    stellarHash: string;
+    txHash: string;
+    contractId: string;
+    network: string;
+    wallet: string;
+    status: string;
+    meta: Record<string, unknown> | null;
+    lastVerifiedAt: string | null;
+    createdAt: string;
+}
+
+/** Body for POST /api/reports/{id}/attestation. */
+export interface RecordAttestationBody {
+    reportHash: string;
+    txHash: string;
+    contractId: string;
+    network: string;
+    wallet: string;
+    meta?: Record<string, unknown>;
+}
+
+/** Server-authoritative hash message (GET …/attestation-message). */
+export interface AttestationMessage {
+    reportId: string;
+    hash: string;
+    canonicalPayload: string;
+}
+
 /** Explorer base for Testnet transactions. */
 export const TESTNET_EXPLORER_TX_BASE = 'https://stellar.expert/explorer/testnet/tx/';
 

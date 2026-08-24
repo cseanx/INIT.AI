@@ -110,17 +110,55 @@ export async function signTransaction(xdr: string, address: string): Promise<str
 
 /* ---------- internals ---------- */
 
+
+/** Kit/wallet rejections arrive as Error, string, OR plain objects
+ *  ({code, message, ext}) — flatten them into one human sentence. */
 export function normalizeWalletError(err: unknown): Error {
-    const raw = err instanceof Error ? err.message : String(err);
+    let raw: string;
+    if (err instanceof Error) raw = err.message;
+    else if (typeof err === 'string') raw = err;
+    else if (err && typeof err === 'object') {
+        const candidate = err as { message?: unknown };
+        raw =
+            typeof candidate.message === 'string'
+                ? candidate.message
+                : (() => {
+                      try {
+                          return JSON.stringify(err);
+                      } catch {
+                          return String(err);
+                      }
+                  })();
+    } else {
+        raw = String(err);
+    }
+
     const msg = raw.toLowerCase();
-    if (msg.includes('declined') || msg.includes('rejected') || msg.includes('denied')) {
+    if (
+        msg.includes('declined') ||
+        msg.includes('rejected') ||
+        msg.includes('denied') ||
+        msg.includes('cancelled') ||
+        msg.includes('canceled')
+    ) {
         return new Error('The signature request was declined in your wallet.');
     }
-    if (msg.includes('not installed') || msg.includes('no wallet') || msg.includes('extension')) {
-        return new Error('The Freighter browser extension is not installed or is locked.');
+    if (
+        msg.includes('not installed') ||
+        msg.includes('no wallet') ||
+        msg.includes('extension') ||
+        msg.includes('unavailable') ||
+        msg.includes('not available') ||
+        msg.includes('locked') ||
+        msg.includes('not found') ||
+        msg.includes('no address')
+    ) {
+        return new Error(
+            'The Freighter browser extension is not installed, locked, or unavailable in this browser.',
+        );
     }
-    if (msg.includes('passphrase') || msg.includes('network')) {
+    if (msg.includes('passphrase') || msg.includes('wrong network') || msg.includes('network')) {
         return new Error('Wallet network mismatch — switch Freighter to Testnet.');
     }
-    return err instanceof Error ? err : new Error(raw);
+    return new Error(raw);
 }

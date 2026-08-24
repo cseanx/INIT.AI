@@ -6,6 +6,7 @@ from app.models.login_attempt import LoginAttempt
 from app.models.mitigation import MitigationProject
 from app.models.preference import UserPreference
 from app.models.report import Report
+from app.models.report_attestation import ReportAttestation
 from app.models.session import UserSession
 from app.models.user import User
 
@@ -17,6 +18,7 @@ __all__ = [
     "LoginAttempt",
     "MitigationProject",
     "Report",
+    "ReportAttestation",
     "User",
     "UserPreference",
     "UserSession",

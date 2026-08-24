@@ -196,6 +196,42 @@ contracts/soroban/
 └── tests/            # reserved for cross-crate/integration tests
 ```
 
+## Database persistence (Phase 6)
+
+Attestations are stored off-chain in PostgreSQL (`report_attestations`
+table — migration 0008; never duplicated report content):
+
+| Column | Notes |
+|---|---|
+| `report_id` | FK → reports.id (CASCADE), indexed |
+| `stellar_hash` | 64-hex SHA-256, **unique** per proof |
+| `tx_hash` | 64-char Stellar tx hash |
+| `contract_id` | Soroban contract id (C…) |
+| `network` | `testnet` (policy-enforced) |
+| `wallet` | submitting account (G…) |
+| `status` | pending / confirmed / failed / verified |
+| `meta`, `last_verified_at`, `created_at` | verification metadata |
+
+APIs:
+
+```
+GET  /api/reports/{id}/attestation-message   → server hash + canonical payload
+GET  /api/reports/{id}/attestation           → proof history for one report (public)
+POST /api/reports/{id}/attestation           → persist after confirmation
+     body { reportHash, txHash, contractId, network, wallet, meta? }
+     · auth required
+     · 409 when reportHash ≠ server-computed hash (report edited after signing)
+     · idempotent: same hash updates pointers instead of duplicating
+
+GET  /api/stellar/attestation/{report_hash}  → public proof lookup by hash
+     → { stellarHash, txHash, contractId, network, wallet, status,
+         createdAt, reportId, reportTitle, matchesCurrentContent }
+     · 404 when unknown; matchesCurrentContent=false ⇒ report edited since
+```
+
+Live record: report #7 is attested on Testnet — hash `923ab672…507a4`,
+tx `431266e6…40b89`, ledger 4309716.
+
 ## Report hashing (Phase 5) — server-authoritative
 
 The hash that goes on-chain is computed **by FastAPI from the stored
@@ -266,6 +302,24 @@ Implementation notes:
 - Errors are humanized in one place (`normalizeWalletError`): declined
   signature, missing/locked extension, network mismatch, unfunded account.
 
+## Verification (Phase 9)
+
+`useStellarVerification(reportHash)` asks the Soroban contract directly
+(free simulated read — no wallet needed) and reduces the answer to three
+non-technical outcomes rendered inside the report panel:
+
+| Outcome | User sees |
+|---|---|
+| `valid` | ✓ "Confirmed on the Stellar Testnet blockchain — this exact report form is permanently recorded." |
+| `none` | "This report version has not been recorded on Stellar yet." |
+| `error` | "We couldn't reach the Stellar network just now." + Try again |
+
+Implementation notes:
+- Read calls use a fixed throwaway G-account as simulation source — contract
+  IDs (`C…`) are not valid `Account` ids.
+- SDK v17 exposes simulation output as singular `result.retval`.
+- An unknown hash parses to `null` → mapped to `none`, never an error.
+
 ## Integration checklist (for Phases 3–4)
 
 - [x] **Deployed to Testnet** — contract id
@@ -277,8 +331,15 @@ Implementation notes:
 - [x] Frontend layer: `services/stellar/*` + `hooks/useStellar*` (flag-gated, lazy-loaded)
 - [x] Backend hashing service + `GET /api/reports/{id}/attestation-message`
       (server-authoritative hash, tested)
-- [ ] Backend columns: `stellar_hash`, `stellar_tx_hash`, `stellar_wallet`,
-      `stellar_attested_at` on `reports` (+ migration 0008 / ensure.py sync)
+- [x] Backend columns/table: `report_attestations` (migration 0008, live on Neon)
+- [x] Persistence APIs: `POST/GET /api/reports/{id}/attestation` (tested, live)
+- [x] Public lookup: `GET /api/stellar/attestation/{hash}` with
+      `matchesCurrentContent` integrity flag (tested, live)
+- [x] Reports UI: "Verify on Stellar" button + "✓ Verified on Stellar"
+      card in ReportEditor (`StellarVerifyPanel.tsx`) with all flow states,
+      explorer links, and graceful failure handling (browser-tested)
+- [x] Verification tri-state (valid / none / error) straight from the
+      contract, with plain-language wording + manual retry
 - [ ] Hash source: `buildReportPayload()` output serialized canonically
       (sorted keys, no volatile fields), hashed with WebCrypto SHA-256
 - [ ] UI: Verify button states idle → connecting → signing → submitting →

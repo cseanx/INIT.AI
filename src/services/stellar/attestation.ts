@@ -146,12 +146,15 @@ export async function fetchChainAttestation(
         await import('@stellar/stellar-sdk');
     const server = await getServer();
 
-    // Simulated reads don't submit, but the builder needs a plausible account.
+    // Simulated reads don't submit, but the builder needs a plausible
+    // account. Contract ids are NOT valid Account ids — use a fixed
+    // throwaway G-account; the sequence number is irrelevant for simulation.
+    const READ_ONLY_SOURCE_ID = 'GAVQ7SYP6ZTGDASVMOVA3SNO2IAJIJYH6F6BOFWX465CPMQ4GVIO43LS';
     let source;
     try {
-        source = await server.getAccount(readerAddress ?? CONTRACT_ID);
+        source = await server.getAccount(readerAddress ?? READ_ONLY_SOURCE_ID);
     } catch {
-        source = new Account(CONTRACT_ID, '0');
+        source = new Account(READ_ONLY_SOURCE_ID, '0');
     }
 
     const contract = new Contract(CONTRACT_ID);
@@ -164,10 +167,12 @@ export async function fetchChainAttestation(
         .build();
 
     const sim = await server.simulateTransaction(tx);
-    const simSuccess = sim as typeof sim & {
+    // SDK v17 exposes a singular `result`; older shapes used results[].
+    const simAny = sim as typeof sim & {
+        result?: { retval?: import('@stellar/stellar-sdk').xdr.ScVal };
         results?: { retval?: import('@stellar/stellar-sdk').xdr.ScVal }[];
     };
-    const retval = simSuccess.results?.[0]?.retval;
+    const retval = simAny.result?.retval ?? simAny.results?.[0]?.retval;
     if (!retval) return null;
 
     const native = scValToNative(retval) as {

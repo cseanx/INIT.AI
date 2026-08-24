@@ -4,6 +4,7 @@ import Page from '../components/layout/Page';
 import Card from '../components/common/Card';
 import PanelHead from '../components/common/PanelHead';
 import Toast, { type ToastMessage } from '../components/common/Toast';
+import StellarVerifyPanel from '../components/reports/StellarVerifyPanel';
 import { useApiData } from '../hooks/useApiData';
 import { api } from '../services/api';
 import { discardLocalReport, loadCurrentReport, loadStoredReports } from '../reports/reportService';
@@ -333,6 +334,9 @@ export default function ReportEditor() {
                         <Stat label="Active Mitigation" value={report.mitigationProjects != null ? `${report.mitigationProjects}` : '—'} icon="fa-seedling" />
                     </div>
                 </div>
+
+                {/* Stellar attestation — saved reports only */}
+                {isRemote ? <StellarVerifyPanel report={report} /> : null}
 
                 {/* Sections */}
                 <div className="flex flex-col gap-4">

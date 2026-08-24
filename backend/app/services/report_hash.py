@@ -14,14 +14,20 @@ timestamps are deliberately excluded — the proof covers report CONTENT only.
 
 import hashlib
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from app.models.report import Report
 
 
 def _iso(value: datetime | None) -> str | None:
-    return value.isoformat() if value else None
+    """Stable ISO string: naive datetimes are interpreted as UTC, everything
+    is normalized to UTC — immune to driver/DB tz round-trip quirks."""
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc).isoformat()
 
 
 def _num(value: float | int | None) -> float | int | None:

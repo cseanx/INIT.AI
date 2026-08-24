@@ -9,6 +9,11 @@ import type {
     ReportPayload,
     UserPreferences,
 } from '../types';
+import type {
+    AttestationMessage,
+    RecordAttestationBody,
+    ReportAttestationRecord,
+} from '../types/stellar';
 import {
     barangays,
     canopySnapshot,
@@ -245,6 +250,29 @@ getReports: async (): Promise<Report[]> => {
             ),
         remove: (id: number): Promise<void> =>
             authFetch<void>(`/api/reports/${id}`, { method: 'DELETE' }),
+
+        /** Server-authoritative hash + canonical payload for attestation. */
+        attestationMessage: (id: number | string): Promise<AttestationMessage> =>
+            authFetch<AttestationMessage>(`/api/reports/${id}/attestation-message`),
+
+        /** Persisted proof history (public). */
+        listAttestations: (id: number | string): Promise<ReportAttestationRecord[]> =>
+            authFetch<unknown>(`/api/reports/${id}/attestation`).then((data) =>
+                Array.isArray(data) &&
+                data.every((r) => typeof r?.stellarHash === 'string' && typeof r?.txHash === 'string')
+                    ? (data as ReportAttestationRecord[])
+                    : [],
+            ),
+
+        /** Store a confirmed on-chain attestation (auth required; 409 on stale hash). */
+        recordAttestation: async (
+            id: number | string,
+            body: RecordAttestationBody,
+        ): Promise<ReportAttestationRecord> =>
+            authFetch<ReportAttestationRecord>(`/api/reports/${id}/attestation`, {
+                method: 'POST',
+                body: JSON.stringify(body),
+            }),
     },
 
     auth: {

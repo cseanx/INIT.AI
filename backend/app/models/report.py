@@ -56,6 +56,9 @@ class Report(Base):
     )
 
     barangay: Mapped["Barangay | None"] = relationship(back_populates="reports")  # type: ignore[name-defined]
+    attestations: Mapped[list["ReportAttestation"]] = relationship(  # type: ignore[name-defined]
+        back_populates="report", cascade="all, delete-orphan"
+    )
 
     @property
     def barangay_name(self) -> str | None:

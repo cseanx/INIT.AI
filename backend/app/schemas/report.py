@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, model_validator
+import re
+
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 from pydantic.alias_generators import to_camel
 
 
@@ -54,6 +56,71 @@ class ReportAttestationMessage(BaseModel):
     report_id: str
     hash: str
     canonical_payload: str
+
+
+class ReportAttestationCreate(BaseModel):
+    """Payload the frontend sends after a confirmed Soroban invocation."""
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    report_hash: str
+    tx_hash: str
+    contract_id: str
+    network: str = "testnet"
+    wallet: str
+    meta: dict | None = None
+
+    @field_validator("report_hash")
+    @classmethod
+    def _hash_shape(cls, value: str) -> str:
+        if not re.fullmatch(r"[0-9a-f]{64}", value):
+            raise ValueError("reportHash must be 64 lowercase hex characters (SHA-256).")
+        return value
+
+    @field_validator("tx_hash")
+    @classmethod
+    def _tx_shape(cls, value: str) -> str:
+        if not re.fullmatch(r"[0-9a-fA-F]{64}", value):
+            raise ValueError("txHash must be a 64-character Stellar transaction hash.")
+        return value.lower()
+
+    @field_validator("contract_id")
+    @classmethod
+    def _contract_shape(cls, value: str) -> str:
+        if not re.fullmatch(r"C[A-Z2-7]{55}", value):
+            raise ValueError("contractId must be a 56-character Soroban contract id (C…).")
+        return value
+
+    @field_validator("wallet")
+    @classmethod
+    def _wallet_shape(cls, value: str) -> str:
+        if not re.fullmatch(r"G[A-Z2-7]{55}", value):
+            raise ValueError("wallet must be a 56-character Stellar account id (G…).")
+        return value
+
+    @field_validator("network")
+    @classmethod
+    def _testnet_only(cls, value: str) -> str:
+        # INIT.AI attestations are Testnet-only by policy.
+        if value != "testnet":
+            raise ValueError("Only the 'testnet' network is supported.")
+        return value
+
+
+class ReportAttestationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True, alias_generator=to_camel, populate_by_name=True)
+
+    id: int
+    report_id: int
+    stellar_hash: str
+    tx_hash: str
+    contract_id: str
+    network: str
+    wallet: str
+    status: str
+    meta: dict | None = None
+    last_verified_at: datetime | None = None
+    created_at: datetime
 
 
 class ReportUpdate(BaseModel):
