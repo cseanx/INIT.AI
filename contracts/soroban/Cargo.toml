@@ -1,0 +1,29 @@
+[package]
+name = "initai-spatial-attestation"
+version = "0.1.0"
+edition = "2021"
+description = "SpatialAttestationRegistry - tamper-evident INIT.AI report attestations on Stellar (Soroban)"
+license = "MIT"
+publish = false
+
+[lib]
+# cdylib produces the deployable WASM; rlib lets the tests/ crate link it.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+soroban-sdk = "27"
+
+[dev-dependencies]
+soroban-sdk = { version = "27", features = ["testutils"] }
+
+[features]
+testutils = ["soroban-sdk/testutils"]
+
+# Compile the deployable WASM for the current Soroban target:
+#   stellar contract build
+#   (or: cargo build --target wasm32v1-none --release)
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+lto = true
