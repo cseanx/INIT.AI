@@ -81,6 +81,13 @@ export default function ReportsTable({ reports }: { reports: Report[] }) {
                                     <div className="flex items-center gap-[6px]">
                                         <button
                                             className={ACTION_BTN_CLASSES}
+                                            title="View report"
+                                            onClick={() => navigate(`/report/edit?id=${r.id}&mode=view`)}
+                                        >
+                                            <i className="fa-solid fa-eye"></i>
+                                        </button>
+                                        <button
+                                            className={ACTION_BTN_CLASSES}
                                             title="Edit report"
                                             onClick={() => navigate(`/report/edit?id=${r.id}`)}
                                         >

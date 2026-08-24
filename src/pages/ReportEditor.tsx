@@ -53,6 +53,8 @@ export default function ReportEditor() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const idParam = searchParams.get('id');
+    // Read-only mode: /report/edit?id=X&mode=view hides save/delete controls.
+    const viewMode = searchParams.get('mode') === 'view';
     const hotspots = useApiData(api.getHotspots);
     const [report, setReport] = useState<Report | null | undefined>(undefined);
     const [recommendations, setRecommendations] = useState('');
@@ -219,15 +221,36 @@ export default function ReportEditor() {
         <Page>
             <Card>
                 <PanelHead
-                    title="Report Editor"
+                    title={viewMode ? 'Report Viewer' : 'Report Editor'}
                     actions={
-                        <button
-                            type="button"
-                            onClick={() => navigate('/reports')}
-                            className={SECONDARY_BTN_CLASSES}
-                        >
-                            <i className="fa-solid fa-arrow-left text-[12px]"></i> Back to Reports
-                        </button>
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => navigate('/reports')}
+                                className={SECONDARY_BTN_CLASSES}
+                            >
+                                <i className="fa-solid fa-arrow-left text-[12px]"></i> Back to Reports
+                            </button>
+                            {!viewMode ? (
+                                <button
+                                    type="button"
+                                    onClick={() => navigate(`/report/edit?id=${report.id}&mode=view`)}
+                                    className={SECONDARY_BTN_CLASSES}
+                                    title="View read-only"
+                                >
+                                    <i className="fa-solid fa-eye text-[12px]"></i> View
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => navigate(`/report/edit?id=${report.id}`)}
+                                    className={SECONDARY_BTN_CLASSES}
+                                    title="Edit this report"
+                                >
+                                    <i className="fa-solid fa-pen text-[12px]"></i> Edit
+                                </button>
+                            )}
+                        </>
                     }
                 />
 
@@ -270,15 +293,17 @@ export default function ReportEditor() {
                             </div>
                         </div>
                         <div className="flex items-center gap-[8px]">
-                            <button
-                                type="button"
-                                onClick={handleSave}
-                                disabled={saving}
-                                className={SECONDARY_BTN_CLASSES}
-                            >
-                                <i className={`fa-solid ${saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'} text-[12px]`}></i>
-                                {saving ? 'Saving…' : isRemote ? 'Save' : 'Save to Database'}
-                            </button>
+                            {!viewMode ? (
+                                <button
+                                    type="button"
+                                    onClick={handleSave}
+                                    disabled={saving}
+                                    className={SECONDARY_BTN_CLASSES}
+                                >
+                                    <i className={`fa-solid ${saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'} text-[12px]`}></i>
+                                    {saving ? 'Saving…' : isRemote ? 'Save' : 'Save to Database'}
+                                </button>
+                            ) : null}
                             <button
                                 type="button"
                                 onClick={() => window.print()}
@@ -286,15 +311,17 @@ export default function ReportEditor() {
                             >
                                 <i className="fa-solid fa-print text-[12px]"></i> Print / Export PDF
                             </button>
-                            <button
-                                type="button"
-                                onClick={handleDelete}
-                                disabled={deleting}
-                                className={confirmingDelete ? DELETE_CONFIRM_CLASSES : DELETE_BTN_CLASSES}
-                            >
-                                <i className={`fa-solid ${deleting ? 'fa-spinner fa-spin' : confirmingDelete ? 'fa-triangle-exclamation' : 'fa-trash-can'} text-[12px]`}></i>
-                                {deleting ? 'Deleting…' : confirmingDelete ? 'Confirm delete?' : 'Delete'}
-                            </button>
+                            {!viewMode ? (
+                                <button
+                                    type="button"
+                                    onClick={handleDelete}
+                                    disabled={deleting}
+                                    className={confirmingDelete ? DELETE_CONFIRM_CLASSES : DELETE_BTN_CLASSES}
+                                >
+                                    <i className={`fa-solid ${deleting ? 'fa-spinner fa-spin' : confirmingDelete ? 'fa-triangle-exclamation' : 'fa-trash-can'} text-[12px]`}></i>
+                                    {deleting ? 'Deleting…' : confirmingDelete ? 'Confirm delete?' : 'Delete'}
+                                </button>
+                            ) : null}
                         </div>
                     </div>
 
@@ -381,8 +408,9 @@ export default function ReportEditor() {
                                     <textarea
                                         rows={5}
                                         value={recommendations}
+                                        readOnly={viewMode}
                                         onChange={(e) => setRecommendations(e.target.value)}
-                                        className="w-full resize-y rounded-[14px] border border-white/10 bg-white/[.04] p-[13px_16px] text-[13px] leading-relaxed text-white outline-none transition duration-200 focus:border-primary focus:shadow-[0_0_0_3px_rgba(var(--accent-glow),.15)]"
+                                        className={`w-full resize-y rounded-[14px] border border-white/10 bg-white/[.04] p-[13px_16px] text-[13px] leading-relaxed text-white outline-none transition duration-200 focus:border-primary focus:shadow-[0_0_0_3px_rgba(var(--accent-glow),.15)] ${viewMode ? 'cursor-default opacity-90' : ''}`}
                                     />
                                 </SectionBlock>
                             );
