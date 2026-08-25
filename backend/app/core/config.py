@@ -29,6 +29,14 @@ class Settings(BaseSettings):
     login_window_seconds: int = 900
     login_lockout_seconds: int = 30
 
+    # Stellar attestation verification (Testnet only by policy).
+    # The backend pins the expected contract id: client-submitted contract
+    # ids are ignored, so proofs can only be recorded against the contract
+    # THIS deployment trusts. Horizon is queried read-only; no keys here.
+    stellar_contract_id: str = "CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF"
+    stellar_horizon_base: str = "https://horizon-testnet.stellar.org"
+    stellar_network: str = "testnet"
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

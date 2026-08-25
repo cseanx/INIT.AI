@@ -334,6 +334,31 @@ Implementation notes:
 Verification metadata persisted per attestation:
 `meta = { source, horizon_ledger, verified_via: "horizon", verified_at }`.
 
+## Environment variables (Phase 11)
+
+**Frontend (`VITE_*` — public values only, never secrets):**
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `VITE_STELLAR_ENABLED` | Master switch for the integration | `false` |
+| `VITE_STELLAR_NETWORK` | Network policy — only `testnet` is supported | `testnet` |
+| `VITE_SOROBAN_CONTRACT_ID` | Deployed contract id (SOW name) | — |
+| `VITE_STELLAR_CONTRACT_ID` | Legacy alias for the same value | — |
+| `VITE_STELLAR_RPC_URL` | Soroban RPC endpoint | `https://soroban-testnet.stellar.org` |
+| `VITE_STELLAR_HORIZON_URL` | Horizon REST endpoint | `https://horizon-testnet.stellar.org` |
+
+**Backend (FastAPI settings — verification is pinned server-side):**
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `STELLAR_CONTRACT_ID` | The contract THIS deployment trusts; client-submitted ids are only cross-checked against it | deployed Testnet contract id |
+| `STELLAR_HORIZON_BASE` | Horizon base URL for read-only transaction verification | `https://horizon-testnet.stellar.org` |
+| `STELLAR_NETWORK` | Policy network | `testnet` |
+
+No private keys, seed phrases, or signing material exist in any environment
+variable — signing happens exclusively in the user's Freighter extension.
+See `.env.example` (frontend) and `backend/.env.example` for annotated copies.
+
 ## Integration checklist (for Phases 3–4)
 
 - [x] **Deployed to Testnet** — contract id

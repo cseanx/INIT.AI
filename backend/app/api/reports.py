@@ -1,10 +1,11 @@
-from datetime import datetime, timezone
+﻿from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import get_current_user
+from app.core.config import settings
 from app.db.session import get_db
 from app.models import Barangay, Report, ReportAttestation, User
 from app.schemas.report import (
@@ -93,7 +94,7 @@ def record_attestation(
     """Persist an on-chain attestation after a confirmed Soroban invocation.
 
     The submitted hash is checked against the server-authoritative content
-    hash — a mismatch (report edited after signing) is rejected with 409.
+    hash â€” a mismatch (report edited after signing) is rejected with 409.
     Re-submitting the same hash is an idempotent update; a new hash (report
     was edited and re-attested) starts a new proof row.
     """
@@ -104,7 +105,7 @@ def record_attestation(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
-                "Report hash mismatch — the stored report content differs from "
+                "Report hash mismatch â€” the stored report content differs from "
                 f"what was signed. Expected {expected}. Re-open the report to "
                 "attest its current form."
             ),
@@ -112,13 +113,24 @@ def record_attestation(
 
     # Trust nothing: confirm on Testnet that this exact transaction exists,
     # succeeded, and invoked attest() with this wallet, hash and report ref.
+    # The contract id is pinned to THIS deployment's configured value â€” the
+    # client-supplied id is only cross-checked for a clear error message.
+    if body.contract_id != settings.stellar_contract_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                "Unknown contract id â€” this deployment verifies attestations "
+                f"against {settings.stellar_contract_id}."
+            ),
+        )
     try:
         horizon_meta = verify_attest_transaction(
             body.tx_hash,
-            expected_contract_id=body.contract_id,
+            expected_contract_id=settings.stellar_contract_id,
             expected_hash_hex=body.report_hash,
             expected_report_ref=str(report.id),
             expected_wallet=body.wallet,
+            horizon_base=settings.stellar_horizon_base,
         )
     except TransactionVerificationError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
@@ -136,7 +148,7 @@ def record_attestation(
             )
         # Idempotent re-submit: refresh chain pointers/metadata.
         existing.tx_hash = body.tx_hash
-        existing.contract_id = body.contract_id
+        existing.contract_id = settings.stellar_contract_id
         existing.network = body.network
         existing.wallet = body.wallet
         existing.status = "confirmed"
@@ -150,7 +162,7 @@ def record_attestation(
         report_id=report.id,
         stellar_hash=body.report_hash,
         tx_hash=body.tx_hash,
-        contract_id=body.contract_id,
+        contract_id=settings.stellar_contract_id,
         network=body.network,
         wallet=body.wallet,
         status="confirmed",

@@ -35,7 +35,7 @@ def fake_horizon(monkeypatch, successful=True, include_params=True):
     ops = {"_embedded": {"records": [{"type": "invoke_host_function", "parameters": parameters}]}}
     calls = []
 
-    def fake_get(path_or_url):
+    def fake_get(path_or_url, horizon_base=sv.HORIZON_BASE):
         calls.append(path_or_url)
         if path_or_url.startswith("/transactions/") and "/operations" not in path_or_url:
             return tx
@@ -76,7 +76,7 @@ def test_missing_params_rejected(monkeypatch):
 
 
 def test_unknown_tx_rejected(monkeypatch):
-    def fake_get(path_or_url):
+    def fake_get(path_or_url, horizon_base=sv.HORIZON_BASE):
         if path_or_url.startswith("/transactions/"):
             raise sv.TransactionVerificationError("Transaction not found on Stellar Testnet.")
         return {}

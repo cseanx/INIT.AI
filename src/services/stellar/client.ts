@@ -8,15 +8,38 @@
 
 const env = import.meta.env;
 
-/** Master switch: requires both the flag and a deployed contract id. */
+/** SOW name first, legacy name second. */
+const CONTRACT_ID_RAW: string =
+    (env.VITE_SOROBAN_CONTRACT_ID as string | undefined) ??
+    (env.VITE_STELLAR_CONTRACT_ID as string | undefined) ??
+    '';
+
+/**
+ * Network policy: INIT.AI attestations are Testnet-only. The network name is
+ * configurable for tooling, but anything other than "testnet" disables the
+ * integration entirely.
+ */
+export const STELLAR_NETWORK: string = (env.VITE_STELLAR_NETWORK as string | undefined) ?? 'testnet';
+
+/** Master switch: requires the flag, a contract id, AND the testnet policy. */
 export const STELLAR_ENABLED: boolean =
-    env.VITE_STELLAR_ENABLED === 'true' && typeof env.VITE_STELLAR_CONTRACT_ID === 'string' && env.VITE_STELLAR_CONTRACT_ID.length > 0;
+    env.VITE_STELLAR_ENABLED === 'true' &&
+    STELLAR_NETWORK === 'testnet' &&
+    CONTRACT_ID_RAW.length > 0;
 
-export const CONTRACT_ID: string = (env.VITE_STELLAR_CONTRACT_ID as string | undefined) ?? '';
+export const CONTRACT_ID: string = CONTRACT_ID_RAW;
 
-/** Testnet only — INIT.AI never touches Mainnet. */
+/** Soroban RPC endpoint (Testnet default). */
+export const RPC_URL: string =
+    (env.VITE_STELLAR_RPC_URL as string | undefined) ?? 'https://soroban-testnet.stellar.org';
+
+/** Horizon REST endpoint (Testnet default) — used by explorer links and any
+ *  client-side transaction lookups. */
+export const HORIZON_URL: string =
+    (env.VITE_STELLAR_HORIZON_URL as string | undefined) ?? 'https://horizon-testnet.stellar.org';
+
+/** Testnet-only network passphrase. */
 export const NETWORK_PASSPHRASE = 'Test SDF Network ; September 2015';
-export const RPC_URL = 'https://soroban-testnet.stellar.org';
 
 /** Thrown when Stellar code is invoked while the integration is disabled. */
 export class StellarDisabledError extends Error {

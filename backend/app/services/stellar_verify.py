@@ -1,7 +1,7 @@
-"""Server-side verification of a claimed Soroban invocation.
+﻿"""Server-side verification of a claimed Soroban invocation.
 
 Before INIT.AI stores an attestation, the backend checks the Stellar Testnet
-(Horizon REST — stdlib only, no extra dependencies) and confirms that the
+(Horizon REST â€” stdlib only, no extra dependencies) and confirms that the
 submitted transaction:
 
     1. exists and succeeded,
@@ -10,7 +10,7 @@ submitted transaction:
     4. carries exactly the claimed report hash and report reference.
 
 This makes it impossible to fabricate a transaction hash or claim someone
-else's proof. Private keys never pass through here — read-only checks.
+else's proof. Private keys never pass through here â€” read-only checks.
 """
 
 import base64
@@ -33,8 +33,8 @@ class TransactionVerificationError(Exception):
     """Raised when a claimed transaction cannot be verified on Testnet."""
 
 
-def _horizon_get(path_or_url: str) -> dict:
-    url = path_or_url if path_or_url.startswith("http") else f"{HORIZON_BASE}{path_or_url}"
+def _horizon_get(path_or_url: str, horizon_base: str = HORIZON_BASE) -> dict:
+    url = path_or_url if path_or_url.startswith("http") else f"{horizon_base}{path_or_url}"
     request = urllib.request.Request(url, headers={"Accept": "application/json"})
     try:
         with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_S) as response:
@@ -72,7 +72,7 @@ def scv_symbol_b64(text: str) -> str:
 
 
 def strkey_to_ed25519(account_id: str) -> bytes:
-    """Decode a Stellar strkey (G… account or C… contract) to its 32-byte key.
+    """Decode a Stellar strkey (Gâ€¦ account or Câ€¦ contract) to its 32-byte key.
     CRC is ignored; version byte accepted: 48 = ed25519 account, 16 = contract."""
     raw = base64.b32decode(account_id + "=" * ((8 - len(account_id) % 8) % 8))
     if raw[0] not in (6 << 3, 2 << 3):
@@ -93,13 +93,14 @@ def verify_attest_transaction(
     expected_hash_hex: str,
     expected_report_ref: str,
     expected_wallet: str,
+    horizon_base: str = HORIZON_BASE,
 ) -> dict:
     """Validate the claimed transaction against Horizon Testnet.
 
     Returns metadata ({ledger, verified_via}) on success; raises
     TransactionVerificationError with a user-facing reason otherwise.
     """
-    tx = _horizon_get(f"/transactions/{tx_hash}")
+    tx = _horizon_get(f"/transactions/{tx_hash}", horizon_base)
     if not tx.get("successful"):
         raise TransactionVerificationError("That transaction failed on-chain.")
 

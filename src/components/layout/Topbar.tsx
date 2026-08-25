@@ -1,8 +1,69 @@
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { metaFor } from '../../routes';
 import { useClock } from '../../hooks/useClock';
 import CitySelector from '../common/CitySelector';
 import { useBentoFx } from '../common/BentoCard';
+
+/**
+ * Collapsing search: a compact icon button that smoothly expands into the
+ * full search field when clicked. Collapses again on outside click or
+ * Escape; typed text is preserved while hidden.
+ */
+function SearchBar() {
+    const [open, setOpen] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const rootRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (open) inputRef.current?.focus();
+    }, [open]);
+
+    useEffect(() => {
+        function onDocumentClick(e: MouseEvent) {
+            if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
+        }
+        function onKeyDown(e: KeyboardEvent) {
+            if (e.key === 'Escape') setOpen(false);
+        }
+        document.addEventListener('click', onDocumentClick);
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('click', onDocumentClick);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    }, []);
+
+    return (
+        <div
+            ref={rootRef}
+            role="search"
+            className={`search flex h-[46px] items-center gap-3 overflow-hidden rounded-[16px] border border-white/5 bg-white/5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                open
+                    ? 'w-[280px] cursor-text px-[18px]'
+                    : 'w-[46px] cursor-pointer justify-center hover:bg-white/8'
+            }`}
+            onClick={() => {
+                setOpen(true);
+                inputRef.current?.focus();
+            }}
+        >
+            <i className="fa-solid fa-magnifying-glass shrink-0"></i>
+            <input
+                ref={inputRef}
+                type="text"
+                placeholder="Search barangay, report..."
+                aria-label="Search barangay, report"
+                tabIndex={open ? 0 : -1}
+                className={`border-none bg-transparent text-white outline-none transition-opacity duration-200 ${
+                    open ? 'w-full opacity-100' : 'w-0 opacity-0'
+                }`}
+            />
+        </div>
+    );
+}
 
 export default function Topbar() {
     const { pathname } = useLocation();
@@ -26,14 +87,7 @@ export default function Topbar() {
             </div>
 
             <div className="topbar-right flex items-center gap-[25px]">
-                <div className="search flex w-[280px] items-center gap-3 rounded-[16px] border border-white/5 bg-white/5 p-[14px_18px]">
-                    <i className="fa-solid fa-magnifying-glass"></i>
-                    <input
-                        type="text"
-                        placeholder="Search barangay, report..."
-                        className="w-full border-none bg-transparent text-white outline-none"
-                    />
-                </div>
+                <SearchBar />
 
                 <CitySelector />
 
