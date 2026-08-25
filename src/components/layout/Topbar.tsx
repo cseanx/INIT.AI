@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { metaFor } from '../../routes';
 import { useClock } from '../../hooks/useClock';
 import CitySelector from '../common/CitySelector';
+import StellarIndicator from './StellarIndicator';
 import { useBentoFx } from '../common/BentoCard';
 
 /**
@@ -99,6 +100,8 @@ export default function Topbar() {
                         {time}
                     </span>
                 </div>
+
+                <StellarIndicator />
             </div>
         </header>
     );

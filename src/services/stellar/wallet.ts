@@ -13,24 +13,37 @@ type Kit = typeof import('@creit.tech/stellar-wallets-kit');
 
 let kitLoaded = false;
 
-/** Load + initialize the kit exactly once (Freighter is the only module). */
+/** Load + initialize the kit exactly once with the supported wallet set.
+ *  Heavy modules (Trezor, Ledger, WalletConnect) are deliberately omitted. */
 async function getKit(): Promise<Kit> {
     requireStellarEnabled();
-    const [{ Networks, StellarWalletsKit }, { FreighterModule, FREIGHTER_ID }] =
-        await Promise.all([
-            import('@creit.tech/stellar-wallets-kit'),
-            import('@creit.tech/stellar-wallets-kit/modules/freighter'),
-        ]);
+    const [kit, freighter, albedo, xbull, rabet, lobstr, hana] = await Promise.all([
+        import('@creit.tech/stellar-wallets-kit'),
+        import('@creit.tech/stellar-wallets-kit/modules/freighter'),
+        import('@creit.tech/stellar-wallets-kit/modules/albedo'),
+        import('@creit.tech/stellar-wallets-kit/modules/xbull'),
+        import('@creit.tech/stellar-wallets-kit/modules/rabet'),
+        import('@creit.tech/stellar-wallets-kit/modules/lobstr'),
+        import('@creit.tech/stellar-wallets-kit/modules/hana'),
+    ]);
     if (!kitLoaded) {
-        StellarWalletsKit.init({
-            modules: [new FreighterModule()],
-            selectedWalletId: FREIGHTER_ID,
+        kit.StellarWalletsKit.init({
+            modules: [
+                new freighter.FreighterModule(),
+                new albedo.AlbedoModule(),
+                new xbull.xBullModule(),
+                new rabet.RabetModule(),
+                new lobstr.LobstrModule(),
+                new hana.HanaModule(),
+            ],
+            // Freighter is the primary/demo wallet — highlighted in the modal.
+            selectedWalletId: freighter.FREIGHTER_ID,
             // Kit-side network awareness: signatures are requested against Testnet.
-            network: Networks.TESTNET,
+            network: kit.Networks.TESTNET,
         });
         kitLoaded = true;
     }
-    return import('@creit.tech/stellar-wallets-kit');
+    return kit;
 }
 
 /** Address remembered from a previous connection (session continuity). */
@@ -42,18 +55,16 @@ export function getStoredAddress(): string | null {
     }
 }
 
-const FREIGHTER_MODULE_ID = 'freighter';
-
 /**
- * Ask Freighter for the user's public key. The extension opens its approval
- * popup on first use; rejects if the user declines or Freighter is missing.
+ * Open the StellarWalletsKit selection popup. After the user picks a wallet
+ * (Freighter, Albedo, xBull, Rabet, LOBSTR, Hana) the kit requests the
+ * public key from that wallet and returns it.
  */
 export async function connect(): Promise<string> {
     const kit = await getKit();
     const { StellarWalletsKit } = kit;
     try {
-        StellarWalletsKit.setWallet(FREIGHTER_MODULE_ID);
-        const { address } = await StellarWalletsKit.getAddress();
+        const { address } = await StellarWalletsKit.authModal();
         try {
             localStorage.setItem(STORE_KEY, address);
         } catch {

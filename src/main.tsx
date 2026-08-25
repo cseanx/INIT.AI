@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { PreferencesProvider } from './preferences/PreferencesContext';
+import { StellarWalletProvider } from './services/stellar/WalletContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import App from './App';
 import './input.css';
@@ -12,9 +13,11 @@ createRoot(document.getElementById('root')!).render(
         <BrowserRouter>
             <AuthProvider>
                 <PreferencesProvider>
-                    <ErrorBoundary>
-                        <App />
-                    </ErrorBoundary>
+                    <StellarWalletProvider>
+                        <ErrorBoundary>
+                            <App />
+                        </ErrorBoundary>
+                    </StellarWalletProvider>
                 </PreferencesProvider>
             </AuthProvider>
         </BrowserRouter>

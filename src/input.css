@@ -863,8 +863,27 @@ html[data-theme='light'] {
 [data-theme='light'] .account-menu .text-\[\#ddd\],
 [data-theme='light'] .city-menu .text-\[\#ddd\],
 [data-theme='light'] .menu-select-menu .text-\[\#ddd\],
-[data-theme='light'] .hotspot-filter-menu .text-\[\#ddd\] {
+[data-theme='light'] .hotspot-filter-menu .text-\[\#ddd\],
+[data-theme='light'] .wallet-menu .text-\[\#ddd\] {
     color: #33363d;
+}
+
+/* Wallet popover surface in light mode. */
+[data-theme='light'] .wallet-menu {
+    background-color: rgba(255, 255, 255, .98);
+    border-color: rgba(20, 25, 35, .14);
+    box-shadow: 0 16px 40px rgba(20, 25, 35, .18);
+}
+
+[data-theme='light'] .wallet-menu .text-\[\#888\],
+[data-theme='light'] .wallet-menu .text-\[\#777\] {
+    color: #5a5f69;
+}
+
+[data-theme='light'] .wallet-menu .border-white\/8,
+[data-theme='light'] .wallet-menu .bg-white\/\[\.04\] {
+    border-color: rgba(20, 25, 35, .12);
+    background: rgba(20, 25, 35, .04);
 }
 
 /* Native <select> option lists stay dark. */
