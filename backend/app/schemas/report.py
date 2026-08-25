@@ -190,6 +190,15 @@ class ReportOut(BaseModel):
     # date; `area` falls back to the legacy barangay for seeded rows.
     date: str = ""
 
+    # Stellar attestation summary (computed by the API, not stored on Report):
+    # total confirmed proofs for this report across all its versions.
+    attestation_count: int = 0
+    # True when the report's CURRENT content hash has a confirmed proof —
+    # i.e. what is shown right now is exactly what was attested on-chain.
+    attested_current: bool = False
+    # When that current-content proof was recorded (None if not attested).
+    attested_at: datetime | None = None
+
     @model_validator(mode="after")
     def fill_display_fields(self) -> "ReportOut":
         if not self.area:

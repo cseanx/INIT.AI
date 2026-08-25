@@ -96,6 +96,11 @@ function fromBackendReport(raw: unknown): Report {
         avgCanopy: asNum(pick('avgCanopy', 'avg_canopy')),
         mitigationProjects: asNum(pick('mitigationProjects', 'mitigation_projects')),
         generatedAt: asStr(pick('generatedAt', 'generated_at')),
+        // Attestation summary — absent on old deployments/local reports.
+        attestationCount: asNum(pick('attestationCount', 'attestation_count')) ?? undefined,
+        attestedCurrent:
+            (pick('attestedCurrent', 'attested_current') as boolean | undefined) ?? undefined,
+        attestedAt: asStr(pick('attestedAt', 'attested_at')),
     };
 }
 

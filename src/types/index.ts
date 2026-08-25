@@ -123,6 +123,15 @@ export interface Report {
     mitigationProjects: number | null;
 
     generatedAt?: string | null;
+
+    /** Stellar attestation summary — server-computed for saved reports;
+     *  absent/undefined for local-only reports and older deployments. */
+    /** Total confirmed on-chain proofs across all versions of this report. */
+    attestationCount?: number;
+    /** True when this report's CURRENT content hash is attested on-chain. */
+    attestedCurrent?: boolean;
+    /** When the current-content proof was recorded (ISO string). */
+    attestedAt?: string | null;
 }
 
 /** Payload sent to POST /api/reports — everything except the server id/date. */

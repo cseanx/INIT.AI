@@ -168,5 +168,51 @@ def test_idempotent_resubmit_updates_not_duplicates(client):
     assert len(rows) == 1
 
 
+def test_report_list_includes_attestation_summary(client):
+    tc, _ = client
+    # Before attesting: no proofs recorded for this report.
+    before = tc.get("/api/reports").json()[0]
+    assert before["attestationCount"] == 0
+    assert before["attestedCurrent"] is False
+    assert before["attestedAt"] is None
+
+    res = tc.post("/api/reports/1/attestation", json=VALID_BODY)
+    assert res.status_code == 201, res.text
+
+    after_list = tc.get("/api/reports").json()[0]
+    assert after_list["attestationCount"] == 1
+    assert after_list["attestedCurrent"] is True
+    assert after_list["attestedAt"]
+
+    single = tc.get("/api/reports/1").json()
+    assert single["attestedCurrent"] is True
+    assert single["attestationCount"] == 1
+
+
+def test_edited_report_reports_outdated_proof(client):
+    tc, db = client
+    res = tc.post("/api/reports/1/attestation", json=VALID_BODY)
+    assert res.status_code == 201
+
+    # Edit content → the existing proof no longer matches the current hash.
+    patch = {"recommendations": "Updated after proof."}
+    edited = tc.put("/api/reports/1", json=patch)
+    assert edited.status_code == 200
+    assert edited.json()["attestedCurrent"] is False
+    assert edited.json()["attestationCount"] == 1
+
+    listed = tc.get("/api/reports").json()[0]
+    assert listed["attestedCurrent"] is False
+    assert listed["attestationCount"] == 1
+
+    # Re-attesting the new content restores verified status.
+    message = tc.get("/api/reports/1/attestation-message").json()
+    body = {**VALID_BODY, "reportHash": message["hash"], "txHash": "e" * 64}
+    assert tc.post("/api/reports/1/attestation", json=body).status_code == 201
+    relisted = tc.get("/api/reports").json()[0]
+    assert relisted["attestedCurrent"] is True
+    assert relisted["attestationCount"] == 2
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-q"]))

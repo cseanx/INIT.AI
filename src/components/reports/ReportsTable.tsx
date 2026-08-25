@@ -9,6 +9,44 @@ const ACTION_BTN_CLASSES =
     'h-[34px] w-[34px] cursor-pointer rounded-[10px] border border-white/10 bg-white/[.04] text-[#ccc] transition duration-200 hover:bg-white/9 hover:text-white';
 const PILL_CLASSES =
     'inline-block rounded-full border border-white/10 bg-white/[.04] px-[9px] py-[3px] text-[11px] text-[#bbb]';
+const VERIFY_PILL_CLASSES =
+    'inline-flex cursor-default items-center gap-[6px] rounded-full px-[10px] py-[4px] text-[11px] font-semibold';
+const VERIFIED_PILL = `${VERIFY_PILL_CLASSES} bg-[rgba(0,255,132,.12)] text-mint`;
+const OUTDATED_PILL = `${VERIFY_PILL_CLASSES} bg-[rgba(255,210,63,.13)] text-gold`;
+const UNVERIFIED_PILL = `${VERIFY_PILL_CLASSES} bg-white/[.05] text-[#8a8a8a]`;
+
+/** Attestation pill for one row: verified / outdated / unverified.
+ *  Mirrors the editor's Stellar panel logic — a proof only counts as
+ *  verified while it matches the report's CURRENT content hash. */
+function VerificationPill({ report }: { report: Report }) {
+    const count = report.attestationCount ?? 0;
+    if (report.attestedCurrent) {
+        const when = report.attestedAt ? new Date(report.attestedAt).toLocaleString() : '';
+        return (
+            <span className={VERIFIED_PILL} title={`Recorded on Stellar Testnet ${when}`.trim()}>
+                <i className="fa-solid fa-circle-check text-[10px]"></i>
+                Verified{count > 1 ? ` · ${count}` : ''}
+            </span>
+        );
+    }
+    if (count > 0) {
+        return (
+            <span
+                className={OUTDATED_PILL}
+                title={`This report was edited after its on-chain proof (${count} recorded). Re-verify to attest the current form.`}
+            >
+                <i className="fa-solid fa-clock-rotate-left text-[10px]"></i>
+                Outdated proof
+            </span>
+        );
+    }
+    return (
+        <span className={UNVERIFIED_PILL}>
+            <i className="fa-solid fa-shield-halved text-[10px] opacity-60"></i>
+            Unverified
+        </span>
+    );
+}
 
 export default function ReportsTable({ reports }: { reports: Report[] }) {
     const navigate = useNavigate();
@@ -25,6 +63,7 @@ export default function ReportsTable({ reports }: { reports: Report[] }) {
                         <th className={TH_CLASSES}>Period</th>
                         <th className={TH_CLASSES}>Data Included</th>
                         <th className={TH_CLASSES}>Status</th>
+                        <th className={TH_CLASSES}>Verification</th>
                         <th className={TH_CLASSES}></th>
                     </tr>
                 </thead>
@@ -76,6 +115,9 @@ export default function ReportsTable({ reports }: { reports: Report[] }) {
                                     >
                                         {ready ? 'Ready' : 'Processing'}
                                     </span>
+                                </td>
+                                <td className={TD_CLASSES}>
+                                    <VerificationPill report={r} />
                                 </td>
                                 <td className={TD_CLASSES}>
                                     <div className="flex items-center gap-[6px]">

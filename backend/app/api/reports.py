@@ -1,4 +1,5 @@
 ﻿from datetime import datetime, timezone
+from typing import Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -35,20 +36,66 @@ def _get_report(db: Session, report_id: int) -> Report:
     return report
 
 
+def _serialize_with_attestations(
+    db: Session, reports: Sequence[Report]
+) -> list[ReportOut]:
+    """Serialize reports with their Stellar attestation summary.
+
+    One batched query covers the whole page: per report we count confirmed
+    proofs and keep the newest one's timestamp; `attestedCurrent` is True
+    when any proof's hash equals the report's CURRENT content hash (same
+    rule the editor panel uses). Hashing is CPU-only and cheap.
+    """
+    counts: dict[int, int] = {}
+    hashes_by_report: dict[int, set[str]] = {}
+    latest_by_report: dict[int, datetime | None] = {}
+
+    ids = [r.id for r in reports]
+    if ids:
+        rows = db.execute(
+            select(
+                ReportAttestation.report_id,
+                ReportAttestation.stellar_hash,
+                ReportAttestation.created_at,
+            )
+            .where(
+                ReportAttestation.report_id.in_(ids),
+                ReportAttestation.status == "confirmed",
+            )
+            .order_by(ReportAttestation.created_at.desc())
+        ).all()
+        for report_id, stellar_hash, created_at in rows:
+            counts[report_id] = counts.get(report_id, 0) + 1
+            hashes_by_report.setdefault(report_id, set()).add(stellar_hash)
+            # Rows arrive newest-first, so the first seen per report is newest.
+            latest_by_report.setdefault(report_id, created_at)
+
+    outs: list[ReportOut] = []
+    for report in reports:
+        out = ReportOut.model_validate(report)
+        out.attestation_count = counts.get(report.id, 0)
+        out.attested_at = latest_by_report.get(report.id)
+        out.attested_current = (
+            attestation_hash(report) in hashes_by_report.get(report.id, set())
+        )
+        outs.append(out)
+    return outs
+
+
 @router.get("", response_model=list[ReportOut])
 def list_reports(
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-) -> list[Report]:
+) -> list[ReportOut]:
     statement = select(Report).options(
         joinedload(Report.barangay)
     ).order_by(Report.created_at.desc())
-    return fetch_all(db, statement, limit)
+    return _serialize_with_attestations(db, fetch_all(db, statement, limit))
 
 
 @router.get("/{report_id}", response_model=ReportOut)
-def get_report(report_id: int, db: Session = Depends(get_db)) -> Report:
-    return _get_report(db, report_id)
+def get_report(report_id: int, db: Session = Depends(get_db)) -> ReportOut:
+    return _serialize_with_attestations(db, [_get_report(db, report_id)])[0]
 
 
 @router.get(
@@ -194,13 +241,15 @@ def update_report(
     body: ReportUpdate,
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
-) -> Report:
+) -> ReportOut:
     report = _get_report(db, report_id)
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(report, field, value)
     db.commit()
     db.refresh(report)
-    return report
+    # Re-serialize after the content change: an edit may invalidate existing
+    # proofs (attestedCurrent flips to False for the new content hash).
+    return _serialize_with_attestations(db, [report])[0]
 
 
 @router.delete("/{report_id}", status_code=status.HTTP_204_NO_CONTENT)
