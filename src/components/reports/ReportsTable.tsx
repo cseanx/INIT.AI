@@ -48,7 +48,15 @@ function VerificationPill({ report }: { report: Report }) {
     );
 }
 
-export default function ReportsTable({ reports }: { reports: Report[] }) {
+export default function ReportsTable({
+    reports,
+    onVerify,
+}: {
+    reports: Report[];
+    /** Present only when Stellar is enabled — renders the per-row
+     *  "Verify on Stellar" action that opens the confirmation modal. */
+    onVerify?: (report: Report) => void;
+}) {
     const navigate = useNavigate();
 
     return (
@@ -147,6 +155,15 @@ export default function ReportsTable({ reports }: { reports: Report[] }) {
                                         >
                                             <i className="fa-solid fa-download"></i>
                                         </button>
+                                        {onVerify && typeof r.id === 'number' ? (
+                                            <button
+                                                className={ACTION_BTN_CLASSES}
+                                                title="Verify on Stellar"
+                                                onClick={() => onVerify(r)}
+                                            >
+                                                <i className="fa-solid fa-shield-halved"></i>
+                                            </button>
+                                        ) : null}
                                     </div>
                                 </td>
                             </tr>

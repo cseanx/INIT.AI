@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { STELLAR_ENABLED } from '../services/stellar/client';
+import { useStellarWallet } from '../hooks/useStellarWallet';
 import Page from '../components/layout/Page';
 import PanelHead from '../components/common/PanelHead';
 import Card from '../components/common/Card';
 import ReportsTable from '../components/reports/ReportsTable';
+import VerifyReportModal from '../components/reports/VerifyReportModal';
 import type { Report } from '../types';
 
 const NEW_REPORT_BTN_CLASSES =
@@ -13,6 +16,9 @@ const NEW_REPORT_BTN_CLASSES =
 export default function Reports() {
     const navigate = useNavigate();
     const [reports, setReports] = useState<Report[] | null>(null);
+    const wallet = useStellarWallet();
+    /** Report targeted by the "Verify on Stellar" action (modal is open while set). */
+    const [verifyTarget, setVerifyTarget] = useState<Report | null>(null);
 
     const load = useCallback(() => {
         api.getReports().then(setReports);
@@ -40,8 +46,19 @@ export default function Reports() {
                         </button>
                     }
                 />
-                {reports ? <ReportsTable reports={reports} /> : null}
+                {reports ? (
+                    <ReportsTable
+                        reports={reports}
+                        onVerify={STELLAR_ENABLED ? setVerifyTarget : undefined}
+                    />
+                ) : null}
             </Card>
+            <VerifyReportModal
+                report={verifyTarget}
+                open={verifyTarget !== null}
+                onClose={() => setVerifyTarget(null)}
+                walletAddress={wallet.address}
+            />
         </Page>
     );
 }
