@@ -64,9 +64,11 @@ export interface AttestOptions {
     reportRef: string;
 }
 
-/** Sign + submit `attest`, then wait for Testnet confirmation.
- *  Returns the transaction hash. */
-export async function attestOnChain({
+/** Prepare the `attest` transaction and obtain a Freighter signature.
+ *  Stops before submission — the signed XDR is returned for the caller to
+ *  submit in a later step. Reuses the single StellarWalletsKit wallet
+ *  session; Freighter itself presents the signing prompt. */
+export async function prepareSignedAttestation({
     address,
     reportHashHex,
     reportRef,
@@ -101,13 +103,19 @@ export async function attestOnChain({
     // Simulation pass: fills resources/footprint for Soroban ops.
     tx = await server.prepareTransaction(tx);
 
-    let signedXdr: string;
     try {
-        signedXdr = await signTransaction(tx.toXdr(), address);
+        return await signTransaction(tx.toXdr(), address);
     } catch (err) {
         throw normalizeWalletError(err);
     }
+}
 
+/** Sign + submit `attest`, then wait for Testnet confirmation.
+ *  Returns the transaction hash. */
+export async function attestOnChain(options: AttestOptions): Promise<string> {
+    const signedXdr = await prepareSignedAttestation(options);
+    const { TransactionBuilder } = await import('@stellar/stellar-sdk');
+    const server = await getServer();
     const signed = TransactionBuilder.fromXdr(signedXdr, NETWORK_PASSPHRASE);
     const sent = await server.sendTransaction(signed);
     if (sent.status === 'ERROR') {

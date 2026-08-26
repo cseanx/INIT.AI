@@ -11,6 +11,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../../services/api';
+import { prepareSignedAttestation } from '../../services/stellar/attestation';
+import { normalizeWalletError } from '../../services/stellar/wallet';
 import type { Report } from '../../types';
 import { explorerTxUrl } from '../../types/stellar';
 
@@ -129,6 +131,7 @@ export default function VerifyReportModal({
     const [reportHash, setReportHash] = useState<string | null>(null);
     const [hashLoading, setHashLoading] = useState(false);
     const [txHash, setTxHash] = useState<string | null>(null);
+    const [signedXdr, setSignedXdr] = useState<string | null>(null);
     const [flowError, setFlowError] = useState<string | null>(null);
 
     // Fresh machine + server-authoritative content hash whenever a report is targeted.
@@ -138,6 +141,7 @@ export default function VerifyReportModal({
         setPhase('confirmation');
         setFlowError(null);
         setTxHash(null);
+        setSignedXdr(null);
         setReportHash(null);
         setHashLoading(true);
         api.reports
@@ -173,32 +177,72 @@ export default function VerifyReportModal({
     const busy = BUSY_PHASES.includes(phase);
 
     const handleContinue = useCallback(async () => {
-        setFlowError(null);
-        setTxHash(null);
-        const controls: VerifyFlowControls = {
-            setPhase: (next) => setPhase(next),
-            succeed: (hash) => {
-                setTxHash(hash ?? null);
-                setPhase('success');
-            },
-            fail: (message) => {
-                setFlowError(message);
-                setPhase('failed');
-            },
-        };
-        setPhase('preparing');
-        if (!runAttestation) {
-            // No chain driver wired yet (by design in this step): park at the
-            // signature stage instead of pretending anything happened on-chain.
-            setPhase('awaiting-signature');
+        // Reusable path: if a driver is injected (future submission step), delegate to it.
+        if (runAttestation) {
+            setFlowError(null);
+            setTxHash(null);
+            setSignedXdr(null);
+            const controls: VerifyFlowControls = {
+                setPhase: (next) => setPhase(next),
+                succeed: (hash) => {
+                    setTxHash(hash ?? null);
+                    setPhase('success');
+                },
+                fail: (message) => {
+                    setFlowError(message);
+                    setPhase('failed');
+                },
+            };
+            setPhase('preparing');
+            try {
+                await runAttestation(controls);
+            } catch (err) {
+                controls.fail(err instanceof Error ? err.message : String(err));
+            }
             return;
         }
-        try {
-            await runAttestation(controls);
-        } catch (err) {
-            controls.fail(err instanceof Error ? err.message : String(err));
+
+        // Step 4 flow: check wallet → prepare transaction → Freighter signature.
+        // No submission yet — stop after the signed XDR is obtained.
+        if (!report || typeof report.id !== 'number') {
+            setFlowError('Invalid report selected.');
+            setPhase('failed');
+            return;
         }
-    }, [runAttestation]);
+        if (!walletAddress) {
+            setFlowError(
+                'No Stellar wallet is connected. Please connect your wallet using the indicator in the header and try again.',
+            );
+            setPhase('failed');
+            return;
+        }
+        if (hashLoading) return;
+        if (!reportHash) {
+            setFlowError('The report hash could not be loaded. Please close and try again.');
+            setPhase('failed');
+            return;
+        }
+
+        setFlowError(null);
+        setTxHash(null);
+        setSignedXdr(null);
+        setPhase('preparing');
+        try {
+            // Let the preparing state paint before the heavy SDK + RPC work.
+            await new Promise<void>((resolve) => setTimeout(resolve, 120));
+            setPhase('awaiting-signature');
+            const signed = await prepareSignedAttestation({
+                address: walletAddress,
+                reportHashHex: reportHash,
+                reportRef: String(report.id),
+            });
+            setSignedXdr(signed);
+            setPhase('success');
+        } catch (err) {
+            setFlowError(normalizeWalletError(err).message);
+            setPhase('failed');
+        }
+    }, [report, walletAddress, reportHash, hashLoading, runAttestation]);
 
     if (!open || !report) return null;
 
@@ -223,21 +267,46 @@ export default function VerifyReportModal({
     }
 
     if (phase === 'success') {
+        const isSignedOnly = !!signedXdr && !txHash;
         return createPortal(
             <div className={BACKDROP_CLASSES}>
-                <div role="dialog" aria-modal="true" aria-label="Report verified" className={CARD_CLASSES}>
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={isSignedOnly ? 'Transaction signed' : 'Report verified'}
+                    className={CARD_CLASSES}
+                >
                     <div className="mb-[14px] flex items-center gap-[12px]">
                         <span className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[rgba(0,255,132,.14)] text-[17px] text-mint">
-                            <i className="fa-solid fa-check"></i>
+                            <i className={isSignedOnly ? 'fa-solid fa-pen-nib' : 'fa-solid fa-check'}></i>
                         </span>
                         <div>
-                            <h4 className="text-[14.5px] font-semibold">Report verified</h4>
+                            <h4 className="text-[14.5px] font-semibold">
+                                {isSignedOnly ? 'Transaction signed' : 'Report verified'}
+                            </h4>
                             <p className="text-[12px] text-[#999]">
-                                This exact report form is now recorded on Stellar Testnet.
+                                {isSignedOnly
+                                    ? 'Freighter has signed the attestation. It has not been submitted to the network yet.'
+                                    : 'This exact report form is now recorded on Stellar Testnet.'}
                             </p>
                         </div>
                     </div>
-                    {txHash ? (
+                    {isSignedOnly && signedXdr ? (
+                        <div className="mb-[6px] rounded-[10px] border border-white/10 bg-white/[.04] p-[10px_12px]">
+                            <p className="mb-[6px] text-[10.5px] font-medium uppercase tracking-[.06em] text-[#777]">
+                                Signed transaction (XDR)
+                            </p>
+                            <p
+                                className="break-all font-mono text-[11px] leading-relaxed text-[#bbb]"
+                                title={signedXdr}
+                            >
+                                {shorten(signedXdr, 32, 32)}
+                            </p>
+                            <p className="mt-[8px] text-[11.5px] leading-relaxed text-[#888]">
+                                Submission to Testnet comes next — nothing has been written on-chain yet.
+                            </p>
+                        </div>
+                    ) : txHash ? (
                         <a
                             className="mb-[6px] inline-flex max-w-full items-center gap-[7px] truncate text-[12.5px] text-accent hover:underline"
                             href={explorerTxUrl(txHash)}
