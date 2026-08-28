@@ -110,20 +110,36 @@ export async function prepareSignedAttestation({
     }
 }
 
-/** Sign + submit `attest`, then wait for Testnet confirmation.
+/** Submit an already-signed `attest` transaction to Stellar Testnet and
+ *  wait for ledger confirmation. Does NOT sign — `prepareSignedAttestation`
+ *  must run first (Freighter only signs once). `onPhase` lets the caller
+ *  surface the submitting → confirming UI transition during polling.
  *  Returns the transaction hash. */
-export async function attestOnChain(options: AttestOptions): Promise<string> {
-    const signedXdr = await prepareSignedAttestation(options);
+export async function submitSignedAttestation(
+    signedXdr: string,
+    onPhase?: (phase: 'submitting' | 'confirming') => void,
+): Promise<string> {
+    requireStellarEnabled();
     const { TransactionBuilder } = await import('@stellar/stellar-sdk');
     const server = await getServer();
+
     const signed = TransactionBuilder.fromXdr(signedXdr, NETWORK_PASSPHRASE);
+    onPhase?.('submitting');
     const sent = await server.sendTransaction(signed);
     if (sent.status === 'ERROR') {
         throw new Error('The network rejected the transaction before it entered a ledger.');
     }
 
+    onPhase?.('confirming');
     await waitForConfirmation(server, sent.hash);
     return sent.hash;
+}
+
+/** Sign + submit `attest`, then wait for Testnet confirmation.
+ *  Returns the transaction hash. */
+export async function attestOnChain(options: AttestOptions): Promise<string> {
+    const signedXdr = await prepareSignedAttestation(options);
+    return submitSignedAttestation(signedXdr);
 }
 
 /** Poll the RPC until the transaction lands or times out. */

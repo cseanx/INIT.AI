@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../../services/api';
-import { prepareSignedAttestation } from '../../services/stellar/attestation';
+import { prepareSignedAttestation, submitSignedAttestation } from '../../services/stellar/attestation';
 import { normalizeWalletError } from '../../services/stellar/wallet';
 import type { Report } from '../../types';
 import { explorerTxUrl } from '../../types/stellar';
@@ -202,8 +202,8 @@ export default function VerifyReportModal({
             return;
         }
 
-        // Step 4 flow: check wallet → prepare transaction → Freighter signature.
-        // No submission yet — stop after the signed XDR is obtained.
+        // Attestation flow: check wallet → prepare (build + simulate) →
+        // Freighter signature → submit to Testnet → confirm on-chain.
         if (!report || typeof report.id !== 'number') {
             setFlowError('Invalid report selected.');
             setPhase('failed');
@@ -230,6 +230,8 @@ export default function VerifyReportModal({
         try {
             // Let the preparing state paint before the heavy SDK + RPC work.
             await new Promise<void>((resolve) => setTimeout(resolve, 120));
+            // 1-3: build `attest` invocation, simulate, prepare — then hand to
+            // Freighter for the actual signature prompt.
             setPhase('awaiting-signature');
             const signed = await prepareSignedAttestation({
                 address: walletAddress,
@@ -237,6 +239,10 @@ export default function VerifyReportModal({
                 reportRef: String(report.id),
             });
             setSignedXdr(signed);
+            // 4-5: submit the signed transaction and wait for Testnet
+            // confirmation (Freighter is no longer involved).
+            const txHash = await submitSignedAttestation(signed, (next) => setPhase(next));
+            setTxHash(txHash);
             setPhase('success');
         } catch (err) {
             setFlowError(normalizeWalletError(err).message);
