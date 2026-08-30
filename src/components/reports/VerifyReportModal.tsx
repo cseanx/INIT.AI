@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../../services/api';
 import { prepareSignedAttestation, submitSignedAttestation } from '../../services/stellar/attestation';
+import { CONTRACT_ID } from '../../services/stellar/client';
 import { normalizeWalletError } from '../../services/stellar/wallet';
 import type { Report } from '../../types';
 import { explorerTxUrl } from '../../types/stellar';
@@ -133,6 +134,7 @@ export default function VerifyReportModal({
     const [txHash, setTxHash] = useState<string | null>(null);
     const [signedXdr, setSignedXdr] = useState<string | null>(null);
     const [flowError, setFlowError] = useState<string | null>(null);
+    const [persistWarning, setPersistWarning] = useState<string | null>(null);
 
     // Fresh machine + server-authoritative content hash whenever a report is targeted.
     useEffect(() => {
@@ -142,6 +144,7 @@ export default function VerifyReportModal({
         setFlowError(null);
         setTxHash(null);
         setSignedXdr(null);
+        setPersistWarning(null);
         setReportHash(null);
         setHashLoading(true);
         api.reports
@@ -182,6 +185,7 @@ export default function VerifyReportModal({
             setFlowError(null);
             setTxHash(null);
             setSignedXdr(null);
+            setPersistWarning(null);
             const controls: VerifyFlowControls = {
                 setPhase: (next) => setPhase(next),
                 succeed: (hash) => {
@@ -244,6 +248,27 @@ export default function VerifyReportModal({
             const txHash = await submitSignedAttestation(signed, (next) => setPhase(next));
             setTxHash(txHash);
             setPhase('success');
+
+            // Persist off-chain (report id + hash + tx hash + contract + wallet +
+            // network). Chain confirmation is the source of truth, so a DB hiccup
+            // must NOT unset "Verified" — surface it as a warning instead.
+            try {
+                await api.reports.recordAttestation(report.id, {
+                    reportHash,
+                    txHash,
+                    contractId: CONTRACT_ID,
+                    network: 'testnet',
+                    wallet: walletAddress,
+                    meta: { source: 'web', flow: 'reports-page-verify' },
+                });
+                setPersistWarning(null);
+            } catch (err) {
+                setPersistWarning(
+                    `Confirmed on-chain, but saving the attestation record failed: ${
+                        err instanceof Error ? err.message : String(err)
+                    }`,
+                );
+            }
         } catch (err) {
             setFlowError(normalizeWalletError(err).message);
             setPhase('failed');
@@ -324,6 +349,12 @@ export default function VerifyReportModal({
                             Transaction {shorten(txHash)}
                         </a>
                     ) : null}
+                    {persistWarning && (
+                        <p className={`${FEE_NOTE_CLASSES} mb-[12px]`}>
+                            <i className="fa-solid fa-triangle-exclamation mt-[2px] text-[11px]"></i>
+                            <span>{persistWarning}</span>
+                        </p>
+                    )}
                     <div className="mt-[16px] flex justify-end">
                         <button type="button" className={PRIMARY_BTN_CLASSES} onClick={onClose}>
                             Done

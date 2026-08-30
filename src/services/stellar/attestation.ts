@@ -80,9 +80,16 @@ export async function prepareSignedAttestation({
 
     await assertTestnetSelected();
 
-    const source = await server.getAccount(address).catch(() => {
+    const source = await server.getAccount(address).catch((err: unknown) => {
+        // 404 = the account doesn't exist on Testnet; anything else is RPC/network trouble.
+        const status = (err as { status?: number } | null)?.status;
+        if (status === 404) {
+            throw new Error(
+                'Your Stellar account is not reachable on Testnet. Fund it via the friendbot faucet and try again.',
+            );
+        }
         throw new Error(
-            'Your Stellar account is not reachable on Testnet. Fund it via the friendbot faucet and try again.',
+            'Could not reach the Stellar Testnet network (RPC error). Check your connection and try again.',
         );
     });
 
@@ -101,7 +108,15 @@ export async function prepareSignedAttestation({
         .build();
 
     // Simulation pass: fills resources/footprint for Soroban ops.
-    tx = await server.prepareTransaction(tx);
+    try {
+        tx = await server.prepareTransaction(tx);
+    } catch (err) {
+        // Soroban simulation failures (contract reject, bad args) and RPC
+        // errors both surface here — map them to one actionable message.
+        throw new Error(
+            'The attestation transaction could not be simulated on Stellar Testnet. The contract may be unavailable, or the network is unreachable — try again shortly.',
+        );
+    }
 
     try {
         return await signTransaction(tx.toXdr(), address);
@@ -125,7 +140,14 @@ export async function submitSignedAttestation(
 
     const signed = TransactionBuilder.fromXdr(signedXdr, NETWORK_PASSPHRASE);
     onPhase?.('submitting');
-    const sent = await server.sendTransaction(signed);
+    let sent;
+    try {
+        sent = await server.sendTransaction(signed);
+    } catch {
+        throw new Error(
+            'Could not submit the transaction to Stellar Testnet (RPC error). Check your connection and try again.',
+        );
+    }
     if (sent.status === 'ERROR') {
         throw new Error('The network rejected the transaction before it entered a ledger.');
     }
@@ -157,7 +179,9 @@ async function waitForConfirmation(
             throw new Error('The attestation transaction failed on-chain.');
         }
     }
-    throw new Error('Timed out waiting for Testnet confirmation — check the explorer shortly.');
+    throw new Error(
+        'Timed out waiting for Testnet confirmation — the network may be slow or unavailable. The transaction might still confirm; check the explorer shortly.',
+    );
 }
 
 /** Read an attestation back from the chain by report hash (free simulated read). */
