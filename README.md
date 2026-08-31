@@ -12,10 +12,14 @@ The platform transforms complex environmental data into actionable information f
 
 ```bash
 npm install
+cp .env.example .env              # frontend env (VITE_API_URL, Stellar Testnet config)
+# for local backend only: cp backend/.env.example backend/.env  # then set DATABASE_URL
 npm run dev        # start the Vite dev server
 npm run build      # typecheck + production build (outputs to dist/)
 npm run preview    # serve the production build
 ```
+
+> Backend is deployed at `https://backend-phi-gray-27.vercel.app` — `npm run dev` works without a local backend. For local API/database work see [`backend/README.md`](backend/README.md).
 
 ## Notes
 
@@ -294,7 +298,7 @@ matches the current content (tamper-evidence working as intended).
 ## Product Demo
 
 > **Product Link**
-> [INIT.AI Vercel Deployment](init-ai-ebon.vercel.app)
+> [INIT.AI Vercel Deployment](https://init-ai-ebon.vercel.app)
 
 > **Demo Video:**
 > W.I.P
