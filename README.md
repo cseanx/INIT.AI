@@ -312,33 +312,23 @@ A short demonstration showing the INIT.AI platform, including login, dashboard n
 
 ### Dashboard
 
-![INIT.AI Dashboard](INSERT_IMAGE_URL_HERE)
-
-> **Screenshot:** Main INIT.AI dashboard showing city-level environmental metrics and heat indicators.
+![INIT.AI Dashboard](/public/assets/images/Dashboard.png)
 
 ### Heat Map
 
-![INIT.AI Heat Map](INSERT_IMAGE_URL_HERE)
-
-> **Screenshot:** Spatial visualization of urban heat across the selected city.
+![INIT.AI Heat Map](/public/assets/images/Heatmap.png)
 
 ### Hotspots
 
-![INIT.AI Hotspots](INSERT_IMAGE_URL_HERE)
-
-> **Screenshot:** Ranked heat hotspots and their associated environmental indicators.
+![INIT.AI Hotspots](/public/assets/images/Hotspots.png)
 
 ### Canopy Analysis
 
-![INIT.AI Canopy Analysis](INSERT_IMAGE_URL_HERE)
-
-> **Screenshot:** Vegetation and canopy coverage analysis.
+![INIT.AI Canopy Analysis](/public/assets/images/CanopyAnalysis.png)
 
 ### Stellar Verification
 
-![INIT.AI Stellar Verification](INSERT_IMAGE_URL_HERE)
-
-> **Screenshot:** INIT.AI workflow demonstrating environmental data verification through Stellar/Soroban.
+![INIT.AI Stellar Verification](/public/assets/images/StellarReport.png)
 
 ---
 
