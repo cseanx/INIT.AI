@@ -99,8 +99,29 @@ def verify_attest_transaction(
 
     Returns metadata ({ledger, verified_via}) on success; raises
     TransactionVerificationError with a user-facing reason otherwise.
+
+    Horizon can lag the RPC by a few seconds right after confirmation, so
+    a 404 is retried briefly before giving up — the transaction was already
+    confirmed via RPC in the frontend, so a transient indexing delay should
+    not surface as a verification error.
     """
-    tx = _horizon_get(f"/transactions/{tx_hash}", horizon_base)
+    # Retry briefly for Horizon indexing delay after a greenlit transaction.
+    last_err: TransactionVerificationError | None = None
+    for attempt in range(3):
+        try:
+            tx = _horizon_get(f"/transactions/{tx_hash}", horizon_base)
+            break
+        except TransactionVerificationError as exc:
+            # Only retry on "not found" — other errors (e.g. HTTP 500) fail fast.
+            if "not found" not in str(exc).lower() or attempt == 2:
+                raise
+            last_err = exc
+            import time
+
+            time.sleep(1.2 * (attempt + 1))
+    else:
+        # Should be unreachable, but keep mypy happy.
+        raise last_err or TransactionVerificationError("Transaction not found on Stellar Testnet.")
     if not tx.get("successful"):
         raise TransactionVerificationError("That transaction failed on-chain.")
 

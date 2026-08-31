@@ -111,8 +111,24 @@ export async function prepareSignedAttestation({
     try {
         tx = await server.prepareTransaction(tx);
     } catch (err) {
-        // Soroban simulation failures (contract reject, bad args) and RPC
-        // errors both surface here — map them to one actionable message.
+        // Preserve duplicate detection: the contract panics with
+        // "attestation already exists for this report hash" — surface that
+        // as a friendly already-verified message instead of a generic
+        // simulation error. The SDK may nest the panic in different shapes,
+        // so flatten the error.
+        const raw = err instanceof Error ? err.message : String(err);
+        let flattened = '';
+        try {
+            flattened = JSON.stringify(err);
+        } catch {
+            flattened = String(err);
+        }
+        const haystack = `${raw} ${flattened}`.toLowerCase();
+        if (haystack.includes('already exists') || haystack.includes('already attested')) {
+            throw new Error(
+                'This report has already been verified on Stellar Testnet. Each report version can only be attested once — edit the report to create a new version to verify.',
+            );
+        }
         throw new Error(
             'The attestation transaction could not be simulated on Stellar Testnet. The contract may be unavailable, or the network is unreachable — try again shortly.',
         );

@@ -20,8 +20,44 @@ export default function Reports() {
     /** Report targeted by the "Verify on Stellar" action (modal is open while set). */
     const [verifyTarget, setVerifyTarget] = useState<Report | null>(null);
 
-    const load = useCallback(() => {
-        api.getReports().then(setReports);
+    const load = useCallback(async () => {
+        const baseReports = await api.getReports();
+        // The deployed Vercel backend may be on an older image that does not
+        // yet serialize `attestationCount/attestedCurrent/attestedAt` in
+        // `ReportOut`. Enrich on the client so the Verified pill is not stuck
+        // on “Unverified” even though `GET /reports/{id}/attestation` already
+        // holds the proofs (e.g. report 7 `923ab672...` and report 2 `972a6b68...`).
+        try {
+            const enriched = await Promise.all(
+                baseReports.map(async (r) => {
+                    if (typeof r.id !== 'number') return r;
+                    // If the backend already supplied a summary, trust it.
+                    if (typeof r.attestationCount === 'number' && typeof r.attestedCurrent === 'boolean') return r;
+                    try {
+                        const [msg, atts] = await Promise.all([
+                            api.reports.attestationMessage(r.id),
+                            api.reports.listAttestations(r.id),
+                        ]);
+                        const confirmed = atts.filter((a) => a.status === 'confirmed');
+                        const attestedCurrent = confirmed.some((a) => a.stellarHash === msg.hash);
+                        const latest = [...confirmed].sort(
+                            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+                        )[0];
+                        return {
+                            ...r,
+                            attestationCount: confirmed.length,
+                            attestedCurrent,
+                            attestedAt: latest?.createdAt ?? r.attestedAt ?? null,
+                        };
+                    } catch {
+                        return r;
+                    }
+                }),
+            );
+            setReports(enriched);
+        } catch {
+            setReports(baseReports);
+        }
     }, []);
 
     useEffect(() => {
@@ -58,6 +94,7 @@ export default function Reports() {
                 open={verifyTarget !== null}
                 onClose={() => setVerifyTarget(null)}
                 walletAddress={wallet.address}
+                onVerified={load}
             />
         </Page>
     );

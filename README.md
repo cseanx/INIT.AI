@@ -257,6 +257,7 @@ One table for reviewers - everything needed to verify this project:
 | Network | Stellar **Testnet** only |
 | Contract ID | [`CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF`](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) |
 | Contract source | [`contracts/soroban/`](contracts/soroban/) (Rust + soroban-sdk 27, unit-tested) |
+| WASM artifact | `target/wasm32v1-none/release/initai_spatial_attestation.wasm` — **26,688 bytes**, **SHA-256** `59d63c9e83fd1e9a5cfa4d284bfb21056ffd821d3057d9e958d85a5f1531016e` — built `2026-08-24` via `stellar contract build` / `cargo build --target wasm32v1-none --release` (Rust `1.98.0`, `soroban-sdk 27.0.1`, `opt-level="z"` + `lto=true`) — `target/` is gitignored; verify with `Get-FileHash -Algorithm SHA256` or `sha256sum` |
 | Live dApp | [https://init-ai-ebon.vercel.app](https://init-ai-ebon.vercel.app) |
 | API documentation | [https://backend-phi-gray-27.vercel.app/docs](https://backend-phi-gray-27.vercel.app/docs) (FastAPI/OpenAPI) |
 | Canonicalization spec | [`initai-canonical-v1`](#canonicalization-specification-initai-canonical-v1) - rules + implementation in [`backend/app/services/report_hash.py`](backend/app/services/report_hash.py) |

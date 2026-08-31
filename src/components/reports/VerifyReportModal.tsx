@@ -15,7 +15,7 @@ import { prepareSignedAttestation, submitSignedAttestation } from '../../service
 import { CONTRACT_ID } from '../../services/stellar/client';
 import { normalizeWalletError } from '../../services/stellar/wallet';
 import type { Report } from '../../types';
-import { explorerTxUrl } from '../../types/stellar';
+import { explorerTxUrl, type ReportAttestationRecord } from '../../types/stellar';
 
 export type VerifyPhase =
     | 'confirmation'
@@ -41,6 +41,8 @@ interface VerifyReportModalProps {
     onClose: () => void;
     /** Connected wallet public key (G…), or null when disconnected. */
     walletAddress?: string | null;
+    /** Called after a greenlit transaction is persisted (or confirmed on-chain) so the parent can refresh. */
+    onVerified?: () => void;
     /**
      * Async attestation pipeline (wallet signature → submit → confirm).
      * Deliberately NOT wired in this step — Step 3 is UI/state only, so no
@@ -126,6 +128,7 @@ export default function VerifyReportModal({
     open,
     onClose,
     walletAddress = null,
+    onVerified,
     runAttestation,
 }: VerifyReportModalProps) {
     const [phase, setPhase] = useState<VerifyPhase>('confirmation');
@@ -135,8 +138,13 @@ export default function VerifyReportModal({
     const [signedXdr, setSignedXdr] = useState<string | null>(null);
     const [flowError, setFlowError] = useState<string | null>(null);
     const [persistWarning, setPersistWarning] = useState<string | null>(null);
+    const [alreadyVerified, setAlreadyVerified] = useState(false);
+    const [existingAttestation, setExistingAttestation] = useState<ReportAttestationRecord | null>(null);
 
     // Fresh machine + server-authoritative content hash whenever a report is targeted.
+    // Also fetch the persisted proof history so we can detect an already-greenlit
+    // attestation without requiring a wallet round-trip — avoids the misleading
+    // “Freighter not installed” error when the proof is already on-chain.
     useEffect(() => {
         if (!open || !report || typeof report.id !== 'number') return;
         let active = true;
@@ -146,14 +154,27 @@ export default function VerifyReportModal({
         setSignedXdr(null);
         setPersistWarning(null);
         setReportHash(null);
+        setAlreadyVerified(false);
+        setExistingAttestation(null);
         setHashLoading(true);
-        api.reports
-            .attestationMessage(report.id)
-            .then((message) => {
-                if (active) setReportHash(message.hash);
+        Promise.all([api.reports.attestationMessage(report.id), api.reports.listAttestations(report.id)])
+            .then(([message, records]) => {
+                if (!active) return;
+                setReportHash(message.hash);
+                const match = records.find((r) => r.stellarHash === message.hash && r.status === 'confirmed') ?? null;
+                if (match || report.attestedCurrent) {
+                    setAlreadyVerified(true);
+                    setExistingAttestation(match);
+                }
             })
             .catch(() => {
-                if (active) setReportHash(null);
+                if (!active) return;
+                setReportHash(null);
+                // If the message fetch fails but the prop says verified, keep the
+                // already-greenlit signal so we don't mislead with a wallet error.
+                if (report.attestedCurrent) {
+                    setAlreadyVerified(true);
+                }
             })
             .finally(() => {
                 if (active) setHashLoading(false);
@@ -191,6 +212,7 @@ export default function VerifyReportModal({
                 succeed: (hash) => {
                     setTxHash(hash ?? null);
                     setPhase('success');
+                    onVerified?.();
                 },
                 fail: (message) => {
                     setFlowError(message);
@@ -211,6 +233,24 @@ export default function VerifyReportModal({
         if (!report || typeof report.id !== 'number') {
             setFlowError('Invalid report selected.');
             setPhase('failed');
+            return;
+        }
+        // If the report's current content is already attested, the contract
+        // will reject a duplicate hash during simulation. Catch this early
+        // with a friendly message instead of a generic simulation error —
+        // the on-chain proof is already greenlit. Use the fresh chain/DB
+        // check (alreadyVerified) plus the prop as fallback.
+        if (alreadyVerified || report.attestedCurrent) {
+            if (existingAttestation?.txHash) {
+                setTxHash(existingAttestation.txHash);
+                setPersistWarning(null);
+                setPhase('success');
+            } else {
+                setFlowError(
+                    'This report version is already verified on Stellar Testnet. Each version can only be attested once — edit the report to create a new version to verify.',
+                );
+                setPhase('failed');
+            }
             return;
         }
         if (!walletAddress) {
@@ -252,6 +292,8 @@ export default function VerifyReportModal({
             // Persist off-chain (report id + hash + tx hash + contract + wallet +
             // network). Chain confirmation is the source of truth, so a DB hiccup
             // must NOT unset "Verified" — surface it as a warning instead.
+            // The transaction is already greenlit at this point; a persist
+            // failure is a warning, not a verification error.
             try {
                 await api.reports.recordAttestation(report.id, {
                     reportHash,
@@ -269,11 +311,24 @@ export default function VerifyReportModal({
                     }`,
                 );
             }
+            // Notify parent so the table's Verified pill updates without a
+            // manual reload — the on-chain proof is already final.
+            onVerified?.();
         } catch (err) {
-            setFlowError(normalizeWalletError(err).message);
+            const msg = normalizeWalletError(err).message;
+            // Duplicate hash can also surface from the simulation step if the
+            // fresh DB check raced. Treat it as already-greenlit, not a failure.
+            if (msg.toLowerCase().includes('already been verified') && existingAttestation?.txHash) {
+                setTxHash(existingAttestation.txHash);
+                setPersistWarning(null);
+                setPhase('success');
+                onVerified?.();
+                return;
+            }
+            setFlowError(msg);
             setPhase('failed');
         }
-    }, [report, walletAddress, reportHash, hashLoading, runAttestation]);
+    }, [report, walletAddress, reportHash, hashLoading, runAttestation, onVerified, alreadyVerified, existingAttestation]);
 
     if (!open || !report) return null;
 
@@ -401,7 +456,8 @@ export default function VerifyReportModal({
     }
 
     /* ---------- confirmation ---------- */
-    const continueDisabled = hashLoading || !reportHash || !walletAddress;
+    const isAlreadyVerified = alreadyVerified || !!report.attestedCurrent;
+    const continueDisabled = hashLoading || !reportHash || !walletAddress || isAlreadyVerified;
 
     return createPortal(
         <div
@@ -462,6 +518,29 @@ export default function VerifyReportModal({
                     </span>
                 </div>
 
+                {isAlreadyVerified ? (
+                    <p className="mb-[10px] flex items-start gap-[7px] rounded-[12px] border border-mint/30 bg-mint/10 p-[10px_12px] text-[11.5px] leading-relaxed text-mint">
+                        <i className="fa-solid fa-circle-check mt-[2px] text-[11px]"></i>
+                        <span>
+                            This version is already verified on Stellar Testnet. The proof is greenlit on-chain — no
+                            new transaction is needed. Edit the report to attest a new version.
+                            {existingAttestation ? (
+                                <>
+                                    {' '}
+                                    <a
+                                        href={explorerTxUrl(existingAttestation.txHash)}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="underline"
+                                    >
+                                        View transaction {existingAttestation.txHash.slice(0, 8)}…
+                                    </a>
+                                </>
+                            ) : null}
+                        </span>
+                    </p>
+                ) : null}
+
                 {!walletAddress ? (
                     <p className="mb-[10px] flex items-center gap-[7px] text-[11.5px] text-[#888]">
                         <i className="fa-solid fa-wallet text-accent"></i>
@@ -478,11 +557,13 @@ export default function VerifyReportModal({
                         className={PRIMARY_BTN_CLASSES}
                         disabled={continueDisabled}
                         title={
-                            !walletAddress
-                                ? 'Connect a Stellar wallet first'
-                                : !reportHash && !hashLoading
-                                  ? 'The report hash could not be loaded'
-                                  : undefined
+                            isAlreadyVerified
+                                ? 'Already verified — edit the report to create a new version'
+                                : !walletAddress
+                                  ? 'Connect a Stellar wallet first'
+                                  : !reportHash && !hashLoading
+                                    ? 'The report hash could not be loaded'
+                                    : undefined
                         }
                         onClick={() => void handleContinue()}
                     >

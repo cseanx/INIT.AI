@@ -158,8 +158,21 @@ export default function ReportsTable({
                                         {onVerify && typeof r.id === 'number' ? (
                                             <button
                                                 className={ACTION_BTN_CLASSES}
-                                                title="Verify on Stellar"
-                                                onClick={() => onVerify(r)}
+                                                disabled={!!r.attestedCurrent}
+                                                style={
+                                                    r.attestedCurrent
+                                                        ? { opacity: 0.35, cursor: 'not-allowed' }
+                                                        : undefined
+                                                }
+                                                title={
+                                                    r.attestedCurrent
+                                                        ? 'Already verified on Stellar Testnet — edit the report to create a new version to verify'
+                                                        : 'Verify on Stellar'
+                                                }
+                                                onClick={() => {
+                                                    if (r.attestedCurrent) return;
+                                                    onVerify(r);
+                                                }}
                                             >
                                                 <i className="fa-solid fa-shield-halved"></i>
                                             </button>

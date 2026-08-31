@@ -157,11 +157,13 @@ export function normalizeWalletError(err: unknown): Error {
     if (
         msg.includes('not installed') ||
         msg.includes('no wallet') ||
+        msg.includes('freighter') ||
         msg.includes('extension') ||
         msg.includes('unavailable') ||
         msg.includes('not available') ||
         msg.includes('locked') ||
-        msg.includes('not found') ||
+        msg.includes('wallet not found') ||
+        msg.includes('account not found') ||
         msg.includes('no address')
     ) {
         return new Error(
