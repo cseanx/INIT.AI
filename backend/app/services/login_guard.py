@@ -14,6 +14,14 @@ from sqlalchemy.orm import Session as DBSession
 from app.models import LoginAttempt
 
 
+def _ensure_aware(dt: datetime | None) -> datetime | None:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 class LoginGuard:
     def __init__(self, max_attempts: int = 5, window: float = 900, lockout: float = 30) -> None:
         self._max_attempts = max_attempts
@@ -32,8 +40,9 @@ class LoginGuard:
         if attempt is None:
             return True, 0, self._max_attempts
 
-        if attempt.locked_until and attempt.locked_until > now:
-            remaining = int((attempt.locked_until - now).total_seconds()) + 1
+        locked = _ensure_aware(attempt.locked_until)
+        if locked and locked > now:
+            remaining = int((locked - now).total_seconds()) + 1
             return False, max(remaining, 1), 0
 
         # Lockout expired -> the client gets a fresh set of attempts.
@@ -45,7 +54,8 @@ class LoginGuard:
             return True, 0, self._max_attempts
 
         window_cutoff = now - timedelta(seconds=self._window)
-        if attempt.last_failure_at and attempt.last_failure_at < window_cutoff:
+        last = _ensure_aware(attempt.last_failure_at)
+        if last and last < window_cutoff:
             attempt.failed_count = 0
             attempt.locked_until = None
             db.commit()
@@ -60,7 +70,8 @@ class LoginGuard:
             attempt = LoginAttempt(key=key, failed_count=1, last_failure_at=now)
             db.add(attempt)
         else:
-            if attempt.locked_until and attempt.locked_until > now:
+            locked = _ensure_aware(attempt.locked_until)
+            if locked and locked > now:
                 return
             attempt.failed_count += 1
             attempt.last_failure_at = now

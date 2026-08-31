@@ -22,18 +22,21 @@ DEMO_USERS = [
         "email": "admin@init.ai",
         "password": "admin123",
         "role": "LGU Administrator",
+        "organization": "Quezon City Local Government",
     },
     {
         "name": "Maria Santos",
         "email": "analyst@init.ai",
         "password": "analyst123",
         "role": "Climate Analyst",
+        "organization": "Quezon City LGU — Climate Division",
     },
     {
         "name": "Ramon Reyes",
         "email": "coordinator@init.ai",
         "password": "coordinator123",
         "role": "Field Coordinator",
+        "organization": "Quezon City LGU — Field Operations",
     },
 ]
 
@@ -171,14 +174,18 @@ def seed(db: Session) -> None:
                     email=demo["email"],
                     password_hash=hash_password(demo["password"]),
                     role=demo["role"],
+                    organization=demo.get("organization"),
+                    email_verified=True,
                 )
             )
         else:
             user.name = demo["name"]
             user.role = demo["role"]
+            user.organization = demo.get("organization", user.organization)
+            user.email_verified = True
             user.password_hash = hash_password(demo["password"])
     db.commit()
-    print(f"Upserted {len(DEMO_USERS)} demo users with Argon2id password hashes.")
+    print(f"Upserted {len(DEMO_USERS)} demo users with Argon2id password hashes (verified).")
 
     if db.scalar(select(func.count()).select_from(Barangay)):
         print("Domain data already present — skipping.")

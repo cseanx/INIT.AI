@@ -6,14 +6,36 @@ from app.api.deps import get_current_user
 from app.core.config import settings
 from app.db.session import get_db
 from app.models import User
-from app.schemas.auth import LoginRequest, UserOut
+from app.schemas.auth import (
+    ForgotPasswordRequest,
+    LoginRequest,
+    MessageOut,
+    RegisterRequest,
+    ResendVerificationRequest,
+    ResetPasswordRequest,
+    UserOut,
+    VerifyEmailRequest,
+)
 from app.services.auth import (
     create_session,
+    hash_password,
+    revoke_all_user_sessions,
     revoke_expired_sessions,
     revoke_session,
     verify_password,
 )
+from app.services.email import (
+    send_password_reset_email,
+    send_verification_email,
+)
 from app.services.login_guard import LoginGuard
+from app.services.tokens import (
+    consume_password_reset_token,
+    consume_verification_token,
+    create_password_reset_token,
+    create_verification_token,
+)
+from app.services.validators import normalize_role
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -55,6 +77,139 @@ def _clear_session_cookie(response: Response) -> None:
     )
 
 
+@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+def register(
+    body: RegisterRequest,
+    db: Session = Depends(get_db),
+) -> User:
+    if body.password != body.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Passwords do not match.",
+        )
+    email = body.email.lower().strip()
+    existing = db.scalar(select(User).where(User.email == email))
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An account with this email already exists.",
+        )
+    role = normalize_role(body.role)
+    user = User(
+        name=body.name.strip(),
+        email=email,
+        password_hash=hash_password(body.password),
+        role=role,
+        organization=body.organization.strip(),
+        email_verified=False,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    # Generate verification token and send email (dev-safe: logs to console).
+    try:
+        raw_token = create_verification_token(db, user)
+        send_verification_email(user.email, user.name, raw_token)
+    except Exception:
+        # Registration succeeds even if email delivery fails; log but don't leak.
+        pass
+    return user
+
+
+@router.post("/verify-email", response_model=MessageOut)
+def verify_email(
+    body: VerifyEmailRequest,
+    db: Session = Depends(get_db),
+) -> MessageOut:
+    user = consume_verification_token(db, body.token)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification link.",
+        )
+    return MessageOut(message="Email verified successfully. You can now log in.")
+
+
+@router.get("/verify-email", response_model=MessageOut)
+def verify_email_get(
+    token: str,
+    db: Session = Depends(get_db),
+) -> MessageOut:
+    user = consume_verification_token(db, token)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification link.",
+        )
+    return MessageOut(message="Email verified successfully. You can now log in.")
+
+
+@router.post("/resend-verification", response_model=MessageOut)
+def resend_verification(
+    body: ResendVerificationRequest,
+    db: Session = Depends(get_db),
+) -> MessageOut:
+    # Generic response to avoid enumeration.
+    generic = MessageOut(
+        message="If an account with that email exists and is not yet verified, a new verification email has been sent."
+    )
+    email = body.email.lower().strip()
+    user = db.scalar(select(User).where(User.email == email))
+    if user is None or user.email_verified:
+        return generic
+    try:
+        raw_token = create_verification_token(db, user)
+        send_verification_email(user.email, user.name, raw_token)
+    except Exception:
+        pass
+    return generic
+
+
+@router.post("/forgot-password", response_model=MessageOut)
+def forgot_password(
+    body: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+) -> MessageOut:
+    generic = MessageOut(
+        message="If an account with that email exists, a password reset link has been sent."
+    )
+    email = body.email.lower().strip()
+    user = db.scalar(select(User).where(User.email == email))
+    if user is None:
+        return generic
+    try:
+        raw_token = create_password_reset_token(db, user)
+        send_password_reset_email(user.email, user.name, raw_token)
+    except Exception:
+        pass
+    return generic
+
+
+@router.post("/reset-password", response_model=MessageOut)
+def reset_password(
+    body: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+) -> MessageOut:
+    if body.new_password != body.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Passwords do not match.",
+        )
+    user = consume_password_reset_token(db, body.token)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset link.",
+        )
+    # Token is already marked used via consume; now update password.
+    user.password_hash = hash_password(body.new_password)
+    db.commit()
+    # Invalidate all existing sessions for security.
+    revoke_all_user_sessions(db, user)
+    return MessageOut(message="Password has been reset. You can now log in.")
+
+
 @router.post("/login", response_model=UserOut)
 def login(
     body: LoginRequest,
@@ -84,6 +239,13 @@ def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=detail,
+        )
+
+    # Require verified email before issuing a session.
+    if not user.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email before logging in. Check your inbox for the verification link.",
         )
 
     _login_guard.record_success(db, key)

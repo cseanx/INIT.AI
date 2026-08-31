@@ -18,20 +18,17 @@ export interface HealthResponse {
     status: string;
 }
 
-export interface AuthUser {
-    id: number;
-    name: string;
-    email: string;
-    role: string;
-    created_at: string;
-}
+export type UserRole = 'LGU Administrator' | 'Climate Analyst' | 'Field Coordinator' | string;
 
 export interface AuthUser {
     id: number;
     name: string;
     email: string;
-    role: string;
+    role: UserRole;
+    organization: string | null;
+    email_verified: boolean;
     created_at: string;
+    updated_at?: string | null;
 }
 
 export interface Barangay {

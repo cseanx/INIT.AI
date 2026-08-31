@@ -37,6 +37,17 @@ class Settings(BaseSettings):
     stellar_horizon_base: str = "https://horizon-testnet.stellar.org"
     stellar_network: str = "testnet"
 
+    # Account / email configuration
+    frontend_url: str = "http://localhost:5173"
+    email_from: str = "noreply@init.ai"
+    email_verification_ttl_hours: int = 24
+    password_reset_ttl_hours: int = 1
+    email_change_ttl_hours: int = 24
+    # When true, email content is logged to stdout (development-safe).
+    # In production a real SMTP provider can be plugged in via services/email.py
+    # without touching this config.
+    email_log_enabled: bool = True
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

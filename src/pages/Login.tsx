@@ -1,8 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import Particles from '../components/common/Particles';
 import { useAuth } from '../auth/AuthContext';
-import { ApiError } from '../services/api';
+import { ApiError, api } from '../services/api';
 
 const INPUT_CLASSES =
     'w-full rounded-[14px] border border-white/8 bg-white/[.04] p-[15px] text-[15px] text-white outline-none transition duration-300 focus:border-primary focus:shadow-[0_0_25px_rgba(var(--accent-glow),.25)]';
@@ -14,7 +14,9 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [loggingIn, setLoggingIn] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [info, setInfo] = useState<string | null>(null);
     const [cooldown, setCooldown] = useState(0);
+    const [showResend, setShowResend] = useState(false);
 
     useEffect(() => {
         if (cooldown <= 0) return;
@@ -39,6 +41,8 @@ export default function Login() {
         }
         setLoggingIn(true);
         setError(null);
+        setInfo(null);
+        setShowResend(false);
         try {
             await login(email, password);
             navigate('/dashboard', { replace: true });
@@ -46,10 +50,24 @@ export default function Login() {
             if (err instanceof ApiError && err.status === 429 && err.retryAfter) {
                 setCooldown(err.retryAfter);
                 setError('Too many failed attempts. Please wait to try again.');
+            } else if (err instanceof ApiError && err.status === 403) {
+                setError(err.message);
+                setShowResend(true);
             } else {
                 setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
             }
             setLoggingIn(false);
+        }
+    }
+
+    async function handleResend() {
+        setError(null);
+        setInfo(null);
+        try {
+            const res = await api.auth.resendVerification(email.trim());
+            setInfo(res.message);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to resend verification email.');
         }
     }
 
@@ -116,6 +134,20 @@ export default function Login() {
                                     : error}
                             </p>
                         ) : null}
+                        {info ? (
+                            <p role="status" className="mb-4 text-center text-[13px] font-medium text-mint">
+                                {info}
+                            </p>
+                        ) : null}
+                        {showResend ? (
+                            <button
+                                type="button"
+                                onClick={handleResend}
+                                className="mb-3 w-full rounded-[14px] border border-white/10 bg-white/[.04] py-3 text-[13px] font-medium text-white hover:bg-white/10"
+                            >
+                                Resend verification email
+                            </button>
+                        ) : null}
                         <button
                             id="loginBtn"
                             type="submit"
@@ -129,6 +161,17 @@ export default function Login() {
                                   : 'Login'}
                         </button>
                     </form>
+                    <div className="mt-5 flex flex-col gap-2 text-center text-[13px]">
+                        <Link to="/forgot-password" className="text-accent hover:text-white">
+                            Forgot password?
+                        </Link>
+                        <span className="text-[#9f9f9f]">
+                            Don&apos;t have an account?{' '}
+                            <Link to="/register" className="font-medium text-white hover:text-accent">
+                                Create account
+                            </Link>
+                        </span>
+                    </div>
                     <footer className="mt-[30px] text-center text-[13px] text-[#9f9f9f]">
                         Prototype Version • 2026
                     </footer>

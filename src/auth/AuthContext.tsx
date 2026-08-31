@@ -15,6 +15,16 @@ interface AuthContextValue {
     loading: boolean;
     login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    refresh: () => Promise<void>;
+    setUser: (user: AuthUser | null) => void;
+    register: (payload: {
+        name: string;
+        email: string;
+        password: string;
+        confirm_password: string;
+        organization: string;
+        role?: string;
+    }) => Promise<AuthUser>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -28,14 +38,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [loading, setLoading] = useState(true);
 
+    const refresh = useCallback(async () => {
+        const current = await api.auth.me();
+        setUser(current);
+    }, []);
+
     useEffect(() => {
         let active = true;
-        api.auth.me().then((current) => {
-            if (active) {
-                setUser(current);
-                setLoading(false);
-            }
-        });
+        api.auth
+            .me()
+            .then((current) => {
+                if (active) setUser(current);
+            })
+            .finally(() => {
+                if (active) setLoading(false);
+            });
         return () => {
             active = false;
         };
@@ -51,9 +68,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
     }, []);
 
+    const register = useCallback(
+        async (payload: {
+            name: string;
+            email: string;
+            password: string;
+            confirm_password: string;
+            organization: string;
+            role?: string;
+        }) => {
+            const created = await api.auth.register(payload);
+            return created;
+        },
+        [],
+    );
+
     const value = useMemo(
-        () => ({ user, loading, login, logout }),
-        [user, loading, login, logout],
+        () => ({ user, loading, login, logout, refresh, setUser, register }),
+        [user, loading, login, logout, refresh, register],
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

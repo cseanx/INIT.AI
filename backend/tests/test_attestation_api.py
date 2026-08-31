@@ -112,7 +112,7 @@ def test_record_and_list_attestation(client):
 
     listed = tc.get("/api/reports/1/attestation").json()
     assert len(listed) == 1
-    assert listed[0]["txHash"].startswith("bf9a28")
+    assert listed[0]["txHash"] == VALID_BODY["txHash"]
 
 
 def test_requires_authentication(client):

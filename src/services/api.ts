@@ -290,6 +290,70 @@ getReports: async (): Promise<Report[]> => {
             authFetch<void>('/api/auth/logout', { method: 'POST' }),
         me: (): Promise<AuthUser | null> =>
             authFetch<AuthUser | null>('/api/auth/me').catch(() => null),
+        register: (payload: {
+            name: string;
+            email: string;
+            password: string;
+            confirm_password: string;
+            organization: string;
+            role?: string;
+        }): Promise<AuthUser> =>
+            authFetch('/api/auth/register', {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            }),
+        verifyEmail: (token: string): Promise<{ message: string }> =>
+            authFetch('/api/auth/verify-email', {
+                method: 'POST',
+                body: JSON.stringify({ token }),
+            }),
+        resendVerification: (email: string): Promise<{ message: string }> =>
+            authFetch('/api/auth/resend-verification', {
+                method: 'POST',
+                body: JSON.stringify({ email }),
+            }),
+        forgotPassword: (email: string): Promise<{ message: string }> =>
+            authFetch('/api/auth/forgot-password', {
+                method: 'POST',
+                body: JSON.stringify({ email }),
+            }),
+        resetPassword: (payload: {
+            token: string;
+            new_password: string;
+            confirm_password: string;
+        }): Promise<{ message: string }> =>
+            authFetch('/api/auth/reset-password', {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            }),
+    },
+
+    account: {
+        me: (): Promise<AuthUser> => authFetch('/api/account/me'),
+        updateProfile: (name: string): Promise<AuthUser> =>
+            authFetch('/api/account/profile', {
+                method: 'PUT',
+                body: JSON.stringify({ name }),
+            }),
+        requestEmailChange: (new_email: string, current_password: string): Promise<{ message: string }> =>
+            authFetch('/api/account/email/request', {
+                method: 'POST',
+                body: JSON.stringify({ new_email, current_password }),
+            }),
+        verifyEmailChange: (token: string): Promise<AuthUser> =>
+            authFetch('/api/account/email/verify', {
+                method: 'POST',
+                body: JSON.stringify({ token }),
+            }),
+        changePassword: (payload: {
+            current_password: string;
+            new_password: string;
+            confirm_password: string;
+        }): Promise<{ message: string }> =>
+            authFetch('/api/account/password', {
+                method: 'PUT',
+                body: JSON.stringify(payload),
+            }),
     },
 
     preferences: {

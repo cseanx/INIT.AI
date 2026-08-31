@@ -39,6 +39,12 @@ def create_session(db: DBSession, user: User) -> str:
     return token
 
 
+def _ensure_aware(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 def get_session_user(db: DBSession, token: str | None) -> User | None:
     if not token:
         return None
@@ -47,7 +53,10 @@ def get_session_user(db: DBSession, token: str | None) -> User | None:
         .options(joinedload(UserSession.user))
         .where(UserSession.token_hash == _hash_token(token))
     )
-    if session is None or session.expires_at < datetime.now(timezone.utc):
+    if session is None:
+        return None
+    expires = _ensure_aware(session.expires_at)
+    if expires < datetime.now(timezone.utc):
         return None
     return session.user
 
@@ -62,10 +71,29 @@ def revoke_session(db: DBSession, token: str | None) -> None:
 
 
 def revoke_expired_sessions(db: DBSession, user: User) -> None:
+    # Handle both Postgres (tz-aware) and SQLite (naive) storage uniformly in Python.
+    now = datetime.now(timezone.utc)
+    sessions = db.scalars(select(UserSession).where(UserSession.user_id == user.id)).all()
+    for s in sessions:
+        if _ensure_aware(s.expires_at) < now:
+            db.delete(s)
+    db.commit()
+
+
+def revoke_all_user_sessions(db: DBSession, user: User) -> None:
+    db.execute(delete(UserSession).where(UserSession.user_id == user.id))
+    db.commit()
+
+
+def revoke_other_sessions(db: DBSession, user: User, current_token: str | None) -> None:
+    if not current_token:
+        revoke_all_user_sessions(db, user)
+        return
+    current_hash = _hash_token(current_token)
     db.execute(
         delete(UserSession).where(
             UserSession.user_id == user.id,
-            UserSession.expires_at < datetime.now(timezone.utc),
+            UserSession.token_hash != current_hash,
         )
     )
     db.commit()

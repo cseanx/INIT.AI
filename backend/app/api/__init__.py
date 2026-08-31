@@ -1,3 +1,4 @@
+from app.api.account import router as account_router
 from app.api.auth import router as auth_router
 from app.api.barangays import router as barangays_router
 from app.api.canopy import router as canopy_router
@@ -10,6 +11,7 @@ from app.api.stellar import router as stellar_router
 
 api_routers = [
     auth_router,
+    account_router,
     cities_router,
     barangays_router,
     heat_router,
