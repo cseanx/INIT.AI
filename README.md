@@ -215,20 +215,36 @@ queryable while each on-chain record stands alone.
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![React Router](https://img.shields.io/badge/React_Router-%23CA4245.svg?style=for-the-badge&logo=react-router&logoColor=white)
 ![Chart.js](https://img.shields.io/badge/chart.js-%23F5788D.svg?style=for-the-badge&logo=chart.js&logoColor=white)
+![MapLibre](https://img.shields.io/badge/MapLibre-%233969FF.svg?style=for-the-badge&logo=maplibre&logoColor=white)
+![GSAP](https://img.shields.io/badge/GSAP-%2388CE02.svg?style=for-the-badge&logo=greensock&logoColor=white)
 
 ## Backend
 
 ![Python](https://img.shields.io/badge/python-%233670A0.svg?style=for-the-badge&logo=python&logoColor=ffdd54)
 ![FastAPI](https://img.shields.io/badge/fastapi-%23009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)
 ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
+![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-%23336791.svg?style=for-the-badge&logo=sqlalchemy&logoColor=white)
+![Alembic](https://img.shields.io/badge/Alembic-%23000000.svg?style=for-the-badge&logo=python&logoColor=white)
+![Pydantic](https://img.shields.io/badge/Pydantic-%23E92063.svg?style=for-the-badge&logo=pydantic&logoColor=white)
+![Uvicorn](https://img.shields.io/badge/Uvicorn-%23009688.svg?style=for-the-badge&logo=gunicorn&logoColor=white)
+![Argon2](https://img.shields.io/badge/Argon2-%23EA2D2E.svg?style=for-the-badge&logo=python&logoColor=white)
+![pytest](https://img.shields.io/badge/pytest-%230A9EDC.svg?style=for-the-badge&logo=pytest&logoColor=white)
+
+## Stellar, Soroban & Wallet
+
 ![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)
 ![Stellar](https://img.shields.io/badge/Stellar-%237D00FF.svg?style=for-the-badge&logo=Stellar&logoColor=white)
+![Soroban](https://img.shields.io/badge/Soroban-%237D00FF.svg?style=for-the-badge&logo=stellar&logoColor=white)
+![Horizon](https://img.shields.io/badge/Horizon-%2300BFFF.svg?style=for-the-badge&logo=stellar&logoColor=white)
+![Freighter](https://img.shields.io/badge/Freighter-%2300A9E0.svg?style=for-the-badge&logo=stellar&logoColor=white)
+![Wallets Kit](https://img.shields.io/badge/Wallets_Kit-%2300719F.svg?style=for-the-badge&logo=stellar&logoColor=white)
+![stellar--cli](https://img.shields.io/badge/stellar--cli-%23000000.svg?style=for-the-badge&logo=stellar&logoColor=white)
 
-- **Web:** React 19, TypeScript, Vite 6, Tailwind, React Router, Chart.js
-- **Backend:** FastAPI, PostgreSQL (Neon), SQLAlchemy, Alembic, Pydantic
-- **Stellar:** StellarWalletsKit, `@stellar/stellar-sdk`, Horizon, Soroban RPC, Testnet
-- **Contracts:** Rust, `soroban-sdk` 27, `stellar-cli`
-- **Tooling:** npm, Vercel, pytest, cargo test
+## Deployment & Tooling
+
+![npm](https://img.shields.io/badge/npm-%23CB3837.svg?style=for-the-badge&logo=npm&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-%23000000.svg?style=for-the-badge&logo=vercel&logoColor=white)
+![Neon](https://img.shields.io/badge/Neon-%2300E699.svg?style=for-the-badge&logo=neon&logoColor=white)
 
 # 6. Product Showcase
 
