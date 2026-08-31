@@ -130,15 +130,17 @@ hashes/submitters, authorization enforcement (fails without a signature),
 explicit single-signature mock, and **revision chain** (`prev_hash` links,
 unknown-prev rejection, report_id mismatch rejection, cross-wallet revision).
 
-## Deployment (Stellar Testnet) — DONE
+## Deployment (Stellar Testnet) — DONE (v2 with `prev_hash`)
 
 | | |
 |---|---|
 | **Network** | Stellar Testnet (`--network testnet`, Soroban RPC `https://soroban-testnet.stellar.org`) |
-| **Contract ID** | `CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF` |
-| **Deployed** | 2026-08-24 · stellar-cli 27.1.0 · wasm32v1-none release build |
-| **Explorer** | https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF |
-| **Initiation tx** | https://stellar.expert/explorer/testnet/tx/bf9a285558eea50b89982bcdccad6ae44ea33cf90739a925cba402b4b8429375 |
+| **Contract ID** | `CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4` |
+| **Deployed** | 2026-08-31 · stellar-cli 28.0.0 · wasm32v1-none release 28,844 bytes (wasm hash `19f8b4bddb717f60aa70116e0c6c0e86e45e3488f0d307dafa277c8534ba210e`) |
+| **Explorer** | https://stellar.expert/explorer/testnet/contract/CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4 |
+| **Deploy tx** | https://stellar.expert/explorer/testnet/tx/b1e1f808ba59e09affe25fe0bb07e9317736c0cdc16d80700b74bfc57ba22e0f |
+| **WASM upload tx** | https://stellar.expert/explorer/testnet/tx/fcda513e2e28a59a1bd266c8bd1ff0a3ad036a62fde46441584b5b01f7bcb530 |
+| **Previous contract** | `CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF` (2026-08-24, superseded) |
 
 ### Deploy command (as executed)
 
@@ -151,10 +153,11 @@ stellar keys generate initai-deployer --network testnet
 curl -s "https://friendbot.stellar.org?addr=$(stellar keys address initai-deployer)"
 
 stellar contract deploy \
-    --wasm target/wasm32v1-none/release/initai_spatial_attestation.wasm \
+    --wasm contracts/soroban/target/wasm32v1-none/release/initai_spatial_attestation.wasm \
     --source initai-deployer \
     --network testnet
-# → CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF
+# → CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4 (2026-08-31, wasm 19f8b4..., 28,844 bytes)
+# previous → CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF (2026-08-24, wasm 59d63c..., 26,688 bytes)
 ```
 
 To redeploy an updated WASM, rerun `stellar contract deploy …` — you get a
@@ -166,10 +169,10 @@ NEW contract id (Soroban deploys are immutable); update
 Reads are free and simulate without submitting:
 
 ```bash
-CID=CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF
+CID=CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4
 
-stellar contract invoke --id $CID --network testnet -- total_attestations
-stellar contract invoke --id $CID --network testnet \
+stellar contract invoke --id $CID --source-account $(stellar keys address initai-deployer) --network testnet -- total_attestations
+stellar contract invoke --id $CID --source-account $(stellar keys address initai-deployer) --network testnet \
     -- verify --hash aa…aa        # 64 hex chars
 ```
 
@@ -193,8 +196,9 @@ stellar contract invoke --id $CID --network testnet \
 
 Smoke test performed at deployment time (hash = 0xaa×32,
 `report_id="smoke-test"`): attest tx
-`bf9a285558eea50b89982bcdccad6ae44ea33cf90739a925cba402b4b8429375`,
-`verify` returned the full record, `total_attestations` → 1.
+`66a6900a24fa4851a5730352af35e1bf5ca8e963ee2fb6d712e7202fd75318f6` (`prev_hash: null`),
+revision `bbbb...` → tx `48f4128e7973a15104de3560aade97d6994a0ff0e15b3459dd1915cb1d1c6985` (`prev_hash: aaaa...`),
+`verify` returns full records with `prev_hash` chain, `total_attestations` → 2.
 
 ---
 

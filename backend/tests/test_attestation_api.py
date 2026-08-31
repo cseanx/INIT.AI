@@ -34,8 +34,8 @@ def _sha(payload: dict) -> str:
 
 VALID_BODY = {
     "reportHash": _sha({"x": 1}),  # replaced per-test with the real content hash
-    "txHash": "bf9a285558eea50b89982bcdccad6ae44ea33cf90739a925cba402b4b8429375",
-    "contractId": "CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF",
+    "txHash": "66a6900a24fa4851a5730352af35e1bf5ca8e963ee2fb6d712e7202fd75318f6",
+    "contractId": "CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4",
     "network": "testnet",
     "wallet": "GBBU32EB3VNOIGDS6GUJ6JWWONQ6NP73BRG6IVE5D4BV3LCTYEJJFAHY",
     "meta": {"source": "test"},

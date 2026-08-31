@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     # The backend pins the expected contract id: client-submitted contract
     # ids are ignored, so proofs can only be recorded against the contract
     # THIS deployment trusts. Horizon is queried read-only; no keys here.
-    stellar_contract_id: str = "CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF"
+    stellar_contract_id: str = "CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4"
     stellar_horizon_base: str = "https://horizon-testnet.stellar.org"
     stellar_network: str = "testnet"
 

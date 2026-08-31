@@ -266,9 +266,9 @@ One table for reviewers - everything needed to verify this project:
 | Item | Value / Link |
 | --- | --- |
 | Network | Stellar **Testnet** only |
-| Contract ID | [`CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF`](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) |
-| Contract source | [`contracts/soroban/`](contracts/soroban/) (Rust + soroban-sdk 27, unit-tested) |
-| WASM artifact | `target/wasm32v1-none/release/initai_spatial_attestation.wasm` — **28,844 bytes**, **SHA-256** `19f8b4bddb717f60aa70116e0c6c0e86e45e3488f0d307dafa277c8534ba210e` — built `2026-08-31` with **on-chain `prev_hash`** revision chain via `stellar contract build` / `cargo build --target wasm32v1-none --release` (Rust `1.98.0`, `soroban-sdk 27.0.1`, `opt-level="z"` + `lto=true`) — `target/` is gitignored; verify with `Get-FileHash -Algorithm SHA256` or `sha256sum` — deployed contract `CBQSI2...UBXF` is previous build `59d63c9e...` (2026-08-24); redeploy with new WASM will yield new contract ID (Soroban deploys are immutable) |
+| Contract ID | [`CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4`](https://stellar.expert/explorer/testnet/contract/CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4) |
+| Contract source | [`contracts/soroban/`](contracts/soroban/) (Rust + soroban-sdk 27, unit-tested, `prev_hash` on-chain) |
+| WASM artifact | `target/wasm32v1-none/release/initai_spatial_attestation.wasm` — **28,844 bytes**, **SHA-256** `19f8b4bddb717f60aa70116e0c6c0e86e45e3488f0d307dafa277c8534ba210e` — built `2026-08-31` with **on-chain `prev_hash`** via `stellar contract build` / `cargo build --target wasm32v1-none --release` (Rust `1.98.0`, `soroban-sdk 27.0.1`, `opt-level="z"` + `lto=true`) — `target/` is gitignored; verify with `Get-FileHash -Algorithm SHA256` or `sha256sum` — wasm hash `19f8b4...` matches deploy (Soroban deploys are immutable) |
 | Live dApp | [https://init-ai-ebon.vercel.app](https://init-ai-ebon.vercel.app) |
 | API documentation | [https://backend-phi-gray-27.vercel.app/docs](https://backend-phi-gray-27.vercel.app/docs) (FastAPI/OpenAPI) |
 | Canonicalization spec | [`initai-canonical-v1`](#canonicalization-specification-initai-canonical-v1) - rules + implementation in [`backend/app/services/report_hash.py`](backend/app/services/report_hash.py) |
@@ -281,19 +281,22 @@ One table for reviewers - everything needed to verify this project:
 
 | Contract | Address | Explorer | Source |
 | --- | --- | --- | --- |
-| `SpatialAttestationRegistry` | `CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) | [`contracts/soroban/`](contracts/soroban/) |
+| `SpatialAttestationRegistry` | `CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4) | [`contracts/soroban/`](contracts/soroban/) |
 
-> Testnet deployment — may be redeployed as the prototype evolves. After a redeployment, update this table, `.env.example`, and `backend/.env.example` together.
+> Deployed `2026-08-31` with stellar-cli `28.0.0` (wasm `19f8b4...`, 28,844 bytes) — wasm hash on-chain matches build. Previous deployment `CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF` (2026-08-24) is superseded. After any redeploy, update this table, `.env.example`, `backend/.env.example`, and `backend/app/core/config.py` together.
 
 ## Transaction Receipts
 
 Each Testnet receipt is labeled with its attestation type and a non-sensitive
 digest prefix (full digests live in the database and on-chain, not here).
+Contract `CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4` (wasm `19f8b4...`). Previous contract `CBQSI2...UBXF` had 2 attestations (archived).
 
-| # | Report ref | Type | Date (UTC) | Source wallet | Digest prefix | Transaction |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | `7` | original | 2026-08-24 11:39:59 | `GBBU32EB...FAHY` (ops) | `923ab672...` | [`431266e6...40b89`](https://stellar.expert/explorer/testnet/tx/431266e6e39da647c15873385568952cd1dd8881346452bdec407cf1fbe40b89) |
-| 2 | `smoke-test` | deployment smoke test | 2026-08-24 08:49:09 | `GBBU32EB...FAHY` (ops) | `aaaa...` (synthetic pattern) | [`bf9a2855...9375`](https://stellar.expert/explorer/testnet/tx/bf9a285558eea50b89982bcdccad6ae44ea33cf90739a925cba402b4b8429375) |
+| # | Report ref | Type | Date (UTC) | Source wallet | Digest prefix | `prev_hash` | Transaction |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `smoke-test` | first version (None) | 2026-08-31  | `GBBU32EB...FAHY` (ops) | `aaaa...` (synthetic `0xaa×32`) | `None` | [`66a6900a...318f6`](https://stellar.expert/explorer/testnet/tx/66a6900a24fa4851a5730352af35e1bf5ca8e963ee2fb6d712e7202fd75318f6) |
+| 2 | `smoke-test` | revision (Some prev) | 2026-08-31  | `GBBU32EB...FAHY` (ops) | `bbbb...` (synthetic `0xbb×32`) | `aaaa...` | [`48f4128e...6985`](https://stellar.expert/explorer/testnet/tx/48f4128e7973a15104de3560aade97d6994a0ff0e15b3459dd1915cb1d1c6985) |
+
+> **On-chain revision demo**: v1 `aaaa...` has `prev_hash: null`; v2 `bbbb...` has `prev_hash: aaaa...` same `report_id` `smoke-test` — walkable via `verify(bbbb...).prev_hash` → `aaaa...`. Duplicate and mismatched `prev_hash` correctly panic (see Failure-Handling below). Explorer links above show ledger `4431681` / `4431689`.
 
 ### Wallets
 
@@ -313,9 +316,22 @@ The implementation visibly handles expected failures, not just the happy path:
 **1. Duplicate-attestation rejection (on-chain):**
 
 ```bash
-stellar contract invoke --id CBQSI2TX... --network testnet --source initai-deployer \
+stellar contract invoke --id CDYHVMVLSKZ... --network testnet --source initai-deployer \
   -- attest --submitter <wallet> --hash <already-attested-hash> --report_id "7"
 # -> error: "attestation already exists for this report hash"
+```
+
+**1b. Revision `prev_hash` rejection (on-chain):**
+
+```bash
+# Unknown prev -> panic "prev_hash references unknown attestation"
+stellar contract invoke --id CDYHVMVLSKZ... --network testnet --source initai-deployer \
+  -- attest --submitter <wallet> --hash <new-hash> --report_id "7" --prev_hash '"ffffffff...ffff"'
+
+# Mismatched report_id -> panic "prev_hash must reference same report_id"
+stellar contract invoke --id CDYHVMVLSKZ... --network testnet --source initai-deployer \
+  -- attest --submitter <wallet> --hash <new-hash2> --report_id "8" --prev_hash '"aaaaaaaa...aaaa"'
+# aaaa... belongs to report 7, not 8
 ```
 
 **2. Fabricated transaction rejection (server-side, HTTP 422):** submitting an
