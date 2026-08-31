@@ -2,6 +2,14 @@
 
 ### AI-Powered Urban Heat Intelligence for Philippine Cities
 
+**Monitor urban heat. Verify what matters on Stellar.**
+
+[![Status](https://img.shields.io/badge/Status-Testnet_Alpha-18181b?style=flat-square)](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) [![Stellar](https://img.shields.io/badge/Stellar-Soroban-7D00FF?style=flat-square&logo=stellar&logoColor=white)](https://developers.stellar.org/docs/learn/fundamentals/contract-development) [![React](https://img.shields.io/badge/React-19-20232a?style=flat-square&logo=react&logoColor=61DAFB)](https://react.dev) [![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev) [![FastAPI](https://img.shields.io/badge/FastAPI-0.1-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com) [![Rust](https://img.shields.io/badge/Rust-Soroban-dea584?style=flat-square&logo=rust&logoColor=black)](https://soroban.stellar.org) [![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](LICENSE)
+
+[Live dApp](https://init-ai-ebon.vercel.app) · [API Docs](https://backend-phi-gray-27.vercel.app/docs) · [Contract on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) · [Run Locally](#getting-started) · [Canonical Spec](#canonicalization-specification-initai-canonical-v1)
+
+> **Important:** INIT.AI is a prototype on **Stellar Testnet** only. Attestations are wallet-submitted, not LGU-certified. Mainnet, production audit, and official endorsement are not claimed.
+
 INIT.AI is a climate intelligence platform designed to help cities understand, monitor, and respond to **urban heat** using satellite-derived environmental data, geospatial analysis, and AI-assisted insights.
 
 The platform transforms complex environmental data into actionable information for local governments, climate analysts, and field teams.
@@ -114,21 +122,7 @@ Environmental data remains in the application's backend and database, while sele
 
 ### Data Flow
 
-```text
-Satellite / Environmental Data
-            |
-       INIT.AI Backend  (FastAPI + PostgreSQL)
-            |
-     Canonical JSON payload          <- deterministic, versioned spec
-            |
-       SHA-256 Hash                   <- server-authoritative
-            |
-     Soroban Contract                <- wallet-signed via Freighter
-            |
-     Stellar Testnet
-            |
-   Verifiable Attestation
-```
+![DataFlow](/public/assets/images/DataFlow.png)
 
 This allows INIT.AI to maintain its existing data-processing architecture while using Stellar to provide an additional layer of **data integrity and verifiability**.
 
@@ -230,6 +224,12 @@ queryable while each on-chain record stands alone.
 ![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)
 ![Stellar](https://img.shields.io/badge/Stellar-%237D00FF.svg?style=for-the-badge&logo=Stellar&logoColor=white)
 
+- **Web:** React 19, TypeScript, Vite 6, Tailwind, React Router, Chart.js
+- **Backend:** FastAPI, PostgreSQL (Neon), SQLAlchemy, Alembic, Pydantic
+- **Stellar:** StellarWalletsKit, `@stellar/stellar-sdk`, Horizon, Soroban RPC, Testnet
+- **Contracts:** Rust, `soroban-sdk` 27, `stellar-cli`
+- **Tooling:** npm, Vercel, pytest, cargo test
+
 # 6. Product Showcase
 
 ## Evidence Index
@@ -248,6 +248,14 @@ One table for reviewers - everything needed to verify this project:
 | Transaction receipts | See [Transaction Receipts](#transaction-receipts) below |
 | Wallets used | See [Wallets](#wallets) below |
 | Demo video | W.I.P |
+
+## Current Testnet Contract
+
+| Contract | Address | Explorer | Source |
+| --- | --- | --- | --- |
+| `SpatialAttestationRegistry` | `CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) | [`contracts/soroban/`](contracts/soroban/) |
+
+> Testnet deployment — may be redeployed as the prototype evolves. After a redeployment, update this table, `.env.example`, and `backend/.env.example` together.
 
 ## Transaction Receipts
 
@@ -295,16 +303,10 @@ wallet."* - with the report left unattested and fully editable.
 its canonical digest; the verification line then reports the proof no longer
 matches the current content (tamper-evidence working as intended).
 
-## Product Demo
+## Product
 
 > **Product Link**
 > [INIT.AI Vercel Deployment](https://init-ai-ebon.vercel.app)
-
-> **Demo Video:**
-> W.I.P
-
-**Video description:**
-A short demonstration showing the INIT.AI platform, including login, dashboard navigation, heat visualization, hotspot analysis, canopy analysis, reporting, and the Stellar verification workflow - including at least one expected failure case (duplicate-attestation or signature rejection) alongside a successful attestation.
 
 ---
 
@@ -332,63 +334,9 @@ A short demonstration showing the INIT.AI platform, including login, dashboard n
 
 ---
 
-## Additional Media
-
-**Demo / Presentation Video:**
-W.I.P
-
-**Product Walkthrough:**
-W.I.P
-
-**Additional Screenshots / Product Gallery:**
-W.I.P
-
-**Pitch Deck:**
-W.I.P
-
----
-
 # 7. Project Architecture
 
-```text
-                    +----------------------+
-                    |   Satellite Data     |
-                    | Environmental Data   |
-                    +----------------------+
-                               |
-                               v
-                    +----------------------+
-                    |       INIT.AI        |
-                    | React + TypeScript   |
-                    |       + Vite         |
-                    +----------------------+
-                               |
-                               v
-                    +----------------------+
-                    |       FastAPI        |
-                    |  Data Processing &   |
-                    |    AI Services       |
-                    +----------------------+
-                         |            |
-         +---------------+            +----------------------+
-         v                                                   v
-+----------------------+                     +----------------------+
-| PostgreSQL +         |                     |  SHA-256 Hashing     |
-| PostGIS / Neon       |                     | (canonical report    |
-+----------------------+                     |  JSON, server-side)  |
-                                             +----------------------+
-                                                      |
-                                                      v
-                                             +----------------------+
-                                             |  Soroban Smart       |
-                                             |      Contract        |
-                                             +----------------------+
-                                                      |
-                                                      v
-                                             +----------------------+
-                                             |   Stellar Testnet    |
-                                             +----------------------+
-```
+![ProjectArchitecture](/public/assets/images/ProjectArchitecture.png)
 
 ---
 
@@ -434,6 +382,63 @@ a known-digest vector, and unicode stability.
 
 Run them: `python -m pytest tests/test_report_hash.py -q` (from `backend/`).
 
+## Test and Validate
+
+```bash
+# frontend
+npm run build        # tsc + vite build
+# backend (from backend/)
+python -m pytest tests -q
+# contract (requires Rust + stellar-cli)
+cargo test --manifest-path contracts/soroban/Cargo.toml
+stellar contract build --manifest-path contracts/soroban/Cargo.toml
+```
+
+## Performance and Benchmarking
+
+Measured **2026-08-31** on local dev machine (Windows 11, Node `24.15.0` / npm `11.12.1`, Python `3.14.3`, Rust `1.98.0`, cargo `1.98.0`) and against the deployed Vercel backend. No mocked timings — all numbers are from real runs on this commit.
+
+**A. Local build & unit tests (deterministic, offline)**
+
+| Target | Command | Result (this machine) |
+| --- | --- | --- |
+| Frontend build | `npx vite build` (3 runs) | `5.86s` / `6.00s` / `6.55s` — avg `~6.14s` |
+| Backend tests | `python -m pytest tests -q` (23 tests, SQLite in-memory) | cold `9.95s` (first import), warm `3.62s` / `4.09s` — avg warm `~3.9s`, `23 passed` |
+| Contract tests | `cargo test --manifest-path contracts/soroban/Cargo.toml` | compile `~16.1s` + exec `0.02s`, `6 passed` (total `~17.4s` first build, `~0.5s` incremental) |
+| Canonical hash | `attestation_hash` on representative report (597-byte JSON) | `~94k` hashes/s, `10.6 µs`/hash; `canonical_json` alone `~120k` ops/s, `8.3 µs`/op |
+
+Hash example: `9bdd0a8739d3d543561045e07559695856dfe5f0dcab371c212d6ffabfc167ea` (597-byte canonical JSON). See `backend/app/services/report_hash.py:41-82` for the `initai-canonical-v1` implementation.
+
+**B. Deployed API — `GET /api/health` (Vercel, sequential, 50 requests)**
+
+Workload: 50 sequential `GET https://backend-phi-gray-27.vercel.app/api/health` via `urllib` (concurrency `1`, 10s timeout), from AP-Southeast-1 residential network to Vercel. Vercel is serverless — expect cold-start outliers; this is not provisioned-infra benchmarking.
+
+| Observed metric | Result |
+| --- | --- |
+| Attempted requests | 50 |
+| Successful | 50 (100%) |
+| Errors / dropped | 0 / 0 |
+| p50 latency | `133.2 ms` |
+| p95 latency | `207.6 ms` |
+| p99 latency | `2325.1 ms` (single cold start) |
+| min / mean / max | `121.6 ms` / `180.9 ms` / `2325.1 ms` |
+
+> Concurrent burst (100 requests, concurrency `10`) was also measured: `p50 136.7 ms`, `p95 2034.5 ms`, `mean 302.6 ms`, `32 req/s` over `3.12s` — p95 inflates under burst due to multiple cold starts. Sequential numbers above reflect steady-state latency.
+
+No `benchmarks/reports/*.json` is committed — the table above is the verifiable record for this commit. Re-run with `python -m pytest tests -q`, `npx vite build`, or the `urllib` snippet above to reproduce.
+
+## Repository Map
+
+```
+.
+├── src/                 # React + Vite frontend (pages, components, services/stellar)
+├── backend/             # FastAPI + PostgreSQL (app/, alembic/, tests/)
+│   ├── app/services/report_hash.py  # canonicalization (initai-canonical-v1)
+│   └── app/api/reports.py           # attestation-message + attestation endpoints
+├── contracts/soroban/   # Rust Soroban contract (SpatialAttestationRegistry)
+└── README.md            # this file (Evidence Index is source of truth)
+```
+
 ---
 
 # 8. Team
@@ -446,17 +451,17 @@ INIT.AI is developed by a three-person team.
 | **Sean** | Full-stack Developer | Frontend, backend, database, system architecture, Stellar/Soroban integration, and implementation |
 | **Marc** | Quality Assurance    | Testing, validation, bug identification, usability checks, and quality assurance                  |
 
-### Team Members
+### Links
 
 **Angelo Rain Regencia**
 Project Manager
 
-> [LinkedIn](www.linkedin.com/in/angelo-rain-regencia-142ab0241/)
+> [GitHub](https://github.com/angelorainregencia-code) [LinkedIn](www.linkedin.com/in/angelo-rain-regencia-142ab0241/)
 
 **Sean Astin Navarro**
 Full-stack Developer
 
-> [Github](https://github.com/cseanx) [LinkedIn](www.linkedin.com/in/cseanxdev)
+> [GitHub](https://github.com/cseanx) [LinkedIn](www.linkedin.com/in/cseanxdev)
 
 **Marc Joshua Valenzuela**
 Quality Assurance
