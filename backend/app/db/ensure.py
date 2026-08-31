@@ -33,9 +33,20 @@ _REPORTS_ALTERS = [
     "ALTER TABLE reports ADD COLUMN IF NOT EXISTS generated_at TIMESTAMPTZ",
 ]
 
+_REPORT_ATTESTATION_ALTERS = [
+    "ALTER TABLE report_attestations ADD COLUMN IF NOT EXISTS prev_hash VARCHAR(64)",
+]
+
 
 def ensure_report_columns(engine: Engine) -> None:
     """Add missing columns on the `reports` table (no-op when present)."""
     with engine.begin() as connection:
         for statement in _REPORTS_ALTERS:
+            connection.execute(text(statement))
+
+
+def ensure_attestation_columns(engine: Engine) -> None:
+    """Add missing columns on the `report_attestations` table."""
+    with engine.begin() as connection:
+        for statement in _REPORT_ATTESTATION_ALTERS:
             connection.execute(text(statement))

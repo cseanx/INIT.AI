@@ -155,6 +155,7 @@ The Soroban contract stores only:
 | Report reference | Opaque numeric id (e.g. `"7"`) |
 | Submitter | Stellar account address |
 | Attestation time | Ledger sequence + unix timestamp |
+| Previous hash | `Option<BytesN<32>>` — `None` for first version, `Some(prev)` for revisions (on-chain revision chain) |
 
 Report titles, municipality/barangay names, coordinates, GeoJSON, imagery,
 reporting periods, and LGU identifiers are **never** placed on-chain.
@@ -167,13 +168,23 @@ attestation of an existing digest, so each proof is unambiguous. A legitimate
 re-attestation only occurs when report **content changes**, producing a *new*
 digest and therefore a new, independent attestation.
 
-### Revision handling
+### Revision handling (on-chain)
 
-Revisions are simple and immutable: editing a report produces a new canonical
-digest and a **new attestation transaction**. Original on-chain records are
-never modified, replaced, or deleted. Off-chain, the database groups a
-report's proof history by report id, so the full revision timeline stays
-queryable while each on-chain record stands alone.
+Revisions are **on-chain linked and immutable**: editing a report produces a
+new canonical digest and a **new attestation transaction** that includes
+`prev_hash` — the SHA-256 of the previous version.
+
+* First version: `attest(submitter, hash, report_id, None)` — no previous hash.
+* Next versions: `attest(submitter, new_hash, report_id, Some(prev_hash))` —
+  the contract validates that `prev_hash` exists and belongs to the same
+  `report_id`, enforcing a linear, tamper-evident chain. Any mismatch
+  (`prev` unknown or different `report_id`) panics.
+
+Original on-chain records are never modified, replaced, or deleted. Off-chain,
+the database mirrors the chain in `report_attestations.prev_hash` and groups
+history by `report_id`, so the full revision timeline is queryable both
+on-chain (`verify(hash).prev_hash`) and off-chain while each proof stands
+alone. Walking the chain: `verify(latest_hash)` → `prev_hash` → `verify(prev_hash)` → ...
 
 ### Stellar Technologies Used
 
@@ -257,7 +268,7 @@ One table for reviewers - everything needed to verify this project:
 | Network | Stellar **Testnet** only |
 | Contract ID | [`CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF`](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) |
 | Contract source | [`contracts/soroban/`](contracts/soroban/) (Rust + soroban-sdk 27, unit-tested) |
-| WASM artifact | `target/wasm32v1-none/release/initai_spatial_attestation.wasm` — **26,688 bytes**, **SHA-256** `59d63c9e83fd1e9a5cfa4d284bfb21056ffd821d3057d9e958d85a5f1531016e` — built `2026-08-24` via `stellar contract build` / `cargo build --target wasm32v1-none --release` (Rust `1.98.0`, `soroban-sdk 27.0.1`, `opt-level="z"` + `lto=true`) — `target/` is gitignored; verify with `Get-FileHash -Algorithm SHA256` or `sha256sum` |
+| WASM artifact | `target/wasm32v1-none/release/initai_spatial_attestation.wasm` — **28,844 bytes**, **SHA-256** `19f8b4bddb717f60aa70116e0c6c0e86e45e3488f0d307dafa277c8534ba210e` — built `2026-08-31` with **on-chain `prev_hash`** revision chain via `stellar contract build` / `cargo build --target wasm32v1-none --release` (Rust `1.98.0`, `soroban-sdk 27.0.1`, `opt-level="z"` + `lto=true`) — `target/` is gitignored; verify with `Get-FileHash -Algorithm SHA256` or `sha256sum` — deployed contract `CBQSI2...UBXF` is previous build `59d63c9e...` (2026-08-24); redeploy with new WASM will yield new contract ID (Soroban deploys are immutable) |
 | Live dApp | [https://init-ai-ebon.vercel.app](https://init-ai-ebon.vercel.app) |
 | API documentation | [https://backend-phi-gray-27.vercel.app/docs](https://backend-phi-gray-27.vercel.app/docs) (FastAPI/OpenAPI) |
 | Canonicalization spec | [`initai-canonical-v1`](#canonicalization-specification-initai-canonical-v1) - rules + implementation in [`backend/app/services/report_hash.py`](backend/app/services/report_hash.py) |

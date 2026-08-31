@@ -86,6 +86,19 @@ def scv_address_b64(account_id: str) -> str:
     return base64.b64encode(struct.pack(">III", _SCV_ADDRESS, 0, 0) + key).decode()
 
 
+def _scv_optional_bytes_b64(hex32: str | None) -> str | None:
+    """Encode Option<BytesN<32>> for Horizon parameter matching.
+
+    Soroban SDK encodes `Some(bytes)` as the raw Bytes ScVal and `None` as
+    `ScVal::Void`. On Horizon the invoke_host_function parameters include the
+    inner value only when Some. We handle both by checking for the raw bytes
+    when expected, and not requiring anything when None.
+    """
+    if hex32 is None:
+        return None
+    return scv_bytes_b64(hex32)
+
+
 def verify_attest_transaction(
     tx_hash: str,
     *,
@@ -93,6 +106,7 @@ def verify_attest_transaction(
     expected_hash_hex: str,
     expected_report_ref: str,
     expected_wallet: str,
+    expected_prev_hash_hex: str | None = None,
     horizon_base: str = HORIZON_BASE,
 ) -> dict:
     """Validate the claimed transaction against Horizon Testnet.
@@ -134,15 +148,27 @@ def verify_attest_transaction(
         scv_string_b64(expected_report_ref),
         scv_address_b64(expected_wallet),
     }
+    # When a prev_hash is expected (revision), the transaction must contain it.
+    # None means first version — no prev bytes required.
+    optional_prev_b64 = _scv_optional_bytes_b64(
+        expected_prev_hash_hex.lower() if expected_prev_hash_hex else None
+    )
+    if optional_prev_b64 is not None:
+        required.add(optional_prev_b64)
 
     for operation in operations.get("_embedded", {}).get("records", []):
         if operation.get("type") != "invoke_host_function":
             continue
         provided = {p.get("value") for p in operation.get("parameters") or []}
+        # For revisions we require prev_hash bytes; for first versions we don't.
+        # Also handle the Option encoding edge: if the contract encodes None as
+        # Void, Horizon will include a void param. We treat that as not requiring
+        # prev bytes, which `required` already reflects when expected is None.
         if required <= provided:
             return {"ledger": tx.get("ledger"), "verified_via": "horizon"}
 
     raise TransactionVerificationError(
         "That transaction does not contain an attest call for this report, "
         "wallet, and hash combination."
+        + (" (prev_hash mismatch)" if expected_prev_hash_hex else "")
     )

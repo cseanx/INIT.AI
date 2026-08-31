@@ -64,6 +64,7 @@ class ReportAttestationCreate(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     report_hash: str
+    prev_hash: str | None = None
     tx_hash: str
     contract_id: str
     network: str = "testnet"
@@ -75,6 +76,15 @@ class ReportAttestationCreate(BaseModel):
     def _hash_shape(cls, value: str) -> str:
         if not re.fullmatch(r"[0-9a-f]{64}", value):
             raise ValueError("reportHash must be 64 lowercase hex characters (SHA-256).")
+        return value
+
+    @field_validator("prev_hash")
+    @classmethod
+    def _prev_hash_shape(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if not re.fullmatch(r"[0-9a-f]{64}", value):
+            raise ValueError("prevHash must be 64 lowercase hex characters (SHA-256) or null.")
         return value
 
     @field_validator("tx_hash")
@@ -113,6 +123,7 @@ class ReportAttestationOut(BaseModel):
     id: int
     report_id: int
     stellar_hash: str
+    prev_hash: str | None = None
     tx_hash: str
     contract_id: str
     network: str

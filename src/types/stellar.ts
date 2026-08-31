@@ -16,6 +16,8 @@ export interface ChainAttestation {
     ledgerSequence: number;
     /** Ledger unix timestamp (seconds) at attestation time. */
     recordedAt: number;
+    /** Optional previous hash for on-chain revision chain — null for first version. */
+    prevHash: string | null;
 }
 
 /** State machine phases for an in-flight attestation. */
@@ -50,6 +52,8 @@ export interface ReportAttestationRecord {
     reportId: number;
     /** SHA-256 hex of the canonical payload at attestation time. */
     stellarHash: string;
+    /** Previous hash for revision chain — null for first version. */
+    prevHash: string | null;
     txHash: string;
     contractId: string;
     network: string;
@@ -63,6 +67,7 @@ export interface ReportAttestationRecord {
 /** Body for POST /api/reports/{id}/attestation. */
 export interface RecordAttestationBody {
     reportHash: string;
+    prevHash?: string | null;
     txHash: string;
     contractId: string;
     network: string;

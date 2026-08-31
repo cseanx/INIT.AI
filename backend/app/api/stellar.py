@@ -27,6 +27,7 @@ class AttestationLookup(BaseModel):
     model_config = ConfigDict(from_attributes=True, alias_generator=to_camel, populate_by_name=True)
 
     stellar_hash: str
+    prev_hash: str | None = None
     tx_hash: str
     contract_id: str
     network: str
@@ -63,6 +64,7 @@ def lookup_attestation(report_hash: str, db: Session = Depends(get_db)) -> Attes
 
     return AttestationLookup(
         stellar_hash=record.stellar_hash,
+        prev_hash=record.prev_hash,
         tx_hash=record.tx_hash,
         contract_id=record.contract_id,
         network=record.network,

@@ -29,6 +29,8 @@ export interface AttestRequest {
     payload?: Record<string, unknown>;
     /** Short on-chain reference (the numeric INIT.AI report id). */
     reportRef: string;
+    /** Optional previous hash for on-chain revision chain — null for first version. */
+    prevHash?: string | null;
 }
 
 export interface UseStellarAttestation {
@@ -96,6 +98,7 @@ export function useStellarAttestation(): UseStellarAttestation {
                     address,
                     reportHashHex: reportHash,
                     reportRef: request.reportRef,
+                    prevHashHex: request.prevHash ?? null,
                 });
 
                 setPhase('confirming');

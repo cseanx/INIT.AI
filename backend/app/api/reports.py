@@ -170,6 +170,27 @@ def record_attestation(
                 f"against {settings.stellar_contract_id}."
             ),
         )
+    # Validate prev_hash linkage off-chain for friendly errors before Horizon check.
+    if body.prev_hash is not None:
+        prev_record = db.scalar(
+            select(ReportAttestation).where(ReportAttestation.stellar_hash == body.prev_hash)
+        )
+        if prev_record is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="prevHash references unknown attestation — attest the previous version first.",
+            )
+        if prev_record.report_id != report.id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="prevHash must reference the same report_id as the new attestation.",
+            )
+        if body.prev_hash == body.report_hash:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="prevHash must differ from the new report hash.",
+            )
+
     try:
         horizon_meta = verify_attest_transaction(
             body.tx_hash,
@@ -177,6 +198,7 @@ def record_attestation(
             expected_hash_hex=body.report_hash,
             expected_report_ref=str(report.id),
             expected_wallet=body.wallet,
+            expected_prev_hash_hex=body.prev_hash,
             horizon_base=settings.stellar_horizon_base,
         )
     except TransactionVerificationError as exc:
@@ -198,6 +220,7 @@ def record_attestation(
         existing.contract_id = settings.stellar_contract_id
         existing.network = body.network
         existing.wallet = body.wallet
+        existing.prev_hash = body.prev_hash
         existing.status = "confirmed"
         existing.meta = verification_meta
         existing.last_verified_at = datetime.now(timezone.utc)
@@ -208,6 +231,7 @@ def record_attestation(
     record = ReportAttestation(
         report_id=report.id,
         stellar_hash=body.report_hash,
+        prev_hash=body.prev_hash,
         tx_hash=body.tx_hash,
         contract_id=settings.stellar_contract_id,
         network=body.network,

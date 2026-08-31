@@ -23,7 +23,8 @@
                 },
                 {
                   "string": "7"
-                }
+                },
+                "void"
               ]
             }
           },
@@ -78,6 +79,12 @@
                     "val": {
                       "u32": 0
                     }
+                  },
+                  {
+                    "key": {
+                      "symbol": "prev_hash"
+                    },
+                    "val": "void"
                   },
                   {
                     "key": {

@@ -8,11 +8,13 @@
 //!   - the 32-byte report hash,
 //!   - a short report reference string (the numeric report ID),
 //!   - the submitting account address,
-//!   - the ledger sequence + unix timestamp of the attestation.
+//!   - the ledger sequence + unix timestamp of the attestation,
+//!   - an optional previous-hash link for on-chain revision history.
 //!
 //! No satellite imagery, GeoJSON, or report bodies ever touch the chain.
 //! Anyone can later call [`verify`] to prove that this exact report existed,
-//! in this exact form, at that ledger time.
+//! in this exact form, at that ledger time, and optionally walk the
+//! on-chain revision chain via `prev_hash`.
 
 #![no_std]
 
@@ -32,6 +34,11 @@ pub struct Attestation {
     pub ledger_sequence: u32,
     /// Ledger timestamp (unix seconds) at attestation time.
     pub recorded_at: u64,
+    /// Optional previous report hash for revision chaining — `None` for the
+    /// first version of a report, `Some(prev)` for every later edit. The
+    /// contract validates that `prev` exists and belongs to the same
+    /// `report_id`, so the on-chain history is tamper-evident and linear.
+    pub prev_hash: Option<BytesN<32>>,
 }
 
 /// Storage keys.
@@ -59,14 +66,38 @@ impl SpatialAttestationRegistry {
     /// - Requires `submitter` to authorize the invocation (wallet signature).
     /// - Rejects duplicates — a given report hash can only ever be attested
     ///   once, keeping the proof unambiguous.
+    /// - When `prev_hash` is `Some`, validates that the previous attestation
+    ///   exists and belongs to the same `report_id`, enforcing an on-chain
+    ///   linear revision chain. `None` is only valid for the first version.
     ///
     /// Returns the stored [Attestation].
-    pub fn attest(env: Env, submitter: Address, hash: BytesN<32>, report_id: String) -> Attestation {
+    pub fn attest(
+        env: Env,
+        submitter: Address,
+        hash: BytesN<32>,
+        report_id: String,
+        prev_hash: Option<BytesN<32>>,
+    ) -> Attestation {
         submitter.require_auth();
 
         let key = DataKey::Attestation(hash.clone());
         if env.storage().persistent().has(&key) {
             panic!("attestation already exists for this report hash");
+        }
+
+        // Validate revision link if supplied.
+        if let Some(ref prev) = prev_hash {
+            // A revision must reference an existing attestation.
+            let prev_key = DataKey::Attestation(prev.clone());
+            let prev_att: Option<Attestation> = env.storage().persistent().get(&prev_key);
+            match prev_att {
+                Some(prev_record) => {
+                    if prev_record.report_id != report_id {
+                        panic!("prev_hash must reference same report_id");
+                    }
+                }
+                None => panic!("prev_hash references unknown attestation"),
+            }
         }
 
         let attestation = Attestation {
@@ -75,6 +106,7 @@ impl SpatialAttestationRegistry {
             submitter: submitter.clone(),
             ledger_sequence: env.ledger().sequence(),
             recorded_at: env.ledger().timestamp(),
+            prev_hash: prev_hash.clone(),
         };
 
         env.storage().persistent().set(&key, &attestation);

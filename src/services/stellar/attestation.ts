@@ -62,6 +62,8 @@ export interface AttestOptions {
     reportHashHex: string;
     /** Short on-chain reference (the numeric INIT.AI report id). */
     reportRef: string;
+    /** Optional previous version hash for on-chain revision chain — null for first version. */
+    prevHashHex?: string | null;
 }
 
 /** Prepare the `attest` transaction and obtain a Freighter signature.
@@ -72,6 +74,7 @@ export async function prepareSignedAttestation({
     address,
     reportHashHex,
     reportRef,
+    prevHashHex,
 }: AttestOptions): Promise<string> {
     requireStellarEnabled();
     const { Address, Contract, TransactionBuilder, nativeToScVal, xdr } =
@@ -94,12 +97,38 @@ export async function prepareSignedAttestation({
     });
 
     const contract = new Contract(CONTRACT_ID);
+    // prev_hash is Option<BytesN<32>> on-chain: Some(bytes) for revisions, Void for first version.
+    // Soroban encodes Option<T> as the inner value or Void — see soroban-env-common/src/option.rs.
+    let prevScVal: import('@stellar/stellar-sdk').xdr.ScVal;
+    if (prevHashHex) {
+        if (!/^[0-9a-fA-F]{64}$/.test(prevHashHex)) {
+            throw new Error('Previous report hash must be a 64-character hex SHA-256.');
+        }
+        prevScVal = xdr.ScVal.scvBytes(hexToBytes32(prevHashHex));
+    } else {
+        // Void encodes Option::None — Soroban SDK maps None -> Val::VOID -> ScVal void
+        const maybeVoid = (xdr.ScVal as unknown as { scvVoid?: () => import('@stellar/stellar-sdk').xdr.ScVal }).scvVoid;
+        if (typeof maybeVoid === 'function') {
+            prevScVal = maybeVoid.call(xdr.ScVal);
+        } else if (typeof (xdr.ScVal as unknown as { scvVoid?: unknown }).scvVoid === 'function') {
+            prevScVal = (xdr.ScVal as unknown as { scvVoid: () => import('@stellar/stellar-sdk').xdr.ScVal }).scvVoid();
+        } else {
+            // Fallback: some SDK versions expose void via nativeToScVal
+            try {
+                prevScVal = nativeToScVal(null as unknown as string, { type: 'void' } as unknown as { type: 'string' }) as unknown as import('@stellar/stellar-sdk').xdr.ScVal;
+            } catch {
+                throw new Error('ScVal.scvVoid not available in this SDK version — upgrade @stellar/stellar-sdk.');
+            }
+        }
+    }
+
     const operation = contract.call(
         'attest',
         new Address(address).toScVal(),
         // scvBytes converts to the contract's BytesN<32> parameter.
         xdr.ScVal.scvBytes(hexToBytes32(reportHashHex)),
         nativeToScVal(reportRef, { type: 'string' }),
+        prevScVal,
     );
 
     let tx = new TransactionBuilder(source, { fee: '10000', networkPassphrase: NETWORK_PASSPHRASE })
@@ -245,15 +274,30 @@ export async function fetchChainAttestation(
         submitter?: string;
         ledger_sequence?: number | bigint;
         recorded_at?: number | bigint;
+        prev_hash?: Uint8Array | number[] | null;
+        prevHash?: Uint8Array | number[] | null;
     } | null;
 
     if (!native?.hash) return null;
+    const rawPrev = (native as unknown as { prev_hash?: unknown; prevHash?: unknown })?.prev_hash ?? (native as unknown as { prevHash?: unknown })?.prevHash ?? null;
+    let prevHex: string | null = null;
+    if (rawPrev instanceof Uint8Array || Array.isArray(rawPrev)) {
+        prevHex = bytesToHex(rawPrev as Uint8Array | number[]);
+    } else if (typeof rawPrev === 'object' && rawPrev !== null) {
+        // Some SDK versions return buffer-like object
+        try {
+            prevHex = bytesToHex(rawPrev as Uint8Array);
+        } catch {
+            prevHex = null;
+        }
+    }
     return {
         hash: bytesToHex(native.hash),
         reportId: String(native.report_id ?? ''),
         submitter: String(native.submitter ?? ''),
         ledgerSequence: Number(native.ledger_sequence ?? 0),
         recordedAt: Number(native.recorded_at ?? 0),
+        prevHash: prevHex,
     };
 }
 

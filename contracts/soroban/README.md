@@ -26,6 +26,7 @@ the report was modified after attestation.
 | Report reference id (`String`)      | Satellite imagery                       |
 | Submitter address (`Address`)       | GeoJSON layers / LST grids              |
 | Ledger sequence + unix timestamp    | Personal data                           |
+| Previous hash (`Option<BytesN<32>>`) — revision link | Full history (reconstructed via chain)  |
 
 Nothing larger than ~a few hundred bytes is ever submitted.
 
@@ -65,18 +66,21 @@ Stellar Testnet                   https://soroban-testnet.stellar.org
 
 ```rust
 pub struct Attestation {
-    pub hash:            BytesN<32>, // SHA-256 of the canonical report payload
-    pub report_id:       String,     // INIT.AI numeric report id, as a short string
-    pub submitter:       Address,    // wallet account that signed
-    pub ledger_sequence: u32,        // ledger height at attestation
-    pub recorded_at:     u64,        // ledger unix timestamp
+    pub hash:            BytesN<32>,              // SHA-256 of the canonical report payload
+    pub report_id:       String,                  // INIT.AI numeric report id, as a short string
+    pub submitter:       Address,                 // wallet account that signed
+    pub ledger_sequence: u32,                     // ledger height at attestation
+    pub recorded_at:     u64,                     // ledger unix timestamp
+    pub prev_hash:       Option<BytesN<32>>,      // None = first version, Some(prev) = revision link
 }
 
 impl SpatialAttestationRegistry {
     /// Record an attestation. Requires `submitter`'s authorization
     /// (wallet signature). Panics if the exact hash was already attested —
     /// one proof per form keeps the registry unambiguous.
-    pub fn attest(env, submitter: Address, hash: BytesN<32>, report_id: String) -> Attestation;
+    /// When `prev_hash` is Some, validates that it exists and belongs to the
+    /// same report_id, enforcing an on-chain linear revision chain.
+    pub fn attest(env, submitter: Address, hash: BytesN<32>, report_id: String, prev_hash: Option<BytesN<32>>) -> Attestation;
 
     /// Returns Some(Attestation) if this exact payload was attested, else None.
     pub fn verify(env, hash: BytesN<32>) -> Option<Attestation>;
@@ -91,6 +95,7 @@ Design notes:
 - **No admin / owner key.** The contract is trust-neutral: whoever signs owns
   their attestation; there is no upgrade path or privileged withdrawal.
 - **Duplicate rejection** prevents silently overwriting a proof.
+- **On-chain revision chain** via `prev_hash: Option<BytesN<32>>` — first version is `None`, every edit links `Some(prev)`. Validated: `prev` must exist and have same `report_id`; otherwise panic.
 - **Persistent storage with TTL extension** (~1 year bumped on every write /
   verified read) so long-lived proofs stay retrievable without manual top-ups.
 
@@ -119,10 +124,11 @@ Unit tests run against the in-process Soroban environment:
 cargo test
 ```
 
-Covered behavior: attest/verify roundtrip (incl. metadata correctness),
+Covered behavior: attest/verify roundtrip (incl. metadata + `prev_hash` correctness),
 unknown-hash → `None`, duplicate-hash rejection, independence across
-hashes/submitters, authorization enforcement (fails without a signature), and
-an explicit single-signature mock test.
+hashes/submitters, authorization enforcement (fails without a signature),
+explicit single-signature mock, and **revision chain** (`prev_hash` links,
+unknown-prev rejection, report_id mismatch rejection, cross-wallet revision).
 
 ## Deployment (Stellar Testnet) — DONE
 
@@ -173,9 +179,16 @@ instead use the user's Freighter wallet):
 ```bash
 DEPLOYER=$(stellar keys address initai-deployer)
 
+# First version (no previous):
 stellar contract invoke --id $CID --network testnet \
     --source initai-deployer \
     -- attest --submitter $DEPLOYER --hash <64-hex> --report_id "<report-id>"
+
+# Revision (links to previous version's hash):
+stellar contract invoke --id $CID --network testnet \
+    --source initai-deployer \
+    -- attest --submitter $DEPLOYER --hash <new-64-hex> --report_id "<report-id>" --prev_hash <prev-64-hex>
+# Or omit --prev_hash for first version (maps to Option::None)
 ```
 
 Smoke test performed at deployment time (hash = 0xaa×32,
@@ -199,12 +212,13 @@ contracts/soroban/
 ## Database persistence (Phase 6)
 
 Attestations are stored off-chain in PostgreSQL (`report_attestations`
-table — migration 0008; never duplicated report content):
+table — migration 0008 + 0009; never duplicated report content):
 
 | Column | Notes |
 |---|---|
 | `report_id` | FK → reports.id (CASCADE), indexed |
 | `stellar_hash` | 64-hex SHA-256, **unique** per proof |
+| `prev_hash` | 64-hex SHA-256 of previous version, **null** for first version — mirrors on-chain `prev_hash` |
 | `tx_hash` | 64-char Stellar tx hash |
 | `contract_id` | Soroban contract id (C…) |
 | `network` | `testnet` (policy-enforced) |
@@ -216,12 +230,14 @@ APIs:
 
 ```
 GET  /api/reports/{id}/attestation-message   → server hash + canonical payload
-GET  /api/reports/{id}/attestation           → proof history for one report (public)
+GET  /api/reports/{id}/attestation           → proof history for one report (public, includes prevHash)
 POST /api/reports/{id}/attestation           → persist after confirmation
-     body { reportHash, txHash, contractId, network, wallet, meta? }
+     body { reportHash, prevHash?, txHash, contractId, network, wallet, meta? }
      · auth required
      · 409 when reportHash ≠ server-computed hash (report edited after signing)
+     · 422 when prevHash references unknown attestation or different report_id
      · idempotent: same hash updates pointers instead of duplicating
+     · prevHash is validated on-chain (must exist + same report_id) and off-chain
 
 GET  /api/stellar/attestation/{report_hash}  → public proof lookup by hash
      → { stellarHash, txHash, contractId, network, wallet, status,

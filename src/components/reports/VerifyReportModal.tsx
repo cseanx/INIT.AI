@@ -140,6 +140,8 @@ export default function VerifyReportModal({
     const [persistWarning, setPersistWarning] = useState<string | null>(null);
     const [alreadyVerified, setAlreadyVerified] = useState(false);
     const [existingAttestation, setExistingAttestation] = useState<ReportAttestationRecord | null>(null);
+    const [prevHash, setPrevHash] = useState<string | null>(null);
+    const [attestationHistory, setAttestationHistory] = useState<ReportAttestationRecord[]>([]);
 
     // Fresh machine + server-authoritative content hash whenever a report is targeted.
     // Also fetch the persisted proof history so we can detect an already-greenlit
@@ -156,15 +158,31 @@ export default function VerifyReportModal({
         setReportHash(null);
         setAlreadyVerified(false);
         setExistingAttestation(null);
+        setPrevHash(null);
+        setAttestationHistory([]);
         setHashLoading(true);
         Promise.all([api.reports.attestationMessage(report.id), api.reports.listAttestations(report.id)])
             .then(([message, records]) => {
                 if (!active) return;
                 setReportHash(message.hash);
+                setAttestationHistory(records);
                 const match = records.find((r) => r.stellarHash === message.hash && r.status === 'confirmed') ?? null;
                 if (match || report.attestedCurrent) {
                     setAlreadyVerified(true);
                     setExistingAttestation(match);
+                }
+                // On-chain revision chain: prevHash is the latest confirmed attestation
+                // for this report that is NOT the current hash. Null for first version.
+                const confirmedSorted = [...records]
+                    .filter((r) => r.status === 'confirmed')
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                const latestPrev = confirmedSorted.find((r) => r.stellarHash !== message.hash) ?? confirmedSorted[0] ?? null;
+                // If already attested, there is no new prev (already linked). For new version, link to latest.
+                if (!match) {
+                    setPrevHash(latestPrev?.stellarHash ?? null);
+                } else {
+                    // Already verified — show its own prev for info, but attestation not needed
+                    setPrevHash(match?.prevHash ?? latestPrev?.stellarHash ?? null);
                 }
             })
             .catch(() => {
@@ -275,12 +293,13 @@ export default function VerifyReportModal({
             // Let the preparing state paint before the heavy SDK + RPC work.
             await new Promise<void>((resolve) => setTimeout(resolve, 120));
             // 1-3: build `attest` invocation, simulate, prepare — then hand to
-            // Freighter for the actual signature prompt.
+            // Freighter for the actual signature prompt. prevHash is on-chain revision link.
             setPhase('awaiting-signature');
             const signed = await prepareSignedAttestation({
                 address: walletAddress,
                 reportHashHex: reportHash,
                 reportRef: String(report.id),
+                prevHashHex: prevHash,
             });
             setSignedXdr(signed);
             // 4-5: submit the signed transaction and wait for Testnet
@@ -297,11 +316,12 @@ export default function VerifyReportModal({
             try {
                 await api.reports.recordAttestation(report.id, {
                     reportHash,
+                    prevHash: prevHash ?? undefined,
                     txHash,
                     contractId: CONTRACT_ID,
                     network: 'testnet',
                     wallet: walletAddress,
-                    meta: { source: 'web', flow: 'reports-page-verify' },
+                    meta: { source: 'web', flow: 'reports-page-verify', prevHash: prevHash ?? null },
                 });
                 setPersistWarning(null);
             } catch (err) {
@@ -492,6 +512,19 @@ export default function VerifyReportModal({
                             </span>
                         ) : (
                             <span className="text-[#ffb03a]">Unavailable — cannot attest right now</span>
+                        )}
+                    </InfoRow>
+                    <InfoRow label="On-chain revision">
+                        {hashLoading ? (
+                            <span className="text-[#888]">Loading…</span>
+                        ) : prevHash ? (
+                            <span className="font-mono" title={prevHash}>
+                                {shorten(prevHash)} <span className="text-[#777]">→ on-chain prev_hash</span>
+                            </span>
+                        ) : attestationHistory.length > 0 ? (
+                            <span className="text-[#ffb03a]">Resolving…</span>
+                        ) : (
+                            <span className="text-mint">First version — no previous hash</span>
                         )}
                     </InfoRow>
                     <InfoRow label="Network">Stellar Testnet</InfoRow>

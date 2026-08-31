@@ -23,6 +23,9 @@ class ReportAttestation(Base):
 
     # 64-hex SHA-256 of the canonical payload — unique per proof.
     stellar_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    # 64-hex SHA-256 of the previous version's hash — on-chain revision link.
+    # Null for the first version of a report, set for every later edit.
+    prev_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, default=None)
     # 64-char Stellar transaction hash on Testnet.
     tx_hash: Mapped[str] = mapped_column(String(64), index=True)
     # Soroban contract that holds the proof ("C…", 56 chars).
