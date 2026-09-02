@@ -44,7 +44,7 @@ cp .env.example .env
 ## Run locally (optional)
 
 ```bash
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
 API docs: http://localhost:8000/docs

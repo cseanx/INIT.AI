@@ -241,8 +241,9 @@ def login(
             detail=detail,
         )
 
-    # Require verified email before issuing a session.
-    if not user.email_verified:
+    # Require verified email before issuing a session — bypass for demo/testing accounts.
+    bypass = {e.strip().lower() for e in settings.demo_bypass_emails.split(",") if e.strip()}
+    if not user.email_verified and email not in bypass:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Please verify your email before logging in. Check your inbox for the verification link.",

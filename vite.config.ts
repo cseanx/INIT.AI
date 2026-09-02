@@ -5,6 +5,14 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
+    optimizeDeps: {
+        // maplibre-gl ships its worker as maplibre-gl-worker.mjs via dynamic import;
+        // vite's dep optimizer tries to bundle node_modules/.vite/deps/maplibre-gl-worker.mjs
+        // which doesn't exist and throws HMR "file does not exist". Exclude to keep
+        // worker as external runtime asset (copied via writeBundle).
+        exclude: ['maplibre-gl'],
+    },
+    worker: { format: 'es' },
     plugins: [
         react(),
         tailwindcss(),
@@ -27,11 +35,9 @@ export default defineConfig({
             },
         },
     ],
-    // When the Python/FastAPI backend is live, re-enable the proxy so
-    // /api/* requests reach it during development:
-    // server: {
-    //     proxy: {
-    //         '/api': { target: 'http://localhost:8000', changeOrigin: true },
-    //     },
-    // },
+    server: {
+        proxy: {
+            '/api': { target: 'http://localhost:8000', changeOrigin: true },
+        },
+    },
 });

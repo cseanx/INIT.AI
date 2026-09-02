@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { CITY_CONFIG, useCity, type CityName } from '../../contexts/CityContext';
 
-const CITIES = ['Quezon City', 'Manila', 'Pasig', 'Caloocan'] as const;
+const CITIES = Object.keys(CITY_CONFIG) as CityName[];
 
 const TRIGGER_CLASSES =
     'flex cursor-pointer items-center gap-3 rounded-[16px] border border-white/5 bg-white/5 p-[14px_18px] text-white transition-all duration-200 hover:bg-white/8';
@@ -11,10 +12,10 @@ const MENU_CLASSES =
 const OPTION_CLASSES =
     'flex w-full cursor-pointer items-center justify-between gap-3 rounded-[10px] p-[10px_12px] text-left text-[13px] text-[#ddd] transition duration-200 hover:bg-white/6 hover:text-white';
 
-/** Glassmorphism city selector (replaces the native <select> dropdown). */
+/** Glassmorphism city selector — reads/writes global CityContext so Heat Map keeps same city. */
 export default function CitySelector() {
     const [open, setOpen] = useState(false);
-    const [selected, setSelected] = useState<string>(CITIES[0]);
+    const { selected, setSelected } = useCity();
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -64,7 +65,7 @@ export default function CitySelector() {
                                 aria-selected={isSelected}
                                 className={`${OPTION_CLASSES} ${isSelected ? 'text-white' : ''}`}
                                 onClick={() => {
-                                    setSelected(city);
+                                    setSelected(city as CityName);
                                     setOpen(false);
                                 }}
                             >

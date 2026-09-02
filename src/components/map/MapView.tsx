@@ -1,17 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Map as MapLibreMap } from 'maplibre-gl';
+import { Map as MapLibreMap, Popup } from 'maplibre-gl';
 import type { StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import MapLayersPanel from './MapLayersPanel';
-import {
-    LST_SOURCE_ID,
-    bindLSTInteractions,
-    emptyLSTCollection,
-    lstFillLayerSpec,
-    lstOutlineLayerSpec,
-    pushLSTData,
-} from './lstLayer';
-import { loadLSTData } from './lstData';
+import { HAS_OPENWEATHER_KEY, LST_RASTER_LAYER_ID, LST_RASTER_SOURCE_ID, fetchLSTPoint, lstSourceLabel, lstTileUrl } from './rasterLST';
+import { useCity } from '../../contexts/CityContext';
 import {
     MAP_LAYERS,
     applyLayerVisibility,
@@ -33,55 +26,86 @@ const TRAVEL_LIMITS: [[number, number], [number, number]] = [
     [130.5, 23.5],
 ];
 
-/** Clean satellite basemap (Esri World Imagery — no API key required) with
- *  a place/boundary label reference layer rendered above the imagery so
- *  geographic names stay readable over the photos.
- *
- *  The LST source + layers are declared here (seeded empty) so they exist
- *  from style load — the Layers-panel toggle always finds them. Data is
- *  pushed in by initLayers() from lstData.ts (mock today; GEE→FastAPI later).
- *  Order: basemap → LST fill → LST outline → labels (labels stay on top). */
-const SATELLITE_STYLE: StyleSpecification = {
-    version: 8,
-    sources: {
-        esri: {
-            type: 'raster',
-            tiles: [
-                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-            ],
-            tileSize: 256,
-            maxzoom: 19,
-            attribution: '© Esri, Maxar, Earthstar Geographics',
+/** Dark satellite basemap + OpenWeather global thermal (no crop, entire MapLibre). */
+function satelliteStyle(): StyleSpecification {
+    const thermalTiles = [lstTileUrl()];
+    const thermalAttribution = HAS_OPENWEATHER_KEY
+        ? '© OpenWeather (temperature) · not satellite LST'
+        : '© OpenWeather — set VITE_OPENWEATHER_API_KEY to enable temperature';
+
+    return {
+        version: 8,
+        sources: {
+            // Dark base: Esri World Imagery darkened via raster paint, keeps roads/labels readable at 0.62 opacity.
+            esri: {
+                type: 'raster',
+                tiles: [
+                    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                ],
+                tileSize: 256,
+                maxzoom: 19,
+                attribution: '© Esri, Maxar',
+            },
+            esriLabels: {
+                type: 'raster',
+                tiles: [
+                    'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+                ],
+                tileSize: 256,
+                maxzoom: 19,
+                attribution: '© Esri',
+            },
+            [LST_RASTER_SOURCE_ID]: {
+                type: 'raster',
+                tiles: thermalTiles,
+                tileSize: 256,
+                minzoom: 0,
+                maxzoom: 19,
+                // Allow overzoom/underzoom to avoid sudden disappearance (§3)
+                attribution: thermalAttribution,
+            },
         },
-        esriLabels: {
-            type: 'raster',
-            tiles: [
-                'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-            ],
-            tileSize: 256,
-            maxzoom: 19,
-            attribution: '© Esri',
-        },
-        [LST_SOURCE_ID]: {
-            type: 'geojson',
-            data: emptyLSTCollection(),
-        },
-    },
-    layers: [
-        {
-            id: 'satellite-basemap',
-            type: 'raster',
-            source: 'esri',
-        },
-        lstFillLayerSpec(),
-        lstOutlineLayerSpec(),
-        {
-            id: 'place-labels',
-            type: 'raster',
-            source: 'esriLabels',
-        },
-    ],
-};
+        layers: [
+            {
+                id: 'satellite-basemap',
+                type: 'raster',
+                source: 'esri',
+                paint: {
+                    // Slightly dim base so thermal pops but roads stay readable at 0.62 opacity.
+                    'raster-brightness-min': 0.15,
+                    'raster-brightness-max': 0.95,
+                    'raster-contrast': 0.05,
+                    'raster-saturation': -0.15,
+                },
+            },
+            {
+                id: LST_RASTER_LAYER_ID,
+                type: 'raster',
+                source: LST_RASTER_SOURCE_ID,
+                paint: {
+                    // §2 smooth, §5 readable 0.55-0.75. 0.62 keeps roads/labels readable, hot spots pop.
+                    'raster-opacity': 0.62,
+                    'raster-resampling': 'linear',
+                    'raster-fade-duration': 80,
+                    'raster-contrast': 0.08,
+                    'raster-saturation': 0.15,
+                    'raster-brightness-min': 0.08,
+                    'raster-brightness-max': 0.98,
+                },
+            },
+            {
+                id: 'place-labels',
+                type: 'raster',
+                source: 'esriLabels',
+                paint: {
+                    'raster-opacity': 0.95,
+                },
+            },
+            // Future vector overlays (barangay/city boundaries, hotspots) inserted here
+            // will always render above thermal by design (§7).
+        ],
+    };
+}
 
 interface MapViewProps {
     className?: string;
@@ -96,22 +120,24 @@ const CTRL_BTN_CLASSES =
 /**
  * Large interactive MapLibre GL map for the Heat Map page.
  *
- * The instance is created once on mount and destroyed on unmount. Because
- * routed pages stay mounted (hidden with CSS), the map listens for the
- * bubbling `page-visible` event to resize itself when its page reappears.
- *
- * A compact React control stack (zoom, reset-to-Philippines, layers) floats
- * top-right; layer visibility is driven by the registry in layers.ts so
- * future backend layers plug in without UI changes.
+ * Now serves continuous raster LST (hourly) instead of 18 vector boxes.
+ * Inspector click fetches `GET /api/layers/lst/point?lat=&lng=&date=now`.
+ * Hourly tiles auto-refresh every 10 min when LST is visible.
  */
 export default function MapView({ className = '', children, onLayerStateChange }: MapViewProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
     const controlsRef = useRef<HTMLDivElement>(null);
-    const lstCleanupRef = useRef<(() => void) | null>(null);
+    const popupRef = useRef<Popup | null>(null);
+    const refreshTimerRef = useRef<number | null>(null);
     const [mapReady, setMapReady] = useState(false);
     const [layersOpen, setLayersOpen] = useState(false);
-    const [layerState, setLayerState] = useState<Record<string, boolean>>(defaultLayerState);
+    const { config: cityConfig } = useCity();
+    const [layerState, setLayerState] = useState<Record<string, boolean>>(() => {
+        const s = defaultLayerState();
+        // Open with thermal on by default (continuous surface, honest OpenWeather)
+        return { ...s, lst: true };
+    });
 
     useEffect(() => {
         const container = containerRef.current;
@@ -119,7 +145,7 @@ export default function MapView({ className = '', children, onLayerStateChange }
 
         const map = new MapLibreMap({
             container,
-            style: SATELLITE_STYLE,
+            style: satelliteStyle(),
             bounds: PHILIPPINES_BOUNDS,
             fitBoundsOptions: { padding: 36, duration: 0 },
             minZoom: 4.2,
@@ -129,45 +155,80 @@ export default function MapView({ className = '', children, onLayerStateChange }
             trackResize: true,
         });
 
-        // The LST layers already exist in the style; only the data is
-        // fetched at runtime (isolated in lstData.ts — mock today,
-        // Google Earth Engine → FastAPI later). A failure here leaves the
-        // rest of the map fully functional; the toggle simply shows the
-        // empty source until data arrives.
-        async function initLayers() {
-            try {
-                const data = await loadLSTData();
-                if (!mapRef.current) return;
-                pushLSTData(mapRef.current, data);
-            } catch {
-                console.warn('INIT.AI map: LST data unavailable — layer stays empty.');
-            }
-        }
-
-        // Debug instrumentation removed — see layers.ts registry for the
-        // layer contract. The map handle stays available for debugging:
         const dbg = window as unknown as Record<string, unknown>;
         dbg.__initaiMap = map;
 
+        function formatTemp(v: number | null): string {
+            if (v == null || !Number.isFinite(v)) return '—';
+            return `${v.toFixed(1)}°C`;
+        }
+
+        async function handleMapClick(e: { lngLat: { lng: number; lat: number } }) {
+            // Only when LST is visible — otherwise click is basemap
+            const lstVisible = map.getLayoutProperty(LST_RASTER_LAYER_ID, 'visibility') !== 'none';
+            if (!lstVisible) return;
+            const { lng, lat } = e.lngLat;
+            // Close previous popup
+            popupRef.current?.remove();
+            const popup = new Popup({
+                closeButton: false,
+                closeOnClick: true,
+                offset: 12,
+                className: 'lst-popup-wrapper',
+                maxWidth: '280px',
+            })
+                .setLngLat([lng, lat])
+                .setHTML(
+                    `<div class="lst-popup">
+                        <div class="lst-popup-title">Fetching…</div>
+                        <div class="lst-popup-sub">${lat.toFixed(3)}, ${lng.toFixed(3)}</div>
+                        <div class="lst-popup-temp">…</div>
+                    </div>`,
+                )
+                .addTo(map);
+            popupRef.current = popup;
+            const data = await fetchLSTPoint(lat, lng, 'now');
+            if (!popup.isOpen()) return;
+            const temp = data?.temperature_c ?? null;
+            const hasReading = temp != null;
+            const ts = data?.timestamp ? new Date(data.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'now';
+            const src = lstSourceLabel();
+            popup.setHTML(
+                `<div class="lst-popup">
+                    <div class="lst-popup-title">${hasReading ? 'Temperature' : 'No data'}</div>
+                    <div class="lst-popup-sub">${lat.toFixed(3)}, ${lng.toFixed(3)}</div>
+                    <div class="lst-popup-temp${hasReading ? '' : ' empty'}">${hasReading ? formatTemp(temp) : '—'}</div>
+                    <div class="lst-popup-meta">Observed ${ts}</div>
+                    <div class="lst-popup-meta">Source: ${hasReading ? src : 'Unknown'} · ${HAS_OPENWEATHER_KEY ? 'not satellite LST' : 'demo'}</div>
+                </div>`,
+            );
+        }
+
         map.on('load', () => {
             setMapReady(true);
-            lstCleanupRef.current = bindLSTInteractions(map);
-            void initLayers();
+            map.on('click', handleMapClick);
+            map.getCanvas().style.cursor = 'crosshair';
         });
         mapRef.current = map;
 
         return () => {
-            lstCleanupRef.current?.();
-            lstCleanupRef.current = null;
+            map.off('click', handleMapClick);
+            popupRef.current?.remove();
+            popupRef.current = null;
             map.remove();
             mapRef.current = null;
             setMapReady(false);
         };
     }, []);
 
-    // Push layer visibility onto the map whenever a toggle changes (and
-    // once the style + runtime layers are loaded). Missing/future layers
-    // resolve to no-ops.
+    // City selector compatibility (§8): keep thermal active, update center/bounds.
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!mapReady || !map) return;
+        map.fitBounds(cityConfig.bounds, { padding: 36, duration: 700, maxZoom: 13.5, essential: true });
+    }, [cityConfig, mapReady]);
+
+    // Push layer visibility onto the map whenever a toggle changes
     useEffect(() => {
         const map = mapRef.current;
         if (!mapReady || !map) return;
@@ -175,6 +236,43 @@ export default function MapView({ className = '', children, onLayerStateChange }
             applyLayerVisibility(map, layer, layerState[layer.id] ?? false);
         }
     }, [layerState, mapReady]);
+
+    // Hourly auto-refresh: when LST is visible, bust tile cache every 10 min
+    useEffect(() => {
+        if (!mapReady) return;
+        const map = mapRef.current;
+        if (!map) return;
+        const lstVisible = layerState.lst ?? false;
+        if (refreshTimerRef.current) {
+            window.clearInterval(refreshTimerRef.current);
+            refreshTimerRef.current = null;
+        }
+        if (!lstVisible) return;
+        const refresh = () => {
+            const src = map.getSource(LST_RASTER_SOURCE_ID) as unknown as { setTiles?: (tiles: string[]) => void; reload?: () => void } | undefined;
+            const url = lstTileUrl('now') + `&t=${Date.now()}`;
+            if (src?.setTiles) {
+                src.setTiles([url]);
+                if (src.reload) src.reload();
+                map.triggerRepaint();
+            } else {
+                // Fallback: force source reload via style diff
+                const style = map.getStyle();
+                if (style?.sources?.[LST_RASTER_SOURCE_ID]) {
+                    (style.sources[LST_RASTER_SOURCE_ID] as { tiles?: string[] }).tiles = [url];
+                    map.setStyle(style as StyleSpecification);
+                }
+            }
+        };
+        // Refresh every 10 min (600_000ms) — aligns to hourly synthetic variation
+        refreshTimerRef.current = window.setInterval(refresh, 10 * 60 * 1000);
+        return () => {
+            if (refreshTimerRef.current) {
+                window.clearInterval(refreshTimerRef.current);
+                refreshTimerRef.current = null;
+            }
+        };
+    }, [layerState.lst, mapReady]);
 
     // Let the page react to toggle changes (legend swap etc.).
     useEffect(() => {

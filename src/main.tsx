@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { PreferencesProvider } from './preferences/PreferencesContext';
 import { StellarWalletProvider } from './services/stellar/WalletContext';
+import { CityProvider } from './contexts/CityContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import App from './App';
 import './input.css';
@@ -14,9 +15,11 @@ createRoot(document.getElementById('root')!).render(
             <AuthProvider>
                 <PreferencesProvider>
                     <StellarWalletProvider>
-                        <ErrorBoundary>
-                            <App />
-                        </ErrorBoundary>
+                        <CityProvider>
+                            <ErrorBoundary>
+                                <App />
+                            </ErrorBoundary>
+                        </CityProvider>
                     </StellarWalletProvider>
                 </PreferencesProvider>
             </AuthProvider>

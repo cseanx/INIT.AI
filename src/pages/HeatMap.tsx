@@ -16,7 +16,7 @@ import { useBentoFx } from '../components/common/BentoCard';
  */
 export default function HeatMap() {
     const [inspectorOpen, setInspectorOpen] = useState(true);
-    const [lstActive, setLstActive] = useState(false);
+    const [lstActive, setLstActive] = useState(true);
     const mapCardFx = useBentoFx({ particleCount: 0 });
 
     // MapView reports toggle changes so the legend can follow the LST layer.

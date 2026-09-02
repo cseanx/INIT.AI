@@ -50,9 +50,8 @@ export const MAP_LAYERS: MapLayerDef[] = [
         label: 'Land Surface Temperature',
         icon: 'fa-temperature-half',
         group: 'environmental',
-        // Layers are attached at runtime by lstLayer.ts (mock data today,
-        // FastAPI/PostGIS later via lstData.ts).
-        styleLayers: ['lst-fill', 'lst-outline'],
+        // Continuous raster XYZ from GET /api/layers/lst/tiles/{z}/{x}/{y}.png (hourly, palette -40→40).
+        styleLayers: ['lst-raster'],
         available: true,
     },
     {
@@ -81,11 +80,10 @@ export const MAP_LAYERS: MapLayerDef[] = [
     },
 ];
 
-/** Default visibility per layer. The basemap starts on; analytical overlays
- *  start off so the map opens clean (consistent with dashboard behavior). */
+/** Default visibility per layer. LST raster is now hourly realtime so it starts on. */
 const LAYER_DEFAULTS: Record<string, boolean> = {
     satellite: true,
-    lst: false,
+    lst: true,
     ndvi: false,
     barangays: false,
     hotspots: false,
