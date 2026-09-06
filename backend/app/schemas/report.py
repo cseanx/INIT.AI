@@ -58,6 +58,37 @@ class ReportAttestationMessage(BaseModel):
     canonical_payload: str
 
 
+class XdrPrepareResponse(BaseModel):
+    """Server-authoritative parameters to build the unsigned `attest` XDR.
+
+    Week 2: REST endpoint for unsigned XDR preparation. The full XDR envelope
+    is built client-side (needs the source account sequence from Soroban RPC
+    + Freighter signing; the backend never holds keys). This response gives
+    the frontend everything authoritative so it never recomputes hashes or
+    guesses contract/prev linkage.
+
+    `operation` mirrors the Soroban `attest` args in order:
+    submitter (G… placeholder — replaced by connected wallet),
+    hash (BytesN<32> hex), report_id (string), prev_hash (hex or null).
+    """
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    report_id: str
+    hash: str
+    prev_hash: str | None = None
+    contract_id: str
+    network: str = "testnet"
+    function: str = "attest"
+    # Ordered arg descriptors for `contract.call(...)`
+    args: list[dict]
+    # Client guidance (fee, timeout, RPC) — not consensus-critical.
+    fee: str = "10000"
+    timeout_seconds: int = 120
+    rpc_url: str = "https://soroban-testnet.stellar.org"
+    canonical_payload: str
+
+
 class ReportAttestationCreate(BaseModel):
     """Payload the frontend sends after a confirmed Soroban invocation."""
 

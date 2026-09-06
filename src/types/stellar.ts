@@ -82,6 +82,35 @@ export interface AttestationMessage {
     canonicalPayload: string;
 }
 
+/** Week 2: unsigned XDR preparation params (GET …/xdr-prepare). */
+export interface XdrPrepareParams {
+    reportId: string;
+    hash: string;
+    prevHash: string | null;
+    contractId: string;
+    network: string;
+    function: string;
+    args: { name: string; type: string; value: string | null }[];
+    fee: string;
+    timeoutSeconds: number;
+    rpcUrl: string;
+    canonicalPayload: string;
+}
+
+/** Week 2: structured simulation result (POST /stellar/simulate). */
+export interface SimulateResult {
+    ok: boolean;
+    code: string;
+    message: string;
+    data: Record<string, unknown> | null;
+}
+
+/** Week 2: GeoJSON hash result (POST /stellar/geojson-hash). */
+export interface GeoJsonHashResult {
+    canonicalJson: string;
+    hash: string;
+}
+
 /** Explorer base for Testnet transactions. */
 export const TESTNET_EXPLORER_TX_BASE = 'https://stellar.expert/explorer/testnet/tx/';
 

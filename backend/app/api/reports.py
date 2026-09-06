@@ -16,6 +16,7 @@ from app.schemas.report import (
     ReportCreate,
     ReportOut,
     ReportUpdate,
+    XdrPrepareResponse,
 )
 from app.services.readings import fetch_all
 from app.services.report_hash import attestation_hash, canonical_json
@@ -125,6 +126,61 @@ def list_attestations(report_id: int, db: Session = Depends(get_db)) -> list[Rep
         .order_by(ReportAttestation.created_at.desc())
     )
     return list(db.scalars(statement))
+
+
+@router.get("/{report_id}/xdr-prepare", response_model=XdrPrepareResponse)
+def get_xdr_prepare(report_id: int, db: Session = Depends(get_db)) -> XdrPrepareResponse:
+    """Week 2: unsigned XDR preparation parameters (server-authoritative).
+
+    Returns everything the frontend needs to build the unsigned `attest`
+    transaction *without* recomputing hashes or guessing revision linkage:
+    current content hash, prev_hash (latest confirmed != current, else null),
+    contract id, and ordered arg descriptors.
+
+    The full XDR envelope is intentionally built client-side
+    (`src/services/stellar/attestation.ts :: prepareSignedAttestation`):
+    it needs the source account sequence from Soroban RPC plus Freighter
+    signing, and the backend never holds keys. Public by design (no auth) —
+    same visibility as `attestation-message`.
+    """
+    report = _get_report(db, report_id)
+    current_hash = attestation_hash(report)
+    canonical = canonical_json(report)
+
+    rows = list(
+        db.scalars(
+            select(ReportAttestation)
+            .where(
+                ReportAttestation.report_id == report.id,
+                ReportAttestation.status == "confirmed",
+            )
+            .order_by(ReportAttestation.created_at.desc())
+        )
+    )
+    prev_hash: str | None = None
+    for row in rows:
+        if row.stellar_hash != current_hash:
+            prev_hash = row.stellar_hash
+            break
+
+    return XdrPrepareResponse(
+        report_id=str(report.id),
+        hash=current_hash,
+        prev_hash=prev_hash,
+        contract_id=settings.stellar_contract_id,
+        network="testnet",
+        function="attest",
+        args=[
+            {"name": "submitter", "type": "Address", "value": "<connected-wallet-G…>"},
+            {"name": "hash", "type": "BytesN<32>", "value": current_hash},
+            {"name": "report_id", "type": "String", "value": str(report.id)},
+            {"name": "prev_hash", "type": "Option<BytesN<32>>", "value": prev_hash},
+        ],
+        fee="10000",
+        timeout_seconds=120,
+        rpc_url=settings.stellar_rpc_url,
+        canonical_payload=canonical,
+    )
 
 
 @router.post(

@@ -271,8 +271,11 @@ One table for reviewers - everything needed to verify this project:
 | WASM artifact | `target/wasm32v1-none/release/initai_spatial_attestation.wasm` — **28,844 bytes**, **SHA-256** `19f8b4bddb717f60aa70116e0c6c0e86e45e3488f0d307dafa277c8534ba210e` — built `2026-08-31` with **on-chain `prev_hash`** via `stellar contract build` / `cargo build --target wasm32v1-none --release` (Rust `1.98.0`, `soroban-sdk 27.0.1`, `opt-level="z"` + `lto=true`) — `target/` is gitignored; verify with `Get-FileHash -Algorithm SHA256` or `sha256sum` — wasm hash `19f8b4...` matches deploy (Soroban deploys are immutable) |
 | Live dApp | [https://init-ai-ebon.vercel.app](https://init-ai-ebon.vercel.app) |
 | API documentation | [https://backend-phi-gray-27.vercel.app/docs](https://backend-phi-gray-27.vercel.app/docs) (FastAPI/OpenAPI) |
-| Canonicalization spec | [`initai-canonical-v1`](#canonicalization-specification-initai-canonical-v1) - rules + implementation in [`backend/app/services/report_hash.py`](backend/app/services/report_hash.py) |
-| Test vectors | [`backend/tests/test_report_hash.py`](backend/tests/test_report_hash.py) (6 vectors: determinism, float normalization, unicode, known-digest) |
+| Canonicalization spec | [`docs/canonical-v1.md`](docs/canonical-v1.md) (`initai-canonical-v1`) + [spec section](#canonicalization-specification-initai-canonical-v1) - rules + `backend/app/services/report_hash.py` (reports) + `backend/app/services/geojson_hash.py` (GeoJSON annex) |
+| Test vectors | [`backend/tests/test_report_hash.py`](backend/tests/test_report_hash.py) (6 report vectors) + [`backend/tests/test_geojson_hash.py`](backend/tests/test_geojson_hash.py) (9 GeoJSON vectors) |
+| XDR-prepare | `GET /api/reports/{id}/xdr-prepare` → `{hash, prevHash, contractId, args}` (server-authoritative unsigned-XDR params; envelope built client-side) |
+| Simulation | `POST /api/stellar/simulate {xdr}` → `{ok, code, message}` — structured codes in [`docs/rpc-errors.md`](docs/rpc-errors.md) |
+| GeoJSON hash | `POST /api/stellar/geojson-hash` → `{canonicalJson, hash}` (deterministic pipeline) |
 | Transaction receipts | See [Transaction Receipts](#transaction-receipts) below |
 | Wallets used | See [Wallets](#wallets) below |
 | Demo video | W.I.P |

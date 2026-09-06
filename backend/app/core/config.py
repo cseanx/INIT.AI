@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     # THIS deployment trusts. Horizon is queried read-only; no keys here.
     stellar_contract_id: str = "CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4"
     stellar_horizon_base: str = "https://horizon-testnet.stellar.org"
+    stellar_rpc_url: str = "https://soroban-testnet.stellar.org"
     stellar_network: str = "testnet"
 
     # Account / email configuration

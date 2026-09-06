@@ -11,8 +11,11 @@ import type {
 } from '../types';
 import type {
     AttestationMessage,
+    GeoJsonHashResult,
     RecordAttestationBody,
     ReportAttestationRecord,
+    SimulateResult,
+    XdrPrepareParams,
 } from '../types/stellar';
 import {
     barangays,
@@ -260,6 +263,10 @@ getReports: async (): Promise<Report[]> => {
         attestationMessage: (id: number | string): Promise<AttestationMessage> =>
             authFetch<AttestationMessage>(`/api/reports/${id}/attestation-message`),
 
+        /** Week 2: unsigned XDR preparation params (hash + prevHash + contract + args). */
+        xdrPrepare: (id: number | string): Promise<XdrPrepareParams> =>
+            authFetch<XdrPrepareParams>(`/api/reports/${id}/xdr-prepare`),
+
         /** Persisted proof history (public). */
         listAttestations: (id: number | string): Promise<ReportAttestationRecord[]> =>
             authFetch<unknown>(`/api/reports/${id}/attestation`).then((data) =>
@@ -363,6 +370,22 @@ getReports: async (): Promise<Report[]> => {
             authFetch<UserPreferences>('/api/preferences', {
                 method: 'PUT',
                 body: JSON.stringify(patch),
+            }),
+    },
+
+    stellar: {
+        /** Week 2: pre-flight simulation proxy (structured codes, see docs/rpc-errors.md). */
+        simulate: (xdr: string): Promise<SimulateResult> =>
+            authFetch<SimulateResult>('/api/stellar/simulate', {
+                method: 'POST',
+                body: JSON.stringify({ xdr }),
+            }),
+
+        /** Week 2: deterministic GeoJSON hashing pipeline. */
+        geojsonHash: (geojson: Record<string, unknown>): Promise<GeoJsonHashResult> =>
+            authFetch<GeoJsonHashResult>('/api/stellar/geojson-hash', {
+                method: 'POST',
+                body: JSON.stringify({ geojson }),
             }),
     },
 };

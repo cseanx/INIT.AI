@@ -116,23 +116,27 @@ All routes are mounted under `/api`.
 | PUT    | /api/reports/{id} | ✓ | Update a report |
 | DELETE | /api/reports/{id} | ✓ | Delete a report |
 | GET    | /api/reports/{id}/attestation-message | – | Server-authoritative content hash + canonical payload |
+| GET    | /api/reports/{id}/xdr-prepare | – | Week 2: unsigned XDR preparation params (hash + prevHash + contract + args) |
 | GET    | /api/reports/{id}/attestation | – | Persisted Stellar proof history |
 | POST   | /api/reports/{id}/attestation | ✓ | Record a confirmed on-chain attestation |
 | GET    | /api/stellar/attestation/{hash} | – | Public lookup: proof by report hash |
+| POST   | /api/stellar/geojson-hash | – | Week 2: deterministic GeoJSON hashing pipeline |
+| POST   | /api/stellar/simulate | – | Week 2: Soroban RPC simulation proxy with structured codes |
 
 ## Project layout
 
 ```
 app/
 ├── main.py          # FastAPI app, CORS, router wiring, schema bootstrap
-├── core/config.py   # Settings from environment / .env
+├── core/config.py   # Settings from environment / .env (incl. STELLAR_RPC_URL)
 ├── db/              # Engine, session, Base, bootstrap helpers, seed script
 ├── models/          # SQLAlchemy ORM models
 ├── schemas/         # Pydantic request/response schemas
 ├── api/             # Route modules (one per resource)
-└── services/        # Report hashing, Horizon verification, query services
+└── services/        # Report hashing, GeoJSON hashing, Horizon verify, RPC simulate
 alembic/             # Migrations
 tests/               # pytest suite (SQLite in-memory)
+docs/                # canonical-v1.md (hashing spec), rpc-errors.md (simulation matrix)
 ```
 
 ## Frontend integration
