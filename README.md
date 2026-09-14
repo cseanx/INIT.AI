@@ -307,7 +307,7 @@ Contract `CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4` (wasm `19f8b
 >
 > **Validation: 5 confirmed attestations across 2 wallets** (`total_attestations` → `5` on 2026-09-14). Full QA matrix: [`docs/qa-checklist.md`](docs/qa-checklist.md).
 >
-> Note: production backend still pins the previous contract until Weeks 1–3 are pushed + redeployed, so `POST /api/reports/{id}/attestation` for these new proofs returns 422 `Unknown contract id` until then. On-chain proofs remain independently verifiable via `verify` + explorer.
+> **Backend live (2026-09-14):** production API now runs current code and pins the new contract — `GET /api/reports/{id}/xdr-prepare` returns `contractId CDYHVMV...GQ4`, and `POST /api/reports/{id}/attestation` accepts new-contract proofs. (Deploy history: the GA `services` routing silently stopped registering routes after Aug 25; fixed by switching `backend/vercel.json` to `experimentalServices` — see `docs/qa-checklist.md` §D.)
 
 ### Wallets
 

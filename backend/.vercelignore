@@ -1,0 +1,9 @@
+# Never upload secrets or local-only files to Vercel build machines.
+# (backend/.gitignore covers .vercel/.env* for git; this file governs `vercel deploy`.)
+.env
+.env.*
+.vercel
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
