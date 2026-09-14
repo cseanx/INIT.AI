@@ -275,10 +275,11 @@ One table for reviewers - everything needed to verify this project:
 | Test vectors | [`backend/tests/test_report_hash.py`](backend/tests/test_report_hash.py) (6 report vectors) + [`backend/tests/test_geojson_hash.py`](backend/tests/test_geojson_hash.py) (9 GeoJSON vectors) |
 | XDR-prepare | `GET /api/reports/{id}/xdr-prepare` → `{hash, prevHash, contractId, args}` (server-authoritative unsigned-XDR params; envelope built client-side) |
 | Simulation | `POST /api/stellar/simulate {xdr}` → `{ok, code, message}` — structured codes in [`docs/rpc-errors.md`](docs/rpc-errors.md) |
+| Validation | [`docs/qa-checklist.md`](docs/qa-checklist.md) (E2E matrix + live results) + [`docs/lgu-quickstart.md`](docs/lgu-quickstart.md) (LGU guide) + [`docs/demo-script.md`](docs/demo-script.md) |
 | GeoJSON hash | `POST /api/stellar/geojson-hash` → `{canonicalJson, hash}` (deterministic pipeline) |
 | Transaction receipts | See [Transaction Receipts](#transaction-receipts) below |
 | Wallets used | See [Wallets](#wallets) below |
-| Demo video | W.I.P |
+| Demo video | Script + shot list [`docs/demo-script.md`](docs/demo-script.md) (recording = 1 remaining manual step) | 
 
 ## Current Testnet Contract
 
@@ -298,8 +299,15 @@ Contract `CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4` (wasm `19f8b
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | `smoke-test` | first version (None) | 2026-08-31  | `GBBU32EB...FAHY` (ops) | `aaaa...` (synthetic `0xaa×32`) | `None` | [`66a6900a...318f6`](https://stellar.expert/explorer/testnet/tx/66a6900a24fa4851a5730352af35e1bf5ca8e963ee2fb6d712e7202fd75318f6) |
 | 2 | `smoke-test` | revision (Some prev) | 2026-08-31  | `GBBU32EB...FAHY` (ops) | `bbbb...` (synthetic `0xbb×32`) | `aaaa...` | [`48f4128e...6985`](https://stellar.expert/explorer/testnet/tx/48f4128e7973a15104de3560aade97d6994a0ff0e15b3459dd1915cb1d1c6985) |
+| 3 | `7` | real report, first version | 2026-09-14 08:42:12 | `GBBU32EB...FAHY` (ops) | `923ab672...` | `None` | [`14850f04...9f046d1d`](https://stellar.expert/explorer/testnet/tx/14850f043c5b50dd4a121db6ac878ad169622c5205df8b372b18ea9e9f046d1d) |
+| 4 | `2` | real report, first version | 2026-09-14 08:42:27 | `GBBU32EB...FAHY` (ops) | `972a6b68...` | `None` | [`534c1030...ce72aa2`](https://stellar.expert/explorer/testnet/tx/534c10304caf47229256f5f99909cb4b1aaa7daedc70421fa20fa523fce72aa2) |
+| 5 | `12` | real report, first version (2nd wallet) | 2026-09-14 08:42:37 | `GAORWFLY...ZWHUZ5J` (qa-second) | `802d191e...` | `None` | [`21ff47a5...025a0e17`](https://stellar.expert/explorer/testnet/tx/21ff47a577bde1ef9d503fe7836ebf6148ec34bdf628c7bac22df57b025a0e17) |
 
-> **On-chain revision demo**: v1 `aaaa...` has `prev_hash: null`; v2 `bbbb...` has `prev_hash: aaaa...` same `report_id` `smoke-test` — walkable via `verify(bbbb...).prev_hash` → `aaaa...`. Duplicate and mismatched `prev_hash` correctly panic (see Failure-Handling below). Explorer links above show ledger `4431681` / `4431689`.
+> **On-chain revision demo**: v1 `aaaa...` has `prev_hash: null`; v2 `bbbb...` has `prev_hash: aaaa...` same `report_id` `smoke-test` — walkable via `verify(bbbb...).prev_hash` → `aaaa...`. Duplicate and mismatched `prev_hash` correctly panic (see Failure-Handling below). Explorer links above show ledgers `4431681` / `4431689` (synthetic) and `4670349` / `4670352` / `4670354` (real reports).
+>
+> **Validation: 5 confirmed attestations across 2 wallets** (`total_attestations` → `5` on 2026-09-14). Full QA matrix: [`docs/qa-checklist.md`](docs/qa-checklist.md).
+>
+> Note: production backend still pins the previous contract until Weeks 1–3 are pushed + redeployed, so `POST /api/reports/{id}/attestation` for these new proofs returns 422 `Unknown contract id` until then. On-chain proofs remain independently verifiable via `verify` + explorer.
 
 ### Wallets
 
@@ -308,9 +316,10 @@ Two distinct wallets are used in this prototype:
 | Wallet | Role | Address |
 | --- | --- | --- |
 | **Ops / deployer** | Contract deployment + CLI demonstrations | `GBBU32EB3VNOIGDS6GUJ6JWWONQ6NP73BRG6IVE5D4BV3LCTYEJJFAHY` |
+| **QA second** | Multi-wallet E2E (friendbot-funded) | `GAORWFLY5DLFOW7GGGBVH6357XDJA2I3T67CXBCLP3PGML2HKZWHUZ5J` |
 | **Demo user** | End-user Freighter wallet for in-app attestations | `GDJ24SBS6QRLRHU2ILDTBM3YHXMW6E6QSTHX6OHPFWAHQHPJOTWGQL22` |
 
-Private keys for neither wallet exist in this repository.
+Secrets for all wallets live only in local `~/.config/stellar/identity/` (ops/qa) or the user's own Freighter extension (demo) — private keys for no wallet exist in this repository.
 
 ## Failure-Handling Demonstrations
 
