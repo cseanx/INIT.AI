@@ -2,8 +2,12 @@
    VERIFY REPORT MODAL
    Reusable confirmation + progress dialog for "Verify on Stellar".
    Owns the full phase machine (confirmation → preparing → awaiting-
-   signature → submitting → confirming → success | failed) and renders
-   each stage; the actual wallet/network driver is injected later via the
+   signature → submitting → confirming → verifying → success | failed) and renders
+   each stage; `verifying` is the contract-verification readback
+   (verify(hash) on-chain) so success means proof confirmed, not just tx landed.
+   Uses backend xdr-prepare (Week 2) for authoritative hash/prevHash when
+   available, falling back to attestation-message + history.
+   The actual wallet/network driver is injected later via the
    `runAttestation` prop. Without a driver the flow honestly stops at the
    signature stage — nothing is faked as verified.
 ========================== */
@@ -11,11 +15,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../../services/api';
-import { prepareSignedAttestation, submitSignedAttestation } from '../../services/stellar/attestation';
+import { fetchChainAttestation, prepareSignedAttestation, submitSignedAttestation } from '../../services/stellar/attestation';
 import { CONTRACT_ID } from '../../services/stellar/client';
 import { normalizeWalletError } from '../../services/stellar/wallet';
 import type { Report } from '../../types';
-import { explorerTxUrl, type ReportAttestationRecord } from '../../types/stellar';
+import { explorerTxUrl, type ChainAttestation, type ReportAttestationRecord } from '../../types/stellar';
 
 export type VerifyPhase =
     | 'confirmation'
@@ -23,6 +27,7 @@ export type VerifyPhase =
     | 'awaiting-signature'
     | 'submitting'
     | 'confirming'
+    | 'verifying'
     | 'success'
     | 'failed';
 
@@ -70,6 +75,7 @@ const PROGRESS_STEPS: { key: Exclude<VerifyPhase, 'confirmation' | 'success' | '
     { key: 'awaiting-signature', label: 'Awaiting wallet signature' },
     { key: 'submitting', label: 'Submitting to Stellar' },
     { key: 'confirming', label: 'Confirming on Testnet' },
+    { key: 'verifying', label: 'Verifying on-chain' },
 ];
 
 const BUSY_PHASES: readonly VerifyPhase[] = [
@@ -77,11 +83,46 @@ const BUSY_PHASES: readonly VerifyPhase[] = [
     'awaiting-signature',
     'submitting',
     'confirming',
+    'verifying',
 ];
 
 /** Shorten long hex/addresses: first N … last M. */
 function shorten(value: string, head = 10, tail = 8): string {
     return value.length <= head + tail + 2 ? value : `${value.slice(0, head)}…${value.slice(-tail)}`;
+}
+
+type FlowErrorKind = 'declined' | 'no-wallet' | 'timeout' | 'network' | 'duplicate' | 'generic';
+
+/** Week 3: classify a failure message so the failed shell can show kind-specific guidance. */
+function classifyFlowError(message: string): FlowErrorKind {
+    const msg = message.toLowerCase();
+    if (msg.includes('declined in your wallet') || msg.includes('declined') || msg.includes('rejected') || msg.includes('denied') || msg.includes('cancelled') || msg.includes('canceled')) {
+        // Distinguish already-verified duplicates from user rejections
+        if (msg.includes('already been verified') || msg.includes('already exists') || msg.includes('already attested')) return 'duplicate';
+        return 'declined';
+    }
+    if (msg.includes('already been verified') || msg.includes('already exists') || msg.includes('already attested')) return 'duplicate';
+    if (msg.includes('no stellar wallet') || msg.includes('no wallet connected') || msg.includes('not installed') || msg.includes('locked') || msg.includes('unavailable')) return 'no-wallet';
+    if (msg.includes('timed out') || msg.includes('timeout')) return 'timeout';
+    if (msg.includes('rpc error') || msg.includes('could not reach') || msg.includes('network') || msg.includes('unreachable')) return 'network';
+    return 'generic';
+}
+
+function errorGuidance(kind: FlowErrorKind): string {
+    switch (kind) {
+        case 'declined':
+            return 'You declined the signature in your wallet. Nothing was submitted — reopen and Continue when ready to sign.';
+        case 'no-wallet':
+            return 'Connect Freighter (Testnet) via the wallet indicator in the header, fund it via friendbot if needed, then retry.';
+        case 'timeout':
+            return 'Testnet was slow to confirm. Your transaction might still land — check the explorer before retrying to avoid a duplicate.';
+        case 'network':
+            return 'The Stellar Testnet RPC was unreachable. Check your connection and retry shortly.';
+        case 'duplicate':
+            return 'This version is already attested on-chain. Edit the report to create a new version to verify.';
+        default:
+            return 'Nothing was written to the blockchain. You can safely retry.';
+    }
 }
 
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -142,6 +183,8 @@ export default function VerifyReportModal({
     const [existingAttestation, setExistingAttestation] = useState<ReportAttestationRecord | null>(null);
     const [prevHash, setPrevHash] = useState<string | null>(null);
     const [attestationHistory, setAttestationHistory] = useState<ReportAttestationRecord[]>([]);
+    const [chainRecord, setChainRecord] = useState<ChainAttestation | null>(null);
+    const [errorKind, setErrorKind] = useState<'declined' | 'no-wallet' | 'timeout' | 'network' | 'duplicate' | 'generic'>('generic');
 
     // Fresh machine + server-authoritative content hash whenever a report is targeted.
     // Also fetch the persisted proof history so we can detect an already-greenlit
@@ -160,31 +203,50 @@ export default function VerifyReportModal({
         setExistingAttestation(null);
         setPrevHash(null);
         setAttestationHistory([]);
+        setChainRecord(null);
+        setErrorKind('generic');
         setHashLoading(true);
-        Promise.all([api.reports.attestationMessage(report.id), api.reports.listAttestations(report.id)])
-            .then(([message, records]) => {
+        // Week 2+3: prefer xdr-prepare (authoritative hash + prevHash + contract
+        // in one call); fall back to attestation-message + history on old backends.
+        api.reports.xdrPrepare(report.id)
+            .then((prep) => {
                 if (!active) return;
-                setReportHash(message.hash);
-                setAttestationHistory(records);
-                const match = records.find((r) => r.stellarHash === message.hash && r.status === 'confirmed') ?? null;
-                if (match || report.attestedCurrent) {
-                    setAlreadyVerified(true);
-                    setExistingAttestation(match);
-                }
-                // On-chain revision chain: prevHash is the latest confirmed attestation
-                // for this report that is NOT the current hash. Null for first version.
-                const confirmedSorted = [...records]
-                    .filter((r) => r.status === 'confirmed')
-                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                const latestPrev = confirmedSorted.find((r) => r.stellarHash !== message.hash) ?? confirmedSorted[0] ?? null;
-                // If already attested, there is no new prev (already linked). For new version, link to latest.
-                if (!match) {
-                    setPrevHash(latestPrev?.stellarHash ?? null);
-                } else {
-                    // Already verified — show its own prev for info, but attestation not needed
-                    setPrevHash(match?.prevHash ?? latestPrev?.stellarHash ?? null);
-                }
+                setReportHash(prep.hash);
+                setPrevHash(prep.prevHash);
+                return api.reports.listAttestations(report.id).then((records) => {
+                    if (!active) return;
+                    setAttestationHistory(records);
+                    const match = records.find((r) => r.stellarHash === prep.hash && r.status === 'confirmed') ?? null;
+                    if (match || report.attestedCurrent) {
+                        setAlreadyVerified(true);
+                        setExistingAttestation(match);
+                    }
+                });
             })
+            .catch(() =>
+                Promise.all([api.reports.attestationMessage(report.id), api.reports.listAttestations(report.id)]).then(
+                    ([message, records]) => {
+                        if (!active) return;
+                        setReportHash(message.hash);
+                        setAttestationHistory(records);
+                        const match = records.find((r) => r.stellarHash === message.hash && r.status === 'confirmed') ?? null;
+                        if (match || report.attestedCurrent) {
+                            setAlreadyVerified(true);
+                            setExistingAttestation(match);
+                        }
+                        const confirmedSorted = [...records]
+                            .filter((r) => r.status === 'confirmed')
+                            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                        const latestPrev =
+                            confirmedSorted.find((r) => r.stellarHash !== message.hash) ?? confirmedSorted[0] ?? null;
+                        if (!match) {
+                            setPrevHash(latestPrev?.stellarHash ?? null);
+                        } else {
+                            setPrevHash(match?.prevHash ?? latestPrev?.stellarHash ?? null);
+                        }
+                    },
+                ),
+            )
             .catch(() => {
                 if (!active) return;
                 setReportHash(null);
@@ -234,6 +296,7 @@ export default function VerifyReportModal({
                 },
                 fail: (message) => {
                     setFlowError(message);
+                    setErrorKind(classifyFlowError(message));
                     setPhase('failed');
                 },
             };
@@ -246,10 +309,12 @@ export default function VerifyReportModal({
             return;
         }
 
-        // Attestation flow: check wallet → prepare (build + simulate) →
-        // Freighter signature → submit to Testnet → confirm on-chain.
+        // Attestation flow (Week 3 explicit 5-state): check wallet → prepare
+        // (build + simulate) → Freighter signature → submit → confirm →
+        // contract-verification readback (verify(hash)).
         if (!report || typeof report.id !== 'number') {
             setFlowError('Invalid report selected.');
+            setErrorKind('generic');
             setPhase('failed');
             return;
         }
@@ -267,6 +332,7 @@ export default function VerifyReportModal({
                 setFlowError(
                     'This report version is already verified on Stellar Testnet. Each version can only be attested once — edit the report to create a new version to verify.',
                 );
+                setErrorKind('duplicate');
                 setPhase('failed');
             }
             return;
@@ -275,12 +341,14 @@ export default function VerifyReportModal({
             setFlowError(
                 'No Stellar wallet is connected. Please connect your wallet using the indicator in the header and try again.',
             );
+            setErrorKind('no-wallet');
             setPhase('failed');
             return;
         }
         if (hashLoading) return;
         if (!reportHash) {
             setFlowError('The report hash could not be loaded. Please close and try again.');
+            setErrorKind('network');
             setPhase('failed');
             return;
         }
@@ -288,6 +356,8 @@ export default function VerifyReportModal({
         setFlowError(null);
         setTxHash(null);
         setSignedXdr(null);
+        setChainRecord(null);
+        setErrorKind('generic');
         setPhase('preparing');
         try {
             // Let the preparing state paint before the heavy SDK + RPC work.
@@ -306,6 +376,16 @@ export default function VerifyReportModal({
             // confirmation (Freighter is no longer involved).
             const txHash = await submitSignedAttestation(signed, (next) => setPhase(next));
             setTxHash(txHash);
+            // Week 3: explicit contract-verification — read verify(hash) back on-chain
+            // so success means proof confirmed, not just tx landed.
+            setPhase('verifying');
+            try {
+                const chain = await fetchChainAttestation(reportHash, walletAddress);
+                if (chain) setChainRecord(chain);
+            } catch {
+                // Readback is best-effort; confirmation already succeeded. A missing
+                // record here surfaces as a persist-style warning, not a failure.
+            }
             setPhase('success');
 
             // Persist off-chain (report id + hash + tx hash + contract + wallet +
@@ -341,14 +421,16 @@ export default function VerifyReportModal({
             if (msg.toLowerCase().includes('already been verified') && existingAttestation?.txHash) {
                 setTxHash(existingAttestation.txHash);
                 setPersistWarning(null);
+                setErrorKind('duplicate');
                 setPhase('success');
                 onVerified?.();
                 return;
             }
             setFlowError(msg);
+            setErrorKind(classifyFlowError(msg));
             setPhase('failed');
         }
-    }, [report, walletAddress, reportHash, hashLoading, runAttestation, onVerified, alreadyVerified, existingAttestation]);
+    }, [report, walletAddress, reportHash, prevHash, hashLoading, runAttestation, onVerified, alreadyVerified, existingAttestation]);
 
     if (!open || !report) return null;
 
@@ -364,7 +446,11 @@ export default function VerifyReportModal({
                     <ProgressStepper phase={phase} />
                     <p className="mt-[16px] flex items-start gap-[8px] text-[11.5px] leading-relaxed text-[#888]">
                         <i className="fa-solid fa-lightbulb mt-[2px] text-[11px] text-accent"></i>
-                        Keep this tab open until the transaction is confirmed.
+                        {phase === 'verifying'
+                            ? 'Transaction landed — reading the proof back from the contract (verify(hash)) to confirm it.'
+                            : phase === 'awaiting-signature'
+                              ? 'Check your wallet extension for the signature prompt. Declining leaves the report unattested.'
+                              : 'Keep this tab open until the transaction is confirmed.'}
                     </p>
                 </div>
             </div>,
@@ -413,16 +499,39 @@ export default function VerifyReportModal({
                             </p>
                         </div>
                     ) : txHash ? (
-                        <a
-                            className="mb-[6px] inline-flex max-w-full items-center gap-[7px] truncate text-[12.5px] text-accent hover:underline"
-                            href={explorerTxUrl(txHash)}
-                            target="_blank"
-                            rel="noreferrer"
-                            title={explorerTxUrl(txHash)}
-                        >
-                            <i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-                            Transaction {shorten(txHash)}
-                        </a>
+                        <>
+                            <a
+                                className="mb-[6px] inline-flex max-w-full items-center gap-[7px] truncate text-[12.5px] text-accent hover:underline"
+                                href={explorerTxUrl(txHash)}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={explorerTxUrl(txHash)}
+                            >
+                                <i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                                Transaction {shorten(txHash)}
+                            </a>
+                            {chainRecord ? (
+                                <div className="mb-[6px] rounded-[10px] border border-mint/25 bg-mint/[.07] p-[10px_12px] text-[11.5px] leading-relaxed text-mint">
+                                    <i className="fa-solid fa-circle-check mr-[6px] text-[11px]"></i>
+                                    Contract-verified on-chain — ledger {chainRecord.ledgerSequence}
+                                    {chainRecord.prevHash ? (
+                                        <>
+                                            {' '}· revision of{' '}
+                                            <span className="font-mono" title={chainRecord.prevHash}>
+                                                {shorten(chainRecord.prevHash)}
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <>{' '}· first version (no previous hash)</>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="mb-[6px] text-[11.5px] leading-relaxed text-[#888]">
+                                    Confirmed on Testnet. On-chain readback was unavailable just now — the
+                                    transaction above is the proof; re-open to re-verify.
+                                </p>
+                            )}
+                        </>
                     ) : null}
                     {persistWarning && (
                         <p className={`${FEE_NOTE_CLASSES} mb-[12px]`}>
@@ -456,6 +565,10 @@ export default function VerifyReportModal({
                     </div>
                     <p className="mb-[4px] break-words rounded-[12px] border border-[rgba(255,45,85,.3)] bg-[rgba(255,45,85,.08)] p-[10px_12px] text-[12px] leading-snug text-[#ff7a94]">
                         {flowError ?? 'An unexpected error occurred.'}
+                    </p>
+                    <p className="mb-[4px] flex items-start gap-[7px] text-[11.5px] leading-relaxed text-[#888]">
+                        <i className="fa-solid fa-circle-info mt-[2px] text-[11px] text-accent"></i>
+                        <span>{errorGuidance(errorKind)}</span>
                     </p>
                     <div className="mt-[16px] flex justify-end gap-[10px]">
                         <button type="button" className={GHOST_BTN_CLASSES} onClick={onClose}>

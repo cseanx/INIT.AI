@@ -26,6 +26,8 @@ Frontend
      (src/services/stellar/attestation.ts :: prepareSignedAttestation)
   3. server.prepareTransaction(tx) — Soroban RPC simulation, fills footprint/resources
      → on success: Freighter signs → server.sendTransaction → poll getTransaction
+     (confirming) → fetchChainAttestation verify(hash) readback (verifying, Week 3)
+     → success shows ledger + prevHash + explorer link
   4. Optional pre-flight: POST /api/stellar/simulate {xdr} → {ok, code, message}
      (backend/app/services/stellar_simulate.py proxies Soroban RPC simulateTransaction)
 

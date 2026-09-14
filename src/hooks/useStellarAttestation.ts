@@ -1,8 +1,8 @@
 /* ==========================
    useStellarAttestation
    Drives the full attestation flow for one report:
-   idle → hashing → (connecting) → signing → submitting → confirming → verified
-   with mapped, user-friendly errors at every step.
+   idle → hashing → (connecting) → signing → submitting → confirming → verifying → verified
+   with mapped, user-friendly errors at every step. verifying reads back verify(hash) on-chain.
 ========================== */
 
 import { useCallback, useState } from 'react';
@@ -102,6 +102,9 @@ export function useStellarAttestation(): UseStellarAttestation {
                 });
 
                 setPhase('confirming');
+                // Week 3: explicit contract-verification readback — success means
+                // verify(hash) returned the record on-chain, not just tx landed.
+                setPhase('verifying');
                 const record = await fetchChainAttestation(reportHash, address).catch(() => null);
                 if (record) setChainRecord(record);
 

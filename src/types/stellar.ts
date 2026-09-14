@@ -20,7 +20,9 @@ export interface ChainAttestation {
     prevHash: string | null;
 }
 
-/** State machine phases for an in-flight attestation. */
+/** State machine phases for an in-flight attestation (Week 3: explicit 5-state flow).
+ *  idle → hashing → (connecting) → signing → submitting → confirming → verifying → verified
+ *  `verifying` is the contract-verification readback (`verify(hash)` on-chain). */
 export type AttestationPhase =
     | 'idle'
     | 'hashing'
@@ -28,6 +30,7 @@ export type AttestationPhase =
     | 'signing'
     | 'submitting'
     | 'confirming'
+    | 'verifying'
     | 'verified';
 
 /** Result of a successful attestation. */

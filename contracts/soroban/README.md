@@ -297,7 +297,7 @@ Adapted to this repo's conventions — `src/services/` for plain logic,
 | `src/services/stellar/wallet.ts` | Freighter via StellarWalletsKit v2: connect / disconnect / address / network check / transaction signing |
 | `src/services/stellar/attestation.ts` | Canonical JSON → SHA-256 → Soroban `attest` invoke → confirmation polling → on-chain `verify` reads |
 | `src/hooks/useStellarWallet.ts` | Wallet session state (persisted address, connect/disconnect) |
-| `src/hooks/useStellarAttestation.ts` | Full flow state machine: `idle → hashing → connecting → signing → submitting → confirming → verified` |
+| `src/hooks/useStellarAttestation.ts` | Full flow state machine: `idle → hashing → connecting → signing → submitting → confirming → verifying → verified` (`verifying` = contract-verification readback) |
 
 Usage sketch (Phase 5 wires this into ReportEditor):
 

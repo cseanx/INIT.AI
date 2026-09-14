@@ -145,6 +145,22 @@ export function normalizeWalletError(err: unknown): Error {
     }
 
     const msg = raw.toLowerCase();
+    // Week 3: explicit timeout + insufficient-balance mapping (plan: timeout + confirmation states)
+    if (msg.includes('timed out') || msg.includes('timeout') || msg.includes('deadline')) {
+        return new Error(
+            'Timed out waiting for Testnet confirmation \u2014 the network may be slow. The transaction might still confirm; check the explorer before retrying.',
+        );
+    }
+    if (
+        msg.includes('insufficient') ||
+        msg.includes('underfunded') ||
+        msg.includes('balance') ||
+        msg.includes('fee') && msg.includes('high')
+    ) {
+        return new Error(
+            'Insufficient Testnet XLM for the network fee. Fund your wallet via the friendbot faucet and try again \u2014 Testnet XLM is free.',
+        );
+    }
     if (
         msg.includes('declined') ||
         msg.includes('rejected') ||
