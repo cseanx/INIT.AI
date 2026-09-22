@@ -50,25 +50,67 @@ export default function Dashboard() {
                 </div>
 
                 <div className="relative z-10 flex w-[45%] min-w-0 justify-end">
-                    <div className="preview-frame relative h-[340px] w-full max-w-[420px] min-w-[280px] overflow-hidden rounded-[24px] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,.5)]">
-                        <div className="thermal-visual absolute inset-0 bg-[#0a1220]">
-                            <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
-                                <img src="/assets/images/urban1.png" alt="" className="block h-full w-full object-cover saturate-[1.1] brightness-[.85]" />
-                                <img src="/assets/images/urban3.png" alt="" className="block h-full w-full object-cover saturate-[1.1] brightness-[.85]" />
-                                <img src="/assets/images/urban2.png" alt="" className="block h-full w-full object-cover saturate-[1.1] brightness-[.85]" />
-                                <img src="/assets/images/urban4.png" alt="" className="block h-full w-full object-cover saturate-[1.1] brightness-[.85]" />
+                    <div className="w-full max-w-[420px] min-w-[280px] rounded-[24px] border border-white/10 bg-[rgba(20,20,25,0.5)] p-[22px] shadow-[0_20px_50px_rgba(0,0,0,.5)] backdrop-blur-md transition-colors duration-300 hover:border-red-500/30">
+                        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
+                        <div className="mb-[18px] flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-2.5">
+                                <span className="relative flex h-2.5 w-2.5 shrink-0">
+                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75"></span>
+                                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_10px_rgba(255,45,85,.9)]"></span>
+                                </span>
+                                <span className="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-[11px] font-semibold tracking-[.08em] text-red-400">
+                                    CRITICAL ANOMALY
+                                </span>
                             </div>
-                            <div className="thermal-overlay"></div>
+                            <div className="flex shrink-0 flex-col items-end gap-1 text-[11px] leading-tight text-[#888]">
+                                <span>2m ago</span>
+                                <span className="text-[#aaa]">Payatas, District 2</span>
+                            </div>
                         </div>
-                        <div className="absolute left-[18px] top-[18px] flex items-center gap-2 rounded-full border border-white/12 bg-black/50 px-[14px] py-2 text-[11px] tracking-[.05em] backdrop-blur-[10px]">
-                            <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)] animate-status-pulse-fast"></span>
-                            LIVE SATELLITE
+
+                        <div className="mb-1 flex items-baseline gap-2">
+                            <span className="font-mono text-[40px] font-bold leading-none text-white">
+                                41.2°C
+                            </span>
                         </div>
-                        <div className="absolute bottom-[44px] left-[18px] text-[40px] font-bold [text-shadow:0_4px_20px_rgba(0,0,0,.6)]">
-                            41.2°C
+                        <p className="mb-[16px] text-[12px] font-medium text-red-400/90">
+                            (+4.8°C above historical baseline)
+                        </p>
+
+                        <div className="mb-[18px]">
+                            <div className="mb-2 flex items-center justify-between text-[11px] font-medium">
+                                <span className="uppercase tracking-[.06em] text-[#888]">Risk level</span>
+                                <span className="text-red-400">Extreme Caution / Danger</span>
+                            </div>
+                            <div className="h-[8px] overflow-hidden rounded-full border border-white/10 bg-white/5">
+                                <div className="h-full w-[86%] rounded-full bg-gradient-to-r from-amber-400 via-red-500 to-red-600 shadow-[0_0_12px_rgba(255,45,85,.5)]" />
+                            </div>
                         </div>
-                        <div className="absolute bottom-[18px] left-[18px] right-[18px] text-[10.5px] text-[#ccc] [text-shadow:0_2px_8px_rgba(0,0,0,.6)]">
-                            Payatas, Quezon City · Imagery © Esri, Maxar, Earthstar Geographics
+
+                        <div className="mb-[18px] flex items-start gap-2.5 rounded-[14px] border border-white/10 bg-white/[.03] p-[12px_14px]">
+                            <i className="fa-solid fa-robot mt-[2px] text-[13px] text-red-400"></i>
+                            <p className="text-[12.5px] leading-relaxed text-[#bbb]">
+                                High surface heat cluster identified over dense residential zone with
+                                12% canopy deficit. Vulnerability score: High.
+                            </p>
+                        </div>
+
+                        <div className="flex gap-2.5">
+                            <button
+                                type="button"
+                                className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border-none bg-red-600/90 px-4 py-3 text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(255,45,85,.35)] transition duration-300 hover:-translate-y-0.5 hover:bg-red-500 hover:shadow-[0_12px_32px_rgba(255,45,85,.45)]"
+                            >
+                                <i className="fa-solid fa-paper-plane text-[11px]"></i>
+                                Dispatch Advisory
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => navigate('/heatmap')}
+                                className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-[13px] font-semibold text-white backdrop-blur-md transition duration-300 hover:-translate-y-0.5 hover:border-red-500/30 hover:bg-white/10"
+                            >
+                                Locate on Map
+                                <span aria-hidden="true">↗</span>
+                            </button>
                         </div>
                     </div>
                 </div>
