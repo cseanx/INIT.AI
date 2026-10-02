@@ -279,7 +279,6 @@ One table for reviewers - everything needed to verify this project:
 | GeoJSON hash | `POST /api/stellar/geojson-hash` → `{canonicalJson, hash}` (deterministic pipeline) |
 | Transaction receipts | See [Transaction Receipts](#transaction-receipts) below |
 | Wallets used | See [Wallets](#wallets) below |
-| Demo video | Shot list ready (recording = 1 remaining manual step) | 
 
 ## Current Testnet Contract
 
