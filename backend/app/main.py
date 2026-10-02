@@ -28,7 +28,9 @@ app = FastAPI(title="INIT.AI API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
+    # Local dev ports via regex; custom production domain must match
+    # explicitly so dashboard CORS list edits can't silently break login.
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?|https://(www\.)?initai\.site",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

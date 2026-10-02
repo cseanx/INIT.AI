@@ -1,12 +1,19 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["sin1"],
-  "experimentalServices": {
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": {
+        "type": "service",
+        "service": "init-ai-api"
+      }
+    }
+  ],
+  "services": {
     "init-ai-api": {
-      "entrypoint": "app/main.py",
-      "routePrefix": "/",
-      "framework": "fastapi",
-      "maxDuration": 60
+      "root": ".",
+      "entrypoint": "app.main:app",
+      "buildCommand": "pip install -r requirements.txt"
     }
   }
 }
