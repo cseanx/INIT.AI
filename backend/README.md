@@ -136,7 +136,6 @@ app/
 â””â”€â”€ services/        # Report hashing, GeoJSON hashing, Horizon verify, RPC simulate
 alembic/             # Migrations
 tests/               # pytest suite (SQLite in-memory)
-docs/                # canonical-v1.md (hashing spec), rpc-errors.md (simulation matrix)
 ```
 
 ## Frontend integration
