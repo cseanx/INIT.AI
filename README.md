@@ -1,4 +1,4 @@
-# INIT.AI
+﻿# INIT.AI
 
 ### AI-Powered Urban Heat Intelligence for Philippine Cities
 
@@ -6,7 +6,7 @@
 
 [![Status](https://img.shields.io/badge/Status-Testnet_Alpha-18181b?style=flat-square)](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) [![Stellar](https://img.shields.io/badge/Stellar-Soroban-7D00FF?style=flat-square&logo=stellar&logoColor=white)](https://developers.stellar.org/docs/learn/fundamentals/contract-development) [![React](https://img.shields.io/badge/React-19-20232a?style=flat-square&logo=react&logoColor=61DAFB)](https://react.dev) [![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev) [![FastAPI](https://img.shields.io/badge/FastAPI-0.1-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com) [![Rust](https://img.shields.io/badge/Rust-Soroban-dea584?style=flat-square&logo=rust&logoColor=black)](https://soroban.stellar.org) [![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](LICENSE)
 
-[Live dApp](https://init-ai-ebon.vercel.app) · [API Docs](https://backend-phi-gray-27.vercel.app/docs) · [Contract on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) · [Run Locally](#getting-started) · [Canonical Spec](#canonicalization-specification-initai-canonical-v1)
+[Live dApp](https://www.initai.site) Â· [API Docs](https://api.initai.site/docs) Â· [Contract on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) Â· [Run Locally](#getting-started) Â· [Canonical Spec](#canonicalization-specification-initai-canonical-v1)
 
 > **Important:** INIT.AI is a prototype on **Stellar Testnet** only. Attestations are wallet-submitted, not LGU-certified. Mainnet, production audit, and official endorsement are not claimed.
 
@@ -27,7 +27,7 @@ npm run build      # typecheck + production build (outputs to dist/)
 npm run preview    # serve the production build
 ```
 
-> Backend is deployed at `https://backend-phi-gray-27.vercel.app` — `npm run dev` works without a local backend. For local API/database work see [`backend/README.md`](backend/README.md).
+> Backend is deployed at `https://api.initai.site` â€” `npm run dev` works without a local backend. For local API/database work see [`backend/README.md`](backend/README.md).
 
 ## Notes
 
@@ -155,7 +155,7 @@ The Soroban contract stores only:
 | Report reference | Opaque numeric id (e.g. `"7"`) |
 | Submitter | Stellar account address |
 | Attestation time | Ledger sequence + unix timestamp |
-| Previous hash | `Option<BytesN<32>>` — `None` for first version, `Some(prev)` for revisions (on-chain revision chain) |
+| Previous hash | `Option<BytesN<32>>` â€” `None` for first version, `Some(prev)` for revisions (on-chain revision chain) |
 
 Report titles, municipality/barangay names, coordinates, GeoJSON, imagery,
 reporting periods, and LGU identifiers are **never** placed on-chain.
@@ -172,10 +172,10 @@ digest and therefore a new, independent attestation.
 
 Revisions are **on-chain linked and immutable**: editing a report produces a
 new canonical digest and a **new attestation transaction** that includes
-`prev_hash` — the SHA-256 of the previous version.
+`prev_hash` â€” the SHA-256 of the previous version.
 
-* First version: `attest(submitter, hash, report_id, None)` — no previous hash.
-* Next versions: `attest(submitter, new_hash, report_id, Some(prev_hash))` —
+* First version: `attest(submitter, hash, report_id, None)` â€” no previous hash.
+* Next versions: `attest(submitter, new_hash, report_id, Some(prev_hash))` â€”
   the contract validates that `prev_hash` exists and belongs to the same
   `report_id`, enforcing a linear, tamper-evident chain. Any mismatch
   (`prev` unknown or different `report_id`) panics.
@@ -184,7 +184,7 @@ Original on-chain records are never modified, replaced, or deleted. Off-chain,
 the database mirrors the chain in `report_attestations.prev_hash` and groups
 history by `report_id`, so the full revision timeline is queryable both
 on-chain (`verify(hash).prev_hash`) and off-chain while each proof stands
-alone. Walking the chain: `verify(latest_hash)` → `prev_hash` → `verify(prev_hash)` → ...
+alone. Walking the chain: `verify(latest_hash)` â†’ `prev_hash` â†’ `verify(prev_hash)` â†’ ...
 
 ### Stellar Technologies Used
 
@@ -268,15 +268,15 @@ One table for reviewers - everything needed to verify this project:
 | Network | Stellar **Testnet** only |
 | Contract ID | [`CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4`](https://stellar.expert/explorer/testnet/contract/CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4) |
 | Contract source | [`contracts/soroban/`](contracts/soroban/) (Rust + soroban-sdk 27, unit-tested, `prev_hash` on-chain) |
-| WASM artifact | `target/wasm32v1-none/release/initai_spatial_attestation.wasm` — **28,844 bytes**, **SHA-256** `19f8b4bddb717f60aa70116e0c6c0e86e45e3488f0d307dafa277c8534ba210e` — built `2026-08-31` with **on-chain `prev_hash`** via `stellar contract build` / `cargo build --target wasm32v1-none --release` (Rust `1.98.0`, `soroban-sdk 27.0.1`, `opt-level="z"` + `lto=true`) — `target/` is gitignored; verify with `Get-FileHash -Algorithm SHA256` or `sha256sum` — wasm hash `19f8b4...` matches deploy (Soroban deploys are immutable) |
-| Live dApp | [https://init-ai-ebon.vercel.app](https://init-ai-ebon.vercel.app) |
-| API documentation | [https://backend-phi-gray-27.vercel.app/docs](https://backend-phi-gray-27.vercel.app/docs) (FastAPI/OpenAPI) |
+| WASM artifact | `target/wasm32v1-none/release/initai_spatial_attestation.wasm` â€” **28,844 bytes**, **SHA-256** `19f8b4bddb717f60aa70116e0c6c0e86e45e3488f0d307dafa277c8534ba210e` â€” built `2026-08-31` with **on-chain `prev_hash`** via `stellar contract build` / `cargo build --target wasm32v1-none --release` (Rust `1.98.0`, `soroban-sdk 27.0.1`, `opt-level="z"` + `lto=true`) â€” `target/` is gitignored; verify with `Get-FileHash -Algorithm SHA256` or `sha256sum` â€” wasm hash `19f8b4...` matches deploy (Soroban deploys are immutable) |
+| Live dApp | [https://www.initai.site](https://www.initai.site) |
+| API documentation | [https://api.initai.site/docs](https://api.initai.site/docs) (FastAPI/OpenAPI) |
 | Canonicalization spec | [`docs/canonical-v1.md`](docs/canonical-v1.md) (`initai-canonical-v1`) + [spec section](#canonicalization-specification-initai-canonical-v1) - rules + `backend/app/services/report_hash.py` (reports) + `backend/app/services/geojson_hash.py` (GeoJSON annex) |
 | Test vectors | [`backend/tests/test_report_hash.py`](backend/tests/test_report_hash.py) (6 report vectors) + [`backend/tests/test_geojson_hash.py`](backend/tests/test_geojson_hash.py) (9 GeoJSON vectors) |
-| XDR-prepare | `GET /api/reports/{id}/xdr-prepare` → `{hash, prevHash, contractId, args}` (server-authoritative unsigned-XDR params; envelope built client-side) |
-| Simulation | `POST /api/stellar/simulate {xdr}` → `{ok, code, message}` — structured codes in [`docs/rpc-errors.md`](docs/rpc-errors.md) |
+| XDR-prepare | `GET /api/reports/{id}/xdr-prepare` â†’ `{hash, prevHash, contractId, args}` (server-authoritative unsigned-XDR params; envelope built client-side) |
+| Simulation | `POST /api/stellar/simulate {xdr}` â†’ `{ok, code, message}` â€” structured codes in [`docs/rpc-errors.md`](docs/rpc-errors.md) |
 | Validation | [`docs/qa-checklist.md`](docs/qa-checklist.md) (E2E matrix + live results) + [`docs/lgu-quickstart.md`](docs/lgu-quickstart.md) (LGU guide) + [`docs/demo-script.md`](docs/demo-script.md) |
-| GeoJSON hash | `POST /api/stellar/geojson-hash` → `{canonicalJson, hash}` (deterministic pipeline) |
+| GeoJSON hash | `POST /api/stellar/geojson-hash` â†’ `{canonicalJson, hash}` (deterministic pipeline) |
 | Transaction receipts | See [Transaction Receipts](#transaction-receipts) below |
 | Wallets used | See [Wallets](#wallets) below |
 | Demo video | Script + shot list [`docs/demo-script.md`](docs/demo-script.md) (recording = 1 remaining manual step) | 
@@ -287,7 +287,7 @@ One table for reviewers - everything needed to verify this project:
 | --- | --- | --- | --- |
 | `SpatialAttestationRegistry` | `CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4) | [`contracts/soroban/`](contracts/soroban/) |
 
-> Deployed `2026-08-31` with stellar-cli `28.0.0` (wasm `19f8b4...`, 28,844 bytes) — wasm hash on-chain matches build. Previous deployment `CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF` (2026-08-24) is superseded. After any redeploy, update this table, `.env.example`, `backend/.env.example`, and `backend/app/core/config.py` together.
+> Deployed `2026-08-31` with stellar-cli `28.0.0` (wasm `19f8b4...`, 28,844 bytes) â€” wasm hash on-chain matches build. Previous deployment `CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF` (2026-08-24) is superseded. After any redeploy, update this table, `.env.example`, `backend/.env.example`, and `backend/app/core/config.py` together.
 
 ## Transaction Receipts
 
@@ -297,17 +297,17 @@ Contract `CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4` (wasm `19f8b
 
 | # | Report ref | Type | Date (UTC) | Source wallet | Digest prefix | `prev_hash` | Transaction |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | `smoke-test` | first version (None) | 2026-08-31  | `GBBU32EB...FAHY` (ops) | `aaaa...` (synthetic `0xaa×32`) | `None` | [`66a6900a...318f6`](https://stellar.expert/explorer/testnet/tx/66a6900a24fa4851a5730352af35e1bf5ca8e963ee2fb6d712e7202fd75318f6) |
-| 2 | `smoke-test` | revision (Some prev) | 2026-08-31  | `GBBU32EB...FAHY` (ops) | `bbbb...` (synthetic `0xbb×32`) | `aaaa...` | [`48f4128e...6985`](https://stellar.expert/explorer/testnet/tx/48f4128e7973a15104de3560aade97d6994a0ff0e15b3459dd1915cb1d1c6985) |
+| 1 | `smoke-test` | first version (None) | 2026-08-31  | `GBBU32EB...FAHY` (ops) | `aaaa...` (synthetic `0xaaÃ—32`) | `None` | [`66a6900a...318f6`](https://stellar.expert/explorer/testnet/tx/66a6900a24fa4851a5730352af35e1bf5ca8e963ee2fb6d712e7202fd75318f6) |
+| 2 | `smoke-test` | revision (Some prev) | 2026-08-31  | `GBBU32EB...FAHY` (ops) | `bbbb...` (synthetic `0xbbÃ—32`) | `aaaa...` | [`48f4128e...6985`](https://stellar.expert/explorer/testnet/tx/48f4128e7973a15104de3560aade97d6994a0ff0e15b3459dd1915cb1d1c6985) |
 | 3 | `7` | real report, first version | 2026-09-14 08:42:12 | `GBBU32EB...FAHY` (ops) | `923ab672...` | `None` | [`14850f04...9f046d1d`](https://stellar.expert/explorer/testnet/tx/14850f043c5b50dd4a121db6ac878ad169622c5205df8b372b18ea9e9f046d1d) |
 | 4 | `2` | real report, first version | 2026-09-14 08:42:27 | `GBBU32EB...FAHY` (ops) | `972a6b68...` | `None` | [`534c1030...ce72aa2`](https://stellar.expert/explorer/testnet/tx/534c10304caf47229256f5f99909cb4b1aaa7daedc70421fa20fa523fce72aa2) |
 | 5 | `12` | real report, first version (2nd wallet) | 2026-09-14 08:42:37 | `GAORWFLY...ZWHUZ5J` (qa-second) | `802d191e...` | `None` | [`21ff47a5...025a0e17`](https://stellar.expert/explorer/testnet/tx/21ff47a577bde1ef9d503fe7836ebf6148ec34bdf628c7bac22df57b025a0e17) |
 
-> **On-chain revision demo**: v1 `aaaa...` has `prev_hash: null`; v2 `bbbb...` has `prev_hash: aaaa...` same `report_id` `smoke-test` — walkable via `verify(bbbb...).prev_hash` → `aaaa...`. Duplicate and mismatched `prev_hash` correctly panic (see Failure-Handling below). Explorer links above show ledgers `4431681` / `4431689` (synthetic) and `4670349` / `4670352` / `4670354` (real reports).
+> **On-chain revision demo**: v1 `aaaa...` has `prev_hash: null`; v2 `bbbb...` has `prev_hash: aaaa...` same `report_id` `smoke-test` â€” walkable via `verify(bbbb...).prev_hash` â†’ `aaaa...`. Duplicate and mismatched `prev_hash` correctly panic (see Failure-Handling below). Explorer links above show ledgers `4431681` / `4431689` (synthetic) and `4670349` / `4670352` / `4670354` (real reports).
 >
-> **Validation: 5 confirmed attestations across 2 wallets** (`total_attestations` → `5` on 2026-09-14). Full QA matrix: [`docs/qa-checklist.md`](docs/qa-checklist.md).
+> **Validation: 5 confirmed attestations across 2 wallets** (`total_attestations` â†’ `5` on 2026-09-14). Full QA matrix: [`docs/qa-checklist.md`](docs/qa-checklist.md).
 >
-> **Backend live (2026-09-14):** production API now runs current code and pins the new contract — `GET /api/reports/{id}/xdr-prepare` returns `contractId CDYHVMV...GQ4`, and `POST /api/reports/{id}/attestation` accepts new-contract proofs. (Deploy history: the GA `services` routing silently stopped registering routes after Aug 25; fixed by switching `backend/vercel.json` to `experimentalServices` — see `docs/qa-checklist.md` §D.)
+> **Backend live (2026-09-14):** production API now runs current code and pins the new contract â€” `GET /api/reports/{id}/xdr-prepare` returns `contractId CDYHVMV...GQ4`, and `POST /api/reports/{id}/attestation` accepts new-contract proofs. (Deploy history: the GA `services` routing silently stopped registering routes after Aug 25; fixed by switching `backend/vercel.json` to `experimentalServices` â€” see `docs/qa-checklist.md` Â§D.)
 
 ### Wallets
 
@@ -319,7 +319,7 @@ Two distinct wallets are used in this prototype:
 | **QA second** | Multi-wallet E2E (friendbot-funded) | `GAORWFLY5DLFOW7GGGBVH6357XDJA2I3T67CXBCLP3PGML2HKZWHUZ5J` |
 | **Demo user** | End-user Freighter wallet for in-app attestations | `GDJ24SBS6QRLRHU2ILDTBM3YHXMW6E6QSTHX6OHPFWAHQHPJOTWGQL22` |
 
-Secrets for all wallets live only in local `~/.config/stellar/identity/` (ops/qa) or the user's own Freighter extension (demo) — private keys for no wallet exist in this repository.
+Secrets for all wallets live only in local `~/.config/stellar/identity/` (ops/qa) or the user's own Freighter extension (demo) â€” private keys for no wallet exist in this repository.
 
 ## Failure-Handling Demonstrations
 
@@ -362,7 +362,7 @@ matches the current content (tamper-evidence working as intended).
 ## Product
 
 > **Product Link**
-> [INIT.AI Vercel Deployment](https://init-ai-ebon.vercel.app)
+> [INIT.AI Vercel Deployment](https://www.initai.site)
 
 ---
 
@@ -452,22 +452,22 @@ stellar contract build --manifest-path contracts/soroban/Cargo.toml
 
 ## Performance and Benchmarking
 
-Measured **2026-08-31** on local dev machine (Windows 11, Node `24.15.0` / npm `11.12.1`, Python `3.14.3`, Rust `1.98.0`, cargo `1.98.0`) and against the deployed Vercel backend. No mocked timings — all numbers are from real runs on this commit.
+Measured **2026-08-31** on local dev machine (Windows 11, Node `24.15.0` / npm `11.12.1`, Python `3.14.3`, Rust `1.98.0`, cargo `1.98.0`) and against the deployed Vercel backend. No mocked timings â€” all numbers are from real runs on this commit.
 
 **A. Local build & unit tests (deterministic, offline)**
 
 | Target | Command | Result (this machine) |
 | --- | --- | --- |
-| Frontend build | `npx vite build` (3 runs) | `5.86s` / `6.00s` / `6.55s` — avg `~6.14s` |
-| Backend tests | `python -m pytest tests -q` (23 tests, SQLite in-memory) | cold `9.95s` (first import), warm `3.62s` / `4.09s` — avg warm `~3.9s`, `23 passed` |
+| Frontend build | `npx vite build` (3 runs) | `5.86s` / `6.00s` / `6.55s` â€” avg `~6.14s` |
+| Backend tests | `python -m pytest tests -q` (23 tests, SQLite in-memory) | cold `9.95s` (first import), warm `3.62s` / `4.09s` â€” avg warm `~3.9s`, `23 passed` |
 | Contract tests | `cargo test --manifest-path contracts/soroban/Cargo.toml` | compile `~16.1s` + exec `0.02s`, `6 passed` (total `~17.4s` first build, `~0.5s` incremental) |
-| Canonical hash | `attestation_hash` on representative report (597-byte JSON) | `~94k` hashes/s, `10.6 µs`/hash; `canonical_json` alone `~120k` ops/s, `8.3 µs`/op |
+| Canonical hash | `attestation_hash` on representative report (597-byte JSON) | `~94k` hashes/s, `10.6 Âµs`/hash; `canonical_json` alone `~120k` ops/s, `8.3 Âµs`/op |
 
 Hash example: `9bdd0a8739d3d543561045e07559695856dfe5f0dcab371c212d6ffabfc167ea` (597-byte canonical JSON). See `backend/app/services/report_hash.py:41-82` for the `initai-canonical-v1` implementation.
 
-**B. Deployed API — `GET /api/health` (Vercel, sequential, 50 requests)**
+**B. Deployed API â€” `GET /api/health` (Vercel, sequential, 50 requests)**
 
-Workload: 50 sequential `GET https://backend-phi-gray-27.vercel.app/api/health` via `urllib` (concurrency `1`, 10s timeout), from AP-Southeast-1 residential network to Vercel. Vercel is serverless — expect cold-start outliers; this is not provisioned-infra benchmarking.
+Workload: 50 sequential `GET https://api.initai.site/api/health` via `urllib` (concurrency `1`, 10s timeout), from AP-Southeast-1 residential network to Vercel. Vercel is serverless â€” expect cold-start outliers; this is not provisioned-infra benchmarking.
 
 | Observed metric | Result |
 | --- | --- |
@@ -479,20 +479,20 @@ Workload: 50 sequential `GET https://backend-phi-gray-27.vercel.app/api/health` 
 | p99 latency | `2325.1 ms` (single cold start) |
 | min / mean / max | `121.6 ms` / `180.9 ms` / `2325.1 ms` |
 
-> Concurrent burst (100 requests, concurrency `10`) was also measured: `p50 136.7 ms`, `p95 2034.5 ms`, `mean 302.6 ms`, `32 req/s` over `3.12s` — p95 inflates under burst due to multiple cold starts. Sequential numbers above reflect steady-state latency.
+> Concurrent burst (100 requests, concurrency `10`) was also measured: `p50 136.7 ms`, `p95 2034.5 ms`, `mean 302.6 ms`, `32 req/s` over `3.12s` â€” p95 inflates under burst due to multiple cold starts. Sequential numbers above reflect steady-state latency.
 
-No `benchmarks/reports/*.json` is committed — the table above is the verifiable record for this commit. Re-run with `python -m pytest tests -q`, `npx vite build`, or the `urllib` snippet above to reproduce.
+No `benchmarks/reports/*.json` is committed â€” the table above is the verifiable record for this commit. Re-run with `python -m pytest tests -q`, `npx vite build`, or the `urllib` snippet above to reproduce.
 
 ## Repository Map
 
 ```
 .
-├── src/                 # React + Vite frontend (pages, components, services/stellar)
-├── backend/             # FastAPI + PostgreSQL (app/, alembic/, tests/)
-│   ├── app/services/report_hash.py  # canonicalization (initai-canonical-v1)
-│   └── app/api/reports.py           # attestation-message + attestation endpoints
-├── contracts/soroban/   # Rust Soroban contract (SpatialAttestationRegistry)
-└── README.md            # this file (Evidence Index is source of truth)
+â”œâ”€â”€ src/                 # React + Vite frontend (pages, components, services/stellar)
+â”œâ”€â”€ backend/             # FastAPI + PostgreSQL (app/, alembic/, tests/)
+â”‚   â”œâ”€â”€ app/services/report_hash.py  # canonicalization (initai-canonical-v1)
+â”‚   â””â”€â”€ app/api/reports.py           # attestation-message + attestation endpoints
+â”œâ”€â”€ contracts/soroban/   # Rust Soroban contract (SpatialAttestationRegistry)
+â””â”€â”€ README.md            # this file (Evidence Index is source of truth)
 ```
 
 ---

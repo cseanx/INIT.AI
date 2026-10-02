@@ -1,4 +1,4 @@
-# INIT.AI Backend
+﻿# INIT.AI Backend
 
 FastAPI + PostgreSQL backend for the INIT.AI platform, deployed on
 **Vercel** (project `backend`, entrypoint `app.main:app`, see `vercel.json`).
@@ -8,7 +8,7 @@ FastAPI + PostgreSQL backend for the INIT.AI platform, deployed on
 Usually **no**. The production/preview deployment is always live at
 
 ```
-https://backend-phi-gray-27.vercel.app
+https://api.initai.site
 ```
 
 and the frontend `.env` points straight at it via `VITE_API_URL`, so
@@ -26,7 +26,7 @@ in the root `.env` (and re-enable the Vite proxy block in `vite.config.ts` if yo
 ## Requirements
 
 - Python 3.12+
-- PostgreSQL (local, or a hosted instance such as Neon) — only for local runs
+- PostgreSQL (local, or a hosted instance such as Neon) â€” only for local runs
 
 ## Setup
 
@@ -60,7 +60,7 @@ pip install pytest httpx2        # dev-only dependencies (not in requirements.tx
 python -m pytest tests -q
 ```
 
-The suite uses an in-memory SQLite database with auth stubbed out — no
+The suite uses an in-memory SQLite database with auth stubbed out â€” no
 PostgreSQL or network access required.
 
 ## Migrations (Alembic)
@@ -90,7 +90,7 @@ inserts domain data only when missing.
 | Climate Analyst     | analyst@init.ai   | analyst123      |
 | Field Coordinator   | coordinator@init.ai | coordinator123 |
 
-Passwords are stored as Argon2id hashes — never in plaintext. These
+Passwords are stored as Argon2id hashes â€” never in plaintext. These
 credentials are for local development only.
 
 ## Endpoints
@@ -99,41 +99,41 @@ All routes are mounted under `/api`.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST   | /api/auth/login | – | Authenticate, sets an HTTP-only session cookie |
-| POST   | /api/auth/logout | – | Invalidates the session and clears the cookie |
-| GET    | /api/auth/me | – | Current authenticated user (401 if none) |
-| GET    | /api/health | – | Service health check |
-| GET    | /api/cities | – | List cities |
-| GET    | /api/barangays | – | List barangays (with city name) |
-| GET    | /api/heat | – | Heat readings, newest first |
-| GET    | /api/canopy | – | Canopy readings, newest first |
-| GET    | /api/mitigation | – | Mitigation projects |
-| GET    | /api/preferences | ✓ | Get the current user's preferences |
-| PUT    | /api/preferences | ✓ | Update the current user's preferences |
-| GET    | /api/reports | – | Reports, newest first (incl. attestation summary) |
-| GET    | /api/reports/{id} | – | Single report |
-| POST   | /api/reports | ✓ | Create a report |
-| PUT    | /api/reports/{id} | ✓ | Update a report |
-| DELETE | /api/reports/{id} | ✓ | Delete a report |
-| GET    | /api/reports/{id}/attestation-message | – | Server-authoritative content hash + canonical payload |
-| GET    | /api/reports/{id}/xdr-prepare | – | Week 2: unsigned XDR preparation params (hash + prevHash + contract + args) |
-| GET    | /api/reports/{id}/attestation | – | Persisted Stellar proof history |
-| POST   | /api/reports/{id}/attestation | ✓ | Record a confirmed on-chain attestation |
-| GET    | /api/stellar/attestation/{hash} | – | Public lookup: proof by report hash |
-| POST   | /api/stellar/geojson-hash | – | Week 2: deterministic GeoJSON hashing pipeline |
-| POST   | /api/stellar/simulate | – | Week 2: Soroban RPC simulation proxy with structured codes |
+| POST   | /api/auth/login | â€“ | Authenticate, sets an HTTP-only session cookie |
+| POST   | /api/auth/logout | â€“ | Invalidates the session and clears the cookie |
+| GET    | /api/auth/me | â€“ | Current authenticated user (401 if none) |
+| GET    | /api/health | â€“ | Service health check |
+| GET    | /api/cities | â€“ | List cities |
+| GET    | /api/barangays | â€“ | List barangays (with city name) |
+| GET    | /api/heat | â€“ | Heat readings, newest first |
+| GET    | /api/canopy | â€“ | Canopy readings, newest first |
+| GET    | /api/mitigation | â€“ | Mitigation projects |
+| GET    | /api/preferences | âœ“ | Get the current user's preferences |
+| PUT    | /api/preferences | âœ“ | Update the current user's preferences |
+| GET    | /api/reports | â€“ | Reports, newest first (incl. attestation summary) |
+| GET    | /api/reports/{id} | â€“ | Single report |
+| POST   | /api/reports | âœ“ | Create a report |
+| PUT    | /api/reports/{id} | âœ“ | Update a report |
+| DELETE | /api/reports/{id} | âœ“ | Delete a report |
+| GET    | /api/reports/{id}/attestation-message | â€“ | Server-authoritative content hash + canonical payload |
+| GET    | /api/reports/{id}/xdr-prepare | â€“ | Week 2: unsigned XDR preparation params (hash + prevHash + contract + args) |
+| GET    | /api/reports/{id}/attestation | â€“ | Persisted Stellar proof history |
+| POST   | /api/reports/{id}/attestation | âœ“ | Record a confirmed on-chain attestation |
+| GET    | /api/stellar/attestation/{hash} | â€“ | Public lookup: proof by report hash |
+| POST   | /api/stellar/geojson-hash | â€“ | Week 2: deterministic GeoJSON hashing pipeline |
+| POST   | /api/stellar/simulate | â€“ | Week 2: Soroban RPC simulation proxy with structured codes |
 
 ## Project layout
 
 ```
 app/
-├── main.py          # FastAPI app, CORS, router wiring, schema bootstrap
-├── core/config.py   # Settings from environment / .env (incl. STELLAR_RPC_URL)
-├── db/              # Engine, session, Base, bootstrap helpers, seed script
-├── models/          # SQLAlchemy ORM models
-├── schemas/         # Pydantic request/response schemas
-├── api/             # Route modules (one per resource)
-└── services/        # Report hashing, GeoJSON hashing, Horizon verify, RPC simulate
+â”œâ”€â”€ main.py          # FastAPI app, CORS, router wiring, schema bootstrap
+â”œâ”€â”€ core/config.py   # Settings from environment / .env (incl. STELLAR_RPC_URL)
+â”œâ”€â”€ db/              # Engine, session, Base, bootstrap helpers, seed script
+â”œâ”€â”€ models/          # SQLAlchemy ORM models
+â”œâ”€â”€ schemas/         # Pydantic request/response schemas
+â”œâ”€â”€ api/             # Route modules (one per resource)
+â””â”€â”€ services/        # Report hashing, GeoJSON hashing, Horizon verify, RPC simulate
 alembic/             # Migrations
 tests/               # pytest suite (SQLite in-memory)
 docs/                # canonical-v1.md (hashing spec), rpc-errors.md (simulation matrix)
@@ -142,7 +142,7 @@ docs/                # canonical-v1.md (hashing spec), rpc-errors.md (simulation
 ## Frontend integration
 
 The React app talks to this API through `src/services/api.ts`. The base URL
-comes from `VITE_API_URL` in the root `.env` — currently the deployed Vercel
+comes from `VITE_API_URL` in the root `.env` â€” currently the deployed Vercel
 URL above, which is why no local server process is needed. Read endpoints
 fall back to bundled mock data when the API is unreachable; writes require a
 live backend and an authenticated session.
@@ -156,5 +156,5 @@ different sites, so the session cookie is issued `SameSite=None; Secure`
 - Database credentials live only in `backend/.env` (git-ignored); they are
   never exposed to the frontend.
 - Stellar attestation verification is Testnet-only by policy; the expected
-  contract id is pinned server-side and Horizon is queried read-only —
+  contract id is pinned server-side and Horizon is queried read-only â€”
   no keys or secrets live in this service.

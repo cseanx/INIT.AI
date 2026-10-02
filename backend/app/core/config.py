@@ -16,8 +16,8 @@ class Settings(BaseSettings):
     # Session cookie
     session_cookie_name: str = "initai_session"
     session_ttl_days: int = 7
-    # Frontend and API live on different sites (init-ai-ebon.vercel.app vs
-    # backend-phi-gray-27.vercel.app), so the cookie must be SameSite=None +
+    # Frontend and API live on different sites (www.initai.site vs
+    # api.initai.site), so the cookie must be SameSite=None +
     # Secure — "lax" is silently dropped by browsers on cross-site fetches,
     # which made every refresh log the user out.
     session_cookie_secure: bool = True
