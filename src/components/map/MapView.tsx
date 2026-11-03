@@ -17,11 +17,6 @@ import {
  * margin around Palawan, the Mindoro provinces, Marinduque and Romblon), so
  * users can't wander outside the deployment's scope.
  */
-const MIMAROPA_BOUNDS: [[number, number], [number, number]] = [
-    [116.9, 7.6],
-    [122.8, 13.95],
-];
-
 const TRAVEL_LIMITS: [[number, number], [number, number]] = [
     [116.6, 7.3],
     [123.1, 14.2],
@@ -147,7 +142,7 @@ export default function MapView({ className = '', children, onLayerStateChange }
         const map = new MapLibreMap({
             container,
             style: satelliteStyle(),
-            bounds: MIMAROPA_BOUNDS,
+            bounds: cityConfig.bounds,
             fitBoundsOptions: { padding: 36, duration: 0 },
             minZoom: 5.4,
             maxZoom: 17,
@@ -318,7 +313,7 @@ export default function MapView({ className = '', children, onLayerStateChange }
     }, []);
 
     function resetView() {
-        mapRef.current?.fitBounds(MIMAROPA_BOUNDS, { padding: 36, duration: 600 });
+        mapRef.current?.fitBounds(cityConfig.bounds, { padding: 36, duration: 600 });
     }
 
     function handleToggle(layer: MapLayerDef, visible: boolean) {
@@ -356,8 +351,8 @@ export default function MapView({ className = '', children, onLayerStateChange }
                     <button
                         type="button"
                         className={CTRL_BTN_CLASSES}
-                        title="Reset view to MIMAROPA"
-                        aria-label="Reset view to MIMAROPA"
+                        title={`Reset view to ${cityConfig.name}`}
+                        aria-label={`Reset view to ${cityConfig.name}`}
                         onClick={resetView}
                     >
                         <i className="fa-solid fa-location-crosshairs"></i>

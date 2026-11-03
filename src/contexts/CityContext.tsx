@@ -1,10 +1,11 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 
 /** INIT.AI is scoped to the MIMAROPA region (Region IV-B). The selector
- *  offers the whole region plus each province so the map can focus without
- *  ever leaving MIMAROPA. */
+ *  offers the whole region, Calapan City, and each province so the map can
+ *  focus without ever leaving MIMAROPA. */
 export type CityName =
     | 'MIMAROPA'
+    | 'Calapan City'
     | 'Occidental Mindoro'
     | 'Oriental Mindoro'
     | 'Marinduque'
@@ -30,6 +31,15 @@ export const CITY_CONFIG: Record<CityName, CityConfig> = {
             [122.8, 13.95],
         ],
         zoom: 6.6,
+    },
+    'Calapan City': {
+        name: 'Calapan City',
+        center: [121.18, 13.41],
+        bounds: [
+            [121.10, 13.33],
+            [121.28, 13.49],
+        ],
+        zoom: 11.8,
     },
     'Occidental Mindoro': {
         name: 'Occidental Mindoro',
@@ -87,7 +97,9 @@ interface CityContextValue {
 const CityContext = createContext<CityContextValue | null>(null);
 
 export function CityProvider({ children }: { children: ReactNode }) {
-    const [selected, setSelected] = useState<CityName>('MIMAROPA');
+    // The heat map opens on the Calapan City pilot; users can still switch to
+    // the whole region or another province from the selector.
+    const [selected, setSelected] = useState<CityName>('Calapan City');
     const value = useMemo(() => ({ selected, config: CITY_CONFIG[selected], setSelected }), [selected]);
     return <CityContext.Provider value={value}>{children}</CityContext.Provider>;
 }

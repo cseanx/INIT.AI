@@ -97,6 +97,8 @@ export type ReportStatus = 'ready' | 'processing';
  *  produced by the report builder (legacy rows fall back to the barangay). */
 export interface Report {
     id: number | string;
+    /** Bundled MIMAROPA demo brief, not a backend-persisted report. */
+    demo?: boolean;
     title: string;
     type: string;
     status: ReportStatus;

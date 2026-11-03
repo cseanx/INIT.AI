@@ -155,7 +155,7 @@ export default function ReportsTable({
                                         >
                                             <i className="fa-solid fa-download"></i>
                                         </button>
-                                        {onVerify && typeof r.id === 'number' ? (
+                                        {onVerify && typeof r.id === 'number' && !r.demo ? (
                                             <button
                                                 className={ACTION_BTN_CLASSES}
                                                 disabled={!!r.attestedCurrent}
