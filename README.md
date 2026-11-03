@@ -390,25 +390,28 @@ matches the current content (tamper-evidence working as intended).
 
 ## Product Screenshots
 
+Screenshots from the current MIMAROPA deployment: the Calapan City pilot,
+the Mindoro-weighted hotspot ranking, and the Stellar Testnet verification flow.
+
 ### Dashboard
 
-![INIT.AI Dashboard](/public/assets/images/Dashboard.png)
+![INIT.AI MIMAROPA dashboard — Calapan City pilot](public/assets/images/Dashboard.png?v=2026-11-03)
 
 ### Heat Map
 
-![INIT.AI Heat Map](/public/assets/images/Heatmap.png)
+![INIT.AI heat map — Calapan City, Oriental Mindoro](public/assets/images/Heatmap.png?v=2026-11-03)
 
 ### Hotspots
 
-![INIT.AI Hotspots](/public/assets/images/Hotspots.png)
+![INIT.AI hotspots — Mindoro-weighted ranking](public/assets/images/Hotspots.png?v=2026-11-03)
 
 ### Canopy Analysis
 
-![INIT.AI Canopy Analysis](/public/assets/images/CanopyAnalysis.png)
+![INIT.AI canopy analysis — MIMAROPA](public/assets/images/CanopyAnalysis.png?v=2026-11-03)
 
 ### Stellar Verification
 
-![INIT.AI Stellar Verification](/public/assets/images/StellarReport.png)
+![INIT.AI Stellar Testnet verification](public/assets/images/StellarReport.png?v=2026-11-03)
 
 ---
 
