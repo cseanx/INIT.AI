@@ -13,17 +13,29 @@ export default function Hotspots() {
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
 
     const counts = useMemo(() => {
-        const c = { critical: 0, high: 0, moderate: 0 };
+        const c = { mindoro: 0, critical: 0, high: 0, moderate: 0 };
         (hotspots ?? []).forEach((b) => {
             if (b.severity === 'critical' || b.severity === 'high' || b.severity === 'moderate') {
                 c[b.severity] += 1;
+            }
+            if (b.province === 'Oriental Mindoro' || b.province === 'Occidental Mindoro') {
+                c.mindoro += 1;
             }
         });
         return { all: hotspots?.length ?? 0, ...c };
     }, [hotspots]);
 
     const rows = useMemo(() => {
-        const base = filter === 'all' ? hotspots : hotspots?.filter((b) => b.severity === filter);
+        const base =
+            filter === 'all'
+                ? hotspots
+                : filter === 'mindoro'
+                  ? hotspots?.filter(
+                        (b) =>
+                            b.province === 'Oriental Mindoro' ||
+                            b.province === 'Occidental Mindoro',
+                    )
+                  : hotspots?.filter((b) => b.severity === filter);
         return [...(base ?? [])].sort((a, b) =>
             order === 'desc' ? b.temp - a.temp : a.temp - b.temp,
         );

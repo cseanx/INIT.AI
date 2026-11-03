@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Severity } from '../../types';
 
-export type HotspotFilterValue = 'all' | Severity;
+export type HotspotFilterValue = 'all' | 'mindoro' | Severity;
 
 const CHIP_CLASSES =
     'cursor-pointer rounded-full border border-white/10 bg-white/[.04] px-3 py-[6px] text-[12px] text-[#aaa] transition duration-200 hover:bg-white/8 hover:text-white';
@@ -45,7 +45,8 @@ export default function HotspotFilter({
     }, []);
 
     const active = filter !== 'all' || order !== 'desc';
-    const filterLabel = filter === 'all' ? 'All' : filter[0].toUpperCase() + filter.slice(1);
+    const filterLabel =
+        filter === 'all' ? 'All' : filter === 'mindoro' ? 'Mindoro' : filter[0].toUpperCase() + filter.slice(1);
 
     const options: { value: HotspotFilterValue; label: string }[] = [
         { value: 'all', label: 'All' },
@@ -85,6 +86,23 @@ export default function HotspotFilter({
                     role="menu"
                     className="hotspot-filter-menu absolute right-0 top-full z-50 mt-2 flex w-[240px] flex-col gap-0.5 rounded-[14px] border border-white/10 bg-[#101010]/95 p-[10px] shadow-[0_16px_40px_rgba(0,0,0,.55)] backdrop-blur-2xl"
                 >
+                    <SectionLabel>Province</SectionLabel>
+                    <div className="mb-[8px] flex flex-wrap gap-[6px]">
+                        <button
+                            type="button"
+                            role="menuitemradio"
+                            aria-checked={filter === 'mindoro'}
+                            onClick={() => onFilterChange('mindoro')}
+                            className={`${CHIP_CLASSES} ${
+                                filter === 'mindoro' ? 'chip-btn active' : ''
+                            }`}
+                        >
+                            Mindoro ({counts.mindoro})
+                        </button>
+                    </div>
+
+                    <div className="my-[4px] border-t border-white/8" />
+
                     <SectionLabel>Severity</SectionLabel>
                     <div className="mb-[8px] flex flex-wrap gap-[6px]">
                         {options.map((option) => (

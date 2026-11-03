@@ -37,6 +37,8 @@ npm run preview    # serve the production build
 - Pages are lazy-loaded; Chart.js is split into its own chunk.
 - The prototype uses mock environmental data - nothing here is real
   satellite/sensor data yet.
+- The Hotspots tab is Mindoro-weighted: 43 demo barangays, 28 of them in
+  Oriental and Occidental Mindoro.
 
 
 ## 1. The Problem

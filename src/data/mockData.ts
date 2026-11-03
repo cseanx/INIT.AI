@@ -27,14 +27,19 @@ type RowSeed = [
     priority: boolean,
 ];
 
-/** One city/municipality per province, five representative barangays each. */
+/** Mindoro-weighted demo dataset: five provincial pilots plus additional
+ *  Oriental and Occidental Mindoro municipalities so the hotspot table
+ *  surfaces the island's heat islands first. */
 const MIMAROPA_ROWS: { city: string; province: string; rows: RowSeed[] }[] = [
     {
         city: 'Calapan City',
         province: 'Oriental Mindoro',
         rows: [
             ['Poblacion', 38.6, 12, 'critical', 'Dense commercial core, low shade', 1.8, 85, -2.6, true],
+            ['Ibaba East', 38.9, 10, 'critical', 'Dense commercial core, low canopy', 2.0, 75, -2.8, true],
+            ['Poblacion II', 37.9, 14, 'high', 'Market and transport hub', 1.5, 60, -2.1, true],
             ['Camilmil', 37.4, 16, 'high', 'Port-adjacent built-up area', 1.3, 120, -2.1, true],
+            ['Lumangbayan', 36.5, 20, 'high', 'Riverside built-up area', 1.1, 140, -1.5, false],
             ['San Vicente', 36.2, 22, 'high', 'Mixed residential density', 0.9, 180, -1.4, false],
             ['San Antonio', 35.1, 28, 'moderate', 'Riverside settlement edge', 0.5, 210, -0.8, false],
             ['Guinobatan', 34.3, 34, 'moderate', 'Peri-urban farmland transition', 0.2, 320, 0.4, false],
@@ -45,10 +50,55 @@ const MIMAROPA_ROWS: { city: string; province: string; rows: RowSeed[] }[] = [
         province: 'Occidental Mindoro',
         rows: [
             ['Poblacion', 36.8, 18, 'high', 'Provincial government core', 1.2, 95, -1.9, true],
+            ['Fatima', 36.2, 22, 'high', 'Residential expansion, low shade', 0.9, 120, -1.3, true],
             ['Payompon', 35.9, 24, 'moderate', 'Coastal residential strip', 0.7, 140, -1.1, false],
+            ['Tayamaan', 35.7, 26, 'moderate', 'Coastal settlement', 0.6, 160, -0.8, false],
             ['Balansay', 35.3, 29, 'moderate', 'Rice-field edge, low density', 0.4, 260, -0.5, false],
+            ['Tangkalan', 35.0, 30, 'moderate', 'Mixed rural-residential', 0.4, 240, -0.4, false],
             ['Talabaan', 34.8, 31, 'moderate', 'Rural barangay, mixed canopy', 0.3, 300, -0.2, false],
             ['Santa Maria', 34.1, 36, 'moderate', 'Upland vegetation buffer', 0.1, 350, 0.6, false],
+        ],
+    },
+    {
+        city: 'San Jose',
+        province: 'Occidental Mindoro',
+        rows: [
+            ['Poblacion', 39.8, 9, 'critical', 'Dense commercial core, low canopy', 2.4, 110, -3.4, true],
+            ['Labangan', 38.1, 14, 'high', 'Market and port corridor', 1.8, 90, -2.5, true],
+            ['Bubog', 36.9, 19, 'high', 'Peri-urban residential', 1.2, 180, -1.6, false],
+        ],
+    },
+    {
+        city: 'Sablayan',
+        province: 'Occidental Mindoro',
+        rows: [
+            ['Poblacion', 38.7, 11, 'critical', 'Port and market district', 1.9, 85, -2.7, true],
+            ['Batong Buhay', 37.4, 17, 'high', 'Coastal residential strip', 1.4, 150, -1.9, true],
+            ['Buenavista', 35.8, 25, 'moderate', 'Upland vegetation buffer', 0.5, 260, -0.7, false],
+        ],
+    },
+    {
+        city: 'Naujan',
+        province: 'Oriental Mindoro',
+        rows: [
+            ['Poblacion', 38.0, 15, 'high', 'Lake-adjacent urban core', 1.6, 130, -2.2, true],
+            ['Bancuro', 36.0, 23, 'high', 'Riverside settlement', 0.8, 180, -1.1, false],
+        ],
+    },
+    {
+        city: 'Pinamalayan',
+        province: 'Oriental Mindoro',
+        rows: [
+            ['Poblacion', 37.7, 16, 'high', 'Commercial corridor, low shade', 1.5, 100, -2.0, true],
+            ['Marfranc', 35.9, 24, 'moderate', 'Residential infill', 0.7, 170, -1.2, false],
+        ],
+    },
+    {
+        city: 'Puerto Galera',
+        province: 'Oriental Mindoro',
+        rows: [
+            ['Poblacion', 37.0, 18, 'high', 'Tourism and port density', 1.3, 70, -1.7, true],
+            ['Sabang', 36.3, 21, 'high', 'Coastal tourism strip', 1.0, 90, -1.4, false],
         ],
     },
     {
@@ -109,15 +159,15 @@ export const priorityHotspots: Barangay[] = [...barangays]
     .slice(0, 4);
 
 export const dashboardStats: StatCardData[] = [
-    { icon: 'fa-temperature-high', tone: 'red', value: '35.6', valueSuffix: '°C', label: 'Avg. Surface Temp', trendIcon: 'fa-arrow-trend-up', trend: '1.8° vs last month', trendTone: 'up' },
-    { icon: 'fa-fire', tone: 'orange', value: '10', label: 'Active Hotspots', trendIcon: 'fa-arrow-trend-up', trend: '2 new this week', trendTone: 'up' },
-    { icon: 'fa-tree', tone: 'green', value: '26.3', valueSuffix: '%', label: 'Canopy Coverage', trendIcon: 'fa-arrow-trend-down', trend: '1.2% vs 2024', trendTone: 'down' },
-    { icon: 'fa-map-location-dot', tone: 'blue', value: '25', label: 'Barangays Monitored', trendIcon: 'fa-satellite', trend: 'Across 5 provinces', trendTone: 'neutral' },
+    { icon: 'fa-temperature-high', tone: 'red', value: '36.3', valueSuffix: '°C', label: 'Avg. Surface Temp', trendIcon: 'fa-arrow-trend-up', trend: '2.2° vs last month', trendTone: 'up' },
+    { icon: 'fa-fire', tone: 'orange', value: '24', label: 'Active Hotspots', trendIcon: 'fa-arrow-trend-up', trend: '6 new this week', trendTone: 'up' },
+    { icon: 'fa-tree', tone: 'green', value: '23.1', valueSuffix: '%', label: 'Canopy Coverage', trendIcon: 'fa-arrow-trend-down', trend: '1.6% vs 2024', trendTone: 'down' },
+    { icon: 'fa-map-location-dot', tone: 'blue', value: '43', label: 'Barangays Monitored', trendIcon: 'fa-satellite', trend: 'Mindoro-weighted', trendTone: 'neutral' },
 ];
 
 export const canopyStats: StatCardData[] = [
-    { icon: 'fa-leaf', tone: 'green', value: '1,430', valueSuffix: ' ha', label: 'Total Canopy Area', trendIcon: 'fa-arrow-trend-down', trend: '-2.8% (5yr)', trendTone: 'down' },
-    { icon: 'fa-seedling', tone: 'red', value: '8', label: 'Priority Replanting Zones', trendIcon: 'fa-map-pin', trend: 'Flagged by AI model', trendTone: 'neutral' },
+    { icon: 'fa-leaf', tone: 'green', value: '1,919', valueSuffix: ' ha', label: 'Total Canopy Area', trendIcon: 'fa-arrow-trend-down', trend: '-2.8% (5yr)', trendTone: 'down' },
+    { icon: 'fa-seedling', tone: 'red', value: '18', label: 'Priority Replanting Zones', trendIcon: 'fa-map-pin', trend: 'Flagged by AI model', trendTone: 'neutral' },
     { icon: 'fa-droplet', tone: 'blue', value: '34.6', valueSuffix: '%', label: 'Impervious Surface', trendIcon: 'fa-arrow-trend-up', trend: '+0.6% vs 2024', trendTone: 'up' },
 ];
 
@@ -192,7 +242,7 @@ export const canopySnapshot: CanopySnapshot = {
     ],
     trend: {
         labels: ['2021', '2022', '2023', '2024', '2025', '2026'],
-        values: [29.1, 28.7, 28.2, 27.6, 27.0, 26.3],
+        values: [25.9, 25.4, 24.8, 24.3, 23.7, 23.1],
     },
     landCover: [
         { label: 'Built-up', value: 42, color: '#ff2d55' },
@@ -201,7 +251,9 @@ export const canopySnapshot: CanopySnapshot = {
         { label: 'Water Bodies', value: 11, color: '#5aa9ff' },
     ],
     priorityZones: [
+        { name: 'Poblacion (San Jose)', cover: 9, priority: 'Critical', tags: ['Needs Trees', 'High Heat'] },
         { name: 'Poblacion (Calapan)', cover: 12, priority: 'Critical', tags: ['Needs Trees', 'High Heat'] },
+        { name: 'Poblacion (Sablayan)', cover: 11, priority: 'Critical', tags: ['Port Area', 'Low Shade'] },
         { name: 'San Pedro (Puerto Princesa)', cover: 10, priority: 'Critical', tags: ['Needs Trees', 'Commercial'] },
         { name: 'Poblacion (Boac)', cover: 20, priority: 'High', tags: ['Heritage Core', 'Low Shade'] },
         { name: 'Poblacion (Romblon)', cover: 21, priority: 'High', tags: ['Port Area', 'Residential'] },
