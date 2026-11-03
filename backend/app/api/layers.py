@@ -1,7 +1,7 @@
 """LST raster tile endpoints — GEE (A) primary, TiTiler COG (B fallback).
 
 Honest, not synthetic: A = Landsat C2 L2 ST_B10 30m via GEE, B = same COG via TiTiler.
-Global overlay, no PH crop — entire MapLibre. `GET /api/layers/lst/info` gives legend.
+Overlay is consumed by the MIMAROPA-bounded MapLibre view. `GET /api/layers/lst/info` gives legend.
 Frontend `MapView.tsx` consumes `tiles/{z}/{x}/{y}.png?date=...` directly.
 """
 

@@ -36,8 +36,9 @@ export default function Dashboard() {
                         Mitigate.
                     </h1>
                     <p className="mb-7 text-[15px] leading-[1.7] text-[#9f9f9f]">
-                        Analyze urban heat islands using satellite imagery, AI-assisted hotspot
-                        detection, and canopy assessment to support climate-smart decision making.
+                        Analyze urban heat islands across MIMAROPA using satellite imagery,
+                        AI-assisted hotspot detection, and canopy assessment to support
+                        climate-smart decision making.
                     </p>
                     <div className="flex gap-[14px]">
                         <button className={PRIMARY_BTN_CLASSES} onClick={() => navigate('/heatmap')}>
@@ -64,17 +65,17 @@ export default function Dashboard() {
                             </div>
                             <div className="flex shrink-0 flex-col items-end gap-1 text-[11px] leading-tight text-[#888]">
                                 <span>2m ago</span>
-                                <span className="text-[#aaa]">Payatas, District 2</span>
+                                <span className="text-[#aaa]">Poblacion, Calapan City</span>
                             </div>
                         </div>
 
                         <div className="mb-1 flex items-baseline gap-2">
                             <span className="font-mono text-[40px] font-bold leading-none text-white">
-                                41.2°C
+                                38.6°C
                             </span>
                         </div>
                         <p className="mb-[16px] text-[12px] font-medium text-red-400/90">
-                            (+4.8°C above historical baseline)
+                            (+4.2°C above historical baseline)
                         </p>
 
                         <div className="mb-[18px]">

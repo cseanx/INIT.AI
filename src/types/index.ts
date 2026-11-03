@@ -41,6 +41,10 @@ export interface Barangay {
     area: number;
     canopyChange: number;
     priority: boolean;
+    /** City or municipality the barangay belongs to. */
+    city?: string;
+    /** Province within MIMAROPA. */
+    province?: string;
 }
 
 export interface HeatReading {
@@ -145,7 +149,7 @@ export type ReportType =
     | 'Quarterly Summary'
     | 'Custom';
 
-export type ReportCoverage = 'Entire city' | 'District' | 'Barangay';
+export type ReportCoverage = 'Entire region' | 'Entire city' | 'District' | 'Barangay';
 
 export type ReportDatasetKey =
     | 'lst'

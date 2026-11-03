@@ -160,7 +160,7 @@ export default function CreateReport() {
 
     const errorMessages: Record<string, string> = {
         title: 'Report title is required.',
-        city: 'Select a city.',
+        city: 'Select an area.',
         coverage: 'Select a coverage area.',
         period: 'Select a reporting period.',
         preparedBy: 'Prepared by is required.',
@@ -299,7 +299,7 @@ export default function CreateReport() {
                                     options={REPORT_TYPES.map((t) => ({ value: t.value, label: t.label }))}
                                 />
                             </Field>
-                            <Field label="Selected city" required error={invalid('city')} errorText={errorMessages.city}>
+                            <Field label="Selected area" required error={invalid('city')} errorText={errorMessages.city}>
                                 <MenuSelect
                                     value={draft.city}
                                     onChange={(value) => setDraft({ ...draft, city: value })}

@@ -35,9 +35,16 @@ export const REPORT_TYPES: { value: ReportType; label: string; icon: string }[] 
     { value: 'Custom', label: 'Custom', icon: 'fa-pen-ruler' },
 ];
 
-export const REPORT_CITIES = ['Quezon City', 'Manila', 'Pasig', 'Caloocan'] as const;
+export const REPORT_CITIES = [
+    'MIMAROPA',
+    'Calapan City',
+    'Mamburao',
+    'Boac',
+    'Romblon',
+    'Puerto Princesa City',
+] as const;
 
-export const COVERAGE_OPTIONS = ['Entire city', 'District', 'Barangay'] as const;
+export const COVERAGE_OPTIONS = ['Entire region', 'Entire city', 'District', 'Barangay'] as const;
 
 export const DATASET_OPTIONS: { key: ReportDatasetKey; label: string; icon: string }[] = [
     { key: 'lst', label: 'Land Surface Temperature', icon: 'fa-temperature-high' },
@@ -70,8 +77,8 @@ export function newDraft(partial: Partial<ReportDraft> = {}): ReportDraft {
         id: crypto.randomUUID(),
         title: '',
         type: 'Heat Assessment',
-        city: 'Quezon City',
-        coverage: 'Entire city',
+        city: 'MIMAROPA',
+        coverage: 'Entire region',
         periodStart: '',
         periodEnd: '',
         preparedBy: '',
@@ -233,7 +240,7 @@ function formatDate(date: Date): string {
 export function buildReportPayload(draft: ReportDraft): ReportPayload {
     const summary = buildSummary();
     const area =
-        draft.coverage === 'Entire city'
+        draft.coverage === 'Entire city' || draft.coverage === 'Entire region'
             ? `${draft.city} (All Areas)`
             : draft.autoPriorityAreas || draft.areas.length === 0
               ? `${draft.city} (Priority Areas)`

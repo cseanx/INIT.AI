@@ -12,6 +12,7 @@ export default function HotspotTable({ hotspots }: { hotspots: Barangay[] }) {
                 <thead>
                     <tr>
                         <th className={TH_CLASSES}>Barangay</th>
+                        <th className={TH_CLASSES}>LGU</th>
                         <th className={TH_CLASSES}>Peak Temp</th>
                         <th className={TH_CLASSES}>Severity</th>
                         <th className={TH_CLASSES}>Trend (7d)</th>
@@ -24,11 +25,15 @@ export default function HotspotTable({ hotspots }: { hotspots: Barangay[] }) {
                         const trendUp = b.trend >= 0;
                         return (
                             <tr
-                                key={b.name}
+                                key={`${b.city ?? ''}-${b.name}`}
                                 className="transition duration-200 hover:bg-white/[.03]"
                             >
                                 <td className={TD_CLASSES}>
                                     <strong>{b.name}</strong>
+                                </td>
+                                <td className={TD_CLASSES}>
+                                    <span className="block text-[12.5px]">{b.city ?? '—'}</span>
+                                    <small className="text-[11px] text-[#888]">{b.province ?? ''}</small>
                                 </td>
                                 <td className={TD_CLASSES}>{b.temp.toFixed(1)}°C</td>
                                 <td className={TD_CLASSES}>

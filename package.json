@@ -2,7 +2,7 @@
   "name": "init-ai",
   "private": true,
   "version": "1.0.0",
-  "description": "INIT.AI — AI-powered urban heat island mapping and mitigation platform for Philippine cities",
+  "description": "INIT.AI — AI-powered urban heat island mapping and mitigation platform for the MIMAROPA region",
   "type": "module",
   "scripts": {
     "dev": "vite",

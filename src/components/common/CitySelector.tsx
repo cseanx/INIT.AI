@@ -7,12 +7,13 @@ const TRIGGER_CLASSES =
     'flex cursor-pointer items-center gap-3 rounded-[16px] border border-white/5 bg-white/5 p-[14px_18px] text-white transition-all duration-200 hover:bg-white/8';
 
 const MENU_CLASSES =
-    'city-menu absolute right-0 top-full z-50 mt-2 flex min-w-[190px] flex-col gap-0.5 rounded-[14px] border border-white/10 bg-[#101010]/90 p-[6px] shadow-[0_16px_40px_rgba(0,0,0,.55)] backdrop-blur-2xl';
+    'city-menu absolute right-0 top-full z-50 mt-2 flex min-w-[220px] flex-col gap-0.5 rounded-[14px] border border-white/10 bg-[#101010]/90 p-[6px] shadow-[0_16px_40px_rgba(0,0,0,.55)] backdrop-blur-2xl';
 
 const OPTION_CLASSES =
     'flex w-full cursor-pointer items-center justify-between gap-3 rounded-[10px] p-[10px_12px] text-left text-[13px] text-[#ddd] transition duration-200 hover:bg-white/6 hover:text-white';
 
-/** Glassmorphism city selector — reads/writes global CityContext so Heat Map keeps same city. */
+/** Glassmorphism area selector — reads/writes global CityContext so the Heat
+ *  Map stays inside the selected MIMAROPA province (or the whole region). */
 export default function CitySelector() {
     const [open, setOpen] = useState(false);
     const { selected, setSelected } = useCity();
@@ -54,7 +55,7 @@ export default function CitySelector() {
             </button>
 
             {open ? (
-                <div className={MENU_CLASSES} role="listbox" aria-label="City">
+                <div className={MENU_CLASSES} role="listbox" aria-label="Area">
                     {CITIES.map((city) => {
                         const isSelected = city === selected;
                         return (

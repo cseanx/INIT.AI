@@ -35,7 +35,7 @@ export default function HeatMap() {
                 >
                     <div className="flex shrink-0 items-center justify-between border-b border-white/8 px-[20px] py-[13px]">
                         <h3 className="text-[15px] font-semibold">
-                            Philippines - Heat Map
+                            MIMAROPA - Heat Map
                         </h3>
                     </div>
                     <div className="relative min-h-0 flex-1 p-[14px]">

@@ -68,10 +68,10 @@ def _hash_noise(lng: float, lat: float, seed: int) -> float:
 
 
 def temperature_at(lng: float, lat: float, dt: datetime | None = None) -> float:
-    """Continuous temperature field -40→40 for any point.
+    """Continuous temperature field for any point in MIMAROPA.
 
-    Synthetic but physically plausible for PH: urban cores hotter, highlands cooler,
-    diurnal swing ~8°C, seasonal ~2°C, per-pixel micro-variation.
+    Synthetic but physically plausible for MIMAROPA: urban cores hotter, highlands
+    cooler, diurnal swing ~8°C, seasonal ~2°C, per-pixel micro-variation.
     Replace body with Himawari/OpenWeather fetch when provider is wired; signature stays.
     """
     if dt is None:
@@ -79,16 +79,19 @@ def temperature_at(lng: float, lat: float, dt: datetime | None = None) -> float:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
 
-    # Base field: Philippines lat 4.6-21.2, lng 116.9-126.6
-    # Highland penalty (Baguio-like): lat ~16.4, cooler
-    highland = -6 * math.exp(-((lat - 16.4) ** 2 + (lng - 120.6) ** 2) / 8)
-    # Urban heat: Metro Manila 14.6,121.0
-    urban = 7 * math.exp(-((lat - 14.60) ** 2 + (lng - 121.03) ** 2) / 0.8)
-    cebu = 5 * math.exp(-((lat - 10.31) ** 2 + (lng - 123.89) ** 2) / 0.9)
-    davao = 4 * math.exp(-((lat - 7.07) ** 2 + (lng - 125.61) ** 2) / 0.9)
+    # Base field: MIMAROPA lat 7.6-13.95, lng 116.9-122.8
+    # Highland penalty around Mt. Halcon (Oriental Mindoro), cooler
+    highland = -4 * math.exp(-((lat - 13.25) ** 2 + (lng - 121.0) ** 2) / 0.6)
+    # Urban heat islands: Calapan City and Puerto Princesa City
+    calapan = 6.5 * math.exp(-((lat - 13.41) ** 2 + (lng - 121.18) ** 2) / 0.35)
+    puerto_princesa = 7 * math.exp(-((lat - 9.74) ** 2 + (lng - 118.74) ** 2) / 0.45)
+    # Secondary town cores: Boac, Romblon, Mamburao
+    boac = 3.5 * math.exp(-((lat - 13.45) ** 2 + (lng - 121.84) ** 2) / 0.18)
+    romblon_town = 3.0 * math.exp(-((lat - 12.58) ** 2 + (lng - 122.27) ** 2) / 0.18)
+    mamburao = 3.0 * math.exp(-((lat - 13.22) ** 2 + (lng - 120.60) ** 2) / 0.18)
 
     # Large-scale lat gradient: south slightly hotter
-    lat_gradient = (lat - 10) * 0.35
+    lat_gradient = (lat - 10) * 0.25
 
     # Seasonal (month): May hottest, Dec coolest
     month_phase = math.sin((dt.month - 5) / 12 * 2 * math.pi) * 1.5
@@ -103,7 +106,20 @@ def temperature_at(lng: float, lat: float, dt: datetime | None = None) -> float:
     # Secondary high-freq noise for detail
     noise2 = _hash_noise(lng * 1.7, lat * 1.7, hour_seed + 999) * 0.9
 
-    base = 22.0 + highland + urban + cebu + davao + lat_gradient + month_phase + diurnal + noise + noise2
+    base = (
+        22.0
+        + highland
+        + calapan
+        + puerto_princesa
+        + boac
+        + romblon_town
+        + mamburao
+        + lat_gradient
+        + month_phase
+        + diurnal
+        + noise
+        + noise2
+    )
 
     # Clamp to palette range
     mn = settings.lst_min_c

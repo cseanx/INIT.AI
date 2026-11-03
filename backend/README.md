@@ -80,7 +80,9 @@ python -m app.db.seed
 ```
 
 The seed upserts the demo users (fixing password hashes on re-runs) and
-inserts domain data only when missing.
+inserts domain data only when missing. MIMAROPA demo data covers one pilot
+city/municipality per province: Calapan City, Mamburao, Boac, Romblon, and
+Puerto Princesa City.
 
 ### Demo accounts (development only)
 
@@ -147,9 +149,9 @@ URL above, which is why no local server process is needed. Read endpoints
 fall back to bundled mock data when the API is unreachable; writes require a
 live backend and an authenticated session.
 
-Cross-site cookies: the frontend (`*.vercel.app`) and this API live on
-different sites, so the session cookie is issued `SameSite=None; Secure`
-(see `app/core/config.py`).
+Cross-site cookies: the frontend (`*.vercel.app`, `initai.site`, or
+`initai2.site`) and this API live on different sites, so the session cookie
+is issued `SameSite=None; Secure` (see `app/core/config.py`).
 
 ## Notes
 

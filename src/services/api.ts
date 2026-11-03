@@ -218,6 +218,29 @@ async function authFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 /* ---------- api surface ---------- */
 
+/** Reports are shared through the API/database, so guard the MIMAROPA
+ *  deployment against records that belong to the original NCR demo. */
+const MIMAROPA_AREAS = new Set([
+    'MIMAROPA',
+    'Occidental Mindoro',
+    'Oriental Mindoro',
+    'Marinduque',
+    'Romblon',
+    'Palawan',
+    'Calapan City',
+    'Calapan',
+    'Mamburao',
+    'Boac',
+    'Romblon',
+    'Puerto Princesa City',
+    'Puerto Princesa',
+]);
+
+function isMimaropaReport(report: Report): boolean {
+    const city = report.city?.trim();
+    return !!city && MIMAROPA_AREAS.has(city);
+}
+
 export const api = {
     getHealth: (): Promise<HealthResponse> =>
         fromApi('/api/health', { status: 'ok' }, (d): d is HealthResponse =>
@@ -231,12 +254,13 @@ export const api = {
         fromApi('/api/canopy', canopySnapshot, isCanopySnapshot),
     getMitigation: (): Promise<MitigationProject[]> =>
         fromApi('/api/mitigation', mitigationProjects, isMitigationProjectArray),
-getReports: async (): Promise<Report[]> => {
+    getReports: async (): Promise<Report[]> => {
         const remote = await fromApi('/api/reports', reports, isReportArray);
         const local = loadStoredReports();
-        return local.length
+        const all = local.length
             ? [...local, ...remote.map(fromBackendReport)]
             : remote.map(fromBackendReport);
+        return all.filter(isMimaropaReport);
     },
     getReport: async (id: number | string): Promise<Report> =>
         fromBackendReport(await authFetch<unknown>(`/api/reports/${id}`)),

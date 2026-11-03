@@ -4,63 +4,129 @@ import type {
     HeatSnapshot,
     MitigationProject,
     Report,
+    Severity,
     StatCardData,
 } from '../types';
 
 /* ==========================
    MOCK DATA — prototype only.
-   To be replaced by the Python backend API responses
-   (see src/services/api.ts). Do not treat as real
-   satellite / sensor observations.
+   MIMAROPA regional demo (Region IV-B). Values are illustrative, not real
+   satellite / sensor observations. To be replaced by the Python backend API
+   responses (see src/services/api.ts).
 ========================== */
 
-export const barangays: Barangay[] = [
-    { name: 'Payatas', temp: 41.2, canopy: 12, severity: 'critical', driver: 'Open dump heat retention', trend: 2.4, area: 180, canopyChange: -4.1, priority: true },
-    { name: 'Batasan Hills', temp: 38.9, canopy: 16, severity: 'high', driver: 'Dense low-rise residential', trend: 1.6, area: 210, canopyChange: -2.8, priority: true },
-    { name: 'Cubao (Commercial)', temp: 38.1, canopy: 9, severity: 'high', driver: 'Impervious commercial surface', trend: 1.1, area: 40, canopyChange: -1.2, priority: true },
-    { name: 'Novaliches Proper', temp: 36.4, canopy: 21, severity: 'moderate', driver: 'Recent canopy loss', trend: 0.8, area: 260, canopyChange: -3.3, priority: true },
-    { name: 'Fairview', temp: 35.8, canopy: 24, severity: 'moderate', driver: 'Expanding subdivision', trend: 0.6, area: 640, canopyChange: -0.9, priority: false },
-    { name: 'Commonwealth', temp: 37.6, canopy: 18, severity: 'high', driver: 'Traffic corridor heat', trend: 1.3, area: 520, canopyChange: -2.0, priority: true },
-    { name: 'Diliman', temp: 33.1, canopy: 38, severity: 'moderate', driver: 'Institutional grounds edge', trend: 0.2, area: 410, canopyChange: 0.3, priority: false },
-    { name: 'Project 6', temp: 36.9, canopy: 19, severity: 'moderate', driver: 'Mixed residential density', trend: 0.9, area: 150, canopyChange: -1.1, priority: false },
-    { name: 'Bagong Silangan', temp: 37.9, canopy: 15, severity: 'high', driver: 'Informal settlement density', trend: 1.4, area: 190, canopyChange: -3.4, priority: true },
-    { name: 'Holy Spirit', temp: 35.2, canopy: 22, severity: 'moderate', driver: 'Rooftop heat absorption', trend: 0.5, area: 230, canopyChange: -0.7, priority: false },
-    { name: 'Tandang Sora', temp: 34.4, canopy: 27, severity: 'moderate', driver: 'Low canopy along main road', trend: 0.3, area: 380, canopyChange: 0.2, priority: false },
-    { name: 'UP Campus', temp: 30.6, canopy: 52, severity: 'moderate', driver: 'Baseline — high canopy zone', trend: -0.4, area: 490, canopyChange: 1.1, priority: false },
-    { name: 'Kamuning', temp: 37.1, canopy: 14, severity: 'high', driver: 'Dense commercial strip', trend: 1.0, area: 60, canopyChange: -1.8, priority: true },
-    { name: 'San Bartolome', temp: 36.1, canopy: 20, severity: 'moderate', driver: 'Riverside informal housing', trend: 0.7, area: 240, canopyChange: -1.0, priority: false },
-    { name: 'Sauyo', temp: 34.9, canopy: 26, severity: 'moderate', driver: 'Light industrial edge', trend: 0.4, area: 300, canopyChange: -0.4, priority: false },
-    { name: 'Pasong Tamo', temp: 39.4, canopy: 11, severity: 'critical', driver: 'Warehouse / logistics zone', trend: 1.9, area: 95, canopyChange: -3.9, priority: true },
-    { name: 'Talipapa', temp: 38.6, canopy: 13, severity: 'critical', driver: 'Market district, low shade', trend: 1.7, area: 70, canopyChange: -3.1, priority: true },
+type RowSeed = [
+    name: string,
+    temp: number,
+    canopy: number,
+    severity: Severity,
+    driver: string,
+    trend: number,
+    area: number,
+    canopyChange: number,
+    priority: boolean,
 ];
+
+/** One city/municipality per province, five representative barangays each. */
+const MIMAROPA_ROWS: { city: string; province: string; rows: RowSeed[] }[] = [
+    {
+        city: 'Calapan City',
+        province: 'Oriental Mindoro',
+        rows: [
+            ['Poblacion', 38.6, 12, 'critical', 'Dense commercial core, low shade', 1.8, 85, -2.6, true],
+            ['Camilmil', 37.4, 16, 'high', 'Port-adjacent built-up area', 1.3, 120, -2.1, true],
+            ['San Vicente', 36.2, 22, 'high', 'Mixed residential density', 0.9, 180, -1.4, false],
+            ['San Antonio', 35.1, 28, 'moderate', 'Riverside settlement edge', 0.5, 210, -0.8, false],
+            ['Guinobatan', 34.3, 34, 'moderate', 'Peri-urban farmland transition', 0.2, 320, 0.4, false],
+        ],
+    },
+    {
+        city: 'Mamburao',
+        province: 'Occidental Mindoro',
+        rows: [
+            ['Poblacion', 36.8, 18, 'high', 'Provincial government core', 1.2, 95, -1.9, true],
+            ['Payompon', 35.9, 24, 'moderate', 'Coastal residential strip', 0.7, 140, -1.1, false],
+            ['Balansay', 35.3, 29, 'moderate', 'Rice-field edge, low density', 0.4, 260, -0.5, false],
+            ['Talabaan', 34.8, 31, 'moderate', 'Rural barangay, mixed canopy', 0.3, 300, -0.2, false],
+            ['Santa Maria', 34.1, 36, 'moderate', 'Upland vegetation buffer', 0.1, 350, 0.6, false],
+        ],
+    },
+    {
+        city: 'Boac',
+        province: 'Marinduque',
+        rows: [
+            ['Poblacion', 35.8, 20, 'high', 'Heritage town core, impervious', 1.0, 70, -1.6, true],
+            ['San Miguel', 35.1, 26, 'moderate', 'Residential infill', 0.6, 150, -0.9, false],
+            ['Laylay', 34.7, 30, 'moderate', 'Coastal road corridor', 0.4, 110, -0.6, false],
+            ['Tampus', 34.2, 35, 'moderate', 'Hillside mixed vegetation', 0.2, 280, 0.3, false],
+            ['Bantad', 33.8, 41, 'moderate', 'Upland forest edge', 0.0, 340, 0.9, false],
+        ],
+    },
+    {
+        city: 'Romblon',
+        province: 'Romblon',
+        rows: [
+            ['Poblacion', 35.5, 21, 'high', 'Port and town center', 0.9, 60, -1.3, true],
+            ['Cahayag', 34.9, 27, 'moderate', 'Dense coastal settlement', 0.5, 85, -0.8, false],
+            ['Cobrador', 33.9, 38, 'moderate', 'Island vegetation cover', 0.1, 190, 0.5, false],
+            ['Ilauran', 34.5, 32, 'moderate', 'Mixed residential and orchard', 0.3, 160, -0.3, false],
+            ['Macalas', 33.7, 44, 'moderate', 'Upland canopy buffer', -0.1, 240, 1.0, false],
+        ],
+    },
+    {
+        city: 'Puerto Princesa City',
+        province: 'Palawan',
+        rows: [
+            ['San Pedro', 39.2, 10, 'critical', 'Dense commercial core, low canopy', 2.1, 130, -3.2, true],
+            ['San Jose', 38.4, 13, 'high', 'Market district, impervious surface', 1.7, 95, -2.7, true],
+            ['Tanglaw', 37.2, 17, 'high', 'Expanding residential subdivision', 1.2, 220, -1.8, true],
+            ['Model', 36.1, 23, 'high', 'Institutional and mixed use', 0.8, 310, -1.0, false],
+            ['Mabuhay', 35.3, 30, 'moderate', 'Peri-urban corridor', 0.4, 420, -0.4, false],
+        ],
+    },
+];
+
+export const barangays: Barangay[] = MIMAROPA_ROWS.flatMap(({ city, province, rows }) =>
+    rows.map(([name, temp, canopy, severity, driver, trend, area, canopyChange, priority]) => ({
+        name,
+        temp,
+        canopy,
+        severity,
+        driver,
+        trend,
+        area,
+        canopyChange,
+        priority,
+        city,
+        province,
+    })),
+);
 
 /* Priority hotspot preview shown on the dashboard */
-export const priorityHotspots: Barangay[] = [
-    { name: 'Payatas', temp: 41.2, canopy: 12, severity: 'critical', driver: 'Landfill-adjacent informal settlement', trend: 2.4, area: 180, canopyChange: -4.1, priority: true },
-    { name: 'Batasan Hills', temp: 38.9, canopy: 16, severity: 'high', driver: 'Dense residential, low canopy', trend: 1.6, area: 210, canopyChange: -2.8, priority: true },
-    { name: 'Cubao Commercial District', temp: 38.1, canopy: 9, severity: 'high', driver: 'Impervious surface, no tree cover', trend: 1.1, area: 40, canopyChange: -1.2, priority: true },
-    { name: 'Novaliches Proper', temp: 36.4, canopy: 21, severity: 'moderate', driver: 'Mixed-use, canopy loss detected', trend: 0.8, area: 260, canopyChange: -3.3, priority: true },
-];
+export const priorityHotspots: Barangay[] = [...barangays]
+    .filter((b) => b.priority)
+    .sort((a, b) => b.temp - a.temp)
+    .slice(0, 4);
 
 export const dashboardStats: StatCardData[] = [
-    { icon: 'fa-temperature-high', tone: 'red', value: '34.6', valueSuffix: '°C', label: 'Avg. Surface Temp', trendIcon: 'fa-arrow-trend-up', trend: '2.1° vs last month', trendTone: 'up' },
-    { icon: 'fa-fire', tone: 'orange', value: '17', label: 'Active Hotspots', trendIcon: 'fa-arrow-trend-up', trend: '3 new this week', trendTone: 'up' },
-    { icon: 'fa-tree', tone: 'green', value: '28.4', valueSuffix: '%', label: 'Canopy Coverage', trendIcon: 'fa-arrow-trend-down', trend: '1.4% vs 2024', trendTone: 'down' },
-    { icon: 'fa-map-location-dot', tone: 'blue', value: '142', label: 'Barangays Monitored', trendIcon: 'fa-satellite', trend: 'Updated 4h ago', trendTone: 'neutral' },
+    { icon: 'fa-temperature-high', tone: 'red', value: '35.6', valueSuffix: '°C', label: 'Avg. Surface Temp', trendIcon: 'fa-arrow-trend-up', trend: '1.8° vs last month', trendTone: 'up' },
+    { icon: 'fa-fire', tone: 'orange', value: '10', label: 'Active Hotspots', trendIcon: 'fa-arrow-trend-up', trend: '2 new this week', trendTone: 'up' },
+    { icon: 'fa-tree', tone: 'green', value: '26.3', valueSuffix: '%', label: 'Canopy Coverage', trendIcon: 'fa-arrow-trend-down', trend: '1.2% vs 2024', trendTone: 'down' },
+    { icon: 'fa-map-location-dot', tone: 'blue', value: '25', label: 'Barangays Monitored', trendIcon: 'fa-satellite', trend: 'Across 5 provinces', trendTone: 'neutral' },
 ];
 
 export const canopyStats: StatCardData[] = [
-    { icon: 'fa-leaf', tone: 'green', value: '6,214', valueSuffix: ' ha', label: 'Total Canopy Area', trendIcon: 'fa-arrow-trend-down', trend: '-1.4% (5yr)', trendTone: 'down' },
-    { icon: 'fa-seedling', tone: 'red', value: '9', label: 'Priority Replanting Zones', trendIcon: 'fa-map-pin', trend: 'Flagged by AI model', trendTone: 'neutral' },
-    { icon: 'fa-droplet', tone: 'blue', value: '31.2', valueSuffix: '%', label: 'Impervious Surface', trendIcon: 'fa-arrow-trend-up', trend: '+0.8% vs 2024', trendTone: 'up' },
+    { icon: 'fa-leaf', tone: 'green', value: '1,430', valueSuffix: ' ha', label: 'Total Canopy Area', trendIcon: 'fa-arrow-trend-down', trend: '-2.8% (5yr)', trendTone: 'down' },
+    { icon: 'fa-seedling', tone: 'red', value: '8', label: 'Priority Replanting Zones', trendIcon: 'fa-map-pin', trend: 'Flagged by AI model', trendTone: 'neutral' },
+    { icon: 'fa-droplet', tone: 'blue', value: '34.6', valueSuffix: '%', label: 'Impervious Surface', trendIcon: 'fa-arrow-trend-up', trend: '+0.6% vs 2024', trendTone: 'up' },
 ];
 
 export const reports: Report[] = [
-    { id: 1, title: 'Q3 Urban Heat Island Summary', type: 'Quarterly', area: 'Quezon City (All Areas)', date: 'Aug 1, 2026', status: 'ready', city: 'Quezon City', coverage: 'Entire city', periodStart: 'Jul 1, 2026', periodEnd: 'Jul 31, 2026', preparedBy: 'Juan Dela Cruz', autoPriorityAreas: false, datasets: ['lst', 'hotspots', 'trends'], areas: ['Payatas', 'Batasan Hills', 'Commonwealth'], sections: ['summary', 'heat', 'hotspots', 'charts', 'methodology'], recommendations: 'Prioritize urban tree planting in Payatas, Batasan Hills and Commonwealth.', avgSurfaceTemp: 36.5, peakTemp: 41.2, peakArea: 'Payatas', criticalCount: 2, highCount: 4, moderateCount: 7, avgCanopy: 21.8, mitigationProjects: 4 },
-    { id: 2, title: 'Payatas Priority Zone Deep Dive', type: 'Hotspot Brief', area: 'Payatas', date: 'Jul 28, 2026', status: 'ready', city: 'Quezon City', coverage: 'Barangay', periodStart: 'Jun 1, 2026', periodEnd: 'Jun 30, 2026', preparedBy: 'Maria Santos', autoPriorityAreas: false, datasets: ['lst', 'hotspots', 'canopy'], areas: ['Payatas'], sections: ['summary', 'hotspots', 'canopy', 'mitigation'], recommendations: 'Fast-track tree planting along arterial roads in Payatas.', avgSurfaceTemp: 38.2, peakTemp: 41.2, peakArea: 'Payatas', criticalCount: 1, highCount: 1, moderateCount: 2, avgCanopy: 12, mitigationProjects: 1 },
-    { id: 3, title: 'Canopy Loss Assessment 2021–2026', type: 'Canopy', area: 'City-wide', date: 'Jul 20, 2026', status: 'ready', city: 'Quezon City', coverage: 'Entire city', periodStart: 'Jan 1, 2021', periodEnd: 'Dec 31, 2025', preparedBy: 'Maria Santos', autoPriorityAreas: false, datasets: ['canopy', 'landcover'], areas: [], sections: ['summary', 'canopy', 'maps', 'charts', 'methodology', 'sources'], recommendations: 'Address canopy deficits in low-cover barangays.', avgSurfaceTemp: 36.5, peakTemp: 41.2, peakArea: 'Payatas', criticalCount: 2, highCount: 4, moderateCount: 7, avgCanopy: 21.8, mitigationProjects: 4 },
-    { id: 4, title: 'Mitigation Impact Projection', type: 'Mitigation', area: '6 Priority Barangays', date: 'Aug 5, 2026', status: 'processing', city: 'Quezon City', coverage: 'District', periodStart: 'Jan 1, 2026', periodEnd: 'Dec 31, 2026', preparedBy: 'Ramon Reyes', autoPriorityAreas: true, datasets: ['lst', 'hotspots', 'mitigation'], areas: [], sections: ['summary', 'mitigation', 'charts'], recommendations: '', avgSurfaceTemp: 36.5, peakTemp: 41.2, peakArea: 'Payatas', criticalCount: 2, highCount: 4, moderateCount: 7, avgCanopy: 21.8, mitigationProjects: 4 },
-    { id: 5, title: 'August Satellite Pass Summary', type: 'Monthly', area: 'Quezon City (All Areas)', date: 'Aug 6, 2026', status: 'processing', city: 'Quezon City', coverage: 'Entire city', periodStart: 'Aug 1, 2026', periodEnd: 'Aug 31, 2026', preparedBy: 'Juan Dela Cruz', autoPriorityAreas: false, datasets: ['lst', 'trends'], areas: [], sections: ['summary', 'heat', 'charts', 'sources'], recommendations: '', avgSurfaceTemp: 36.5, peakTemp: 41.2, peakArea: 'Payatas', criticalCount: 2, highCount: 4, moderateCount: 7, avgCanopy: 21.8, mitigationProjects: 4 },
+    { id: 1, title: 'MIMAROPA Q3 Urban Heat Summary', type: 'Quarterly', area: 'MIMAROPA (All Provinces)', date: 'Aug 1, 2026', status: 'ready', city: 'MIMAROPA', coverage: 'Entire region', periodStart: 'Jul 1, 2026', periodEnd: 'Jul 31, 2026', preparedBy: 'Juan Dela Cruz', autoPriorityAreas: false, datasets: ['lst', 'hotspots', 'trends'], areas: ['Poblacion (Calapan City)', 'San Pedro (Puerto Princesa City)', 'Poblacion (Boac)'], sections: ['summary', 'heat', 'hotspots', 'charts', 'methodology'], recommendations: 'Prioritize urban tree planting in Calapan City, Puerto Princesa City and Boac.', avgSurfaceTemp: 35.6, peakTemp: 39.2, peakArea: 'San Pedro', criticalCount: 2, highCount: 8, moderateCount: 15, avgCanopy: 26.3, mitigationProjects: 4 },
+    { id: 2, title: 'San Pedro Priority Zone Deep Dive', type: 'Hotspot Brief', area: 'San Pedro, Puerto Princesa City', date: 'Jul 28, 2026', status: 'ready', city: 'Puerto Princesa City', coverage: 'Barangay', periodStart: 'Jun 1, 2026', periodEnd: 'Jun 30, 2026', preparedBy: 'Maria Santos', autoPriorityAreas: false, datasets: ['lst', 'hotspots', 'canopy'], areas: ['San Pedro'], sections: ['summary', 'hotspots', 'canopy', 'mitigation'], recommendations: 'Fast-track tree planting along the San Pedro commercial core.', avgSurfaceTemp: 37.8, peakTemp: 39.2, peakArea: 'San Pedro', criticalCount: 1, highCount: 2, moderateCount: 2, avgCanopy: 18.6, mitigationProjects: 1 },
+    { id: 3, title: 'MIMAROPA Canopy Loss Assessment 2021–2026', type: 'Canopy', area: 'Region-wide', date: 'Jul 20, 2026', status: 'ready', city: 'MIMAROPA', coverage: 'Entire region', periodStart: 'Jan 1, 2021', periodEnd: 'Dec 31, 2025', preparedBy: 'Maria Santos', autoPriorityAreas: false, datasets: ['canopy', 'landcover'], areas: [], sections: ['summary', 'canopy', 'maps', 'charts', 'methodology', 'sources'], recommendations: 'Address canopy deficits in the priority barangays of Calapan and Puerto Princesa.', avgSurfaceTemp: 35.6, peakTemp: 39.2, peakArea: 'San Pedro', criticalCount: 2, highCount: 8, moderateCount: 15, avgCanopy: 26.3, mitigationProjects: 4 },
+    { id: 4, title: 'Mitigation Impact Projection', type: 'Mitigation', area: '8 Priority Barangays', date: 'Aug 5, 2026', status: 'processing', city: 'MIMAROPA', coverage: 'Entire region', periodStart: 'Jan 1, 2026', periodEnd: 'Dec 31, 2026', preparedBy: 'Ramon Reyes', autoPriorityAreas: true, datasets: ['lst', 'hotspots', 'mitigation'], areas: [], sections: ['summary', 'mitigation', 'charts'], recommendations: '', avgSurfaceTemp: 35.6, peakTemp: 39.2, peakArea: 'San Pedro', criticalCount: 2, highCount: 8, moderateCount: 15, avgCanopy: 26.3, mitigationProjects: 4 },
+    { id: 5, title: 'August Satellite Pass Summary', type: 'Monthly', area: 'MIMAROPA (All Provinces)', date: 'Aug 6, 2026', status: 'processing', city: 'MIMAROPA', coverage: 'Entire region', periodStart: 'Aug 1, 2026', periodEnd: 'Aug 31, 2026', preparedBy: 'Juan Dela Cruz', autoPriorityAreas: false, datasets: ['lst', 'trends'], areas: [], sections: ['summary', 'heat', 'charts', 'sources'], recommendations: '', avgSurfaceTemp: 35.6, peakTemp: 39.2, peakArea: 'San Pedro', criticalCount: 2, highCount: 8, moderateCount: 15, avgCanopy: 26.3, mitigationProjects: 4 },
 ];
 
 export const mitigationProjects: MitigationProject[] = [
@@ -69,76 +135,76 @@ export const mitigationProjects: MitigationProject[] = [
         icon: 'fa-tree',
         status: 'Proposed',
         title: 'Urban Tree Planting',
-        description: 'Fast-canopy native species along arterial roads in Payatas and Batasan Hills.',
+        description: 'Fast-canopy native species along Poblacion and Camilmil arterials in Calapan City.',
         impact: '-2.1°C',
         impactLabel: 'Projected local drop',
-        metric: '4,800',
+        metric: '3,600',
         metricLabel: 'Trees needed',
-        progress: 65,
+        progress: 58,
     },
     {
         id: 'cool-roofing',
         icon: 'fa-house-chimney',
         status: 'In Progress',
         title: 'Cool / Reflective Roofing',
-        description: 'Retrofit high-density residential rooftops in Cubao with reflective coating.',
+        description: 'Retrofit high-density rooftops in San Pedro and San Jose, Puerto Princesa City.',
         impact: '-1.4°C',
         impactLabel: 'Projected local drop',
         metric: '1,200',
         metricLabel: 'Rooftops targeted',
-        progress: 40,
+        progress: 35,
     },
     {
         id: 'green-corridors',
         icon: 'fa-road',
         status: 'Proposed',
         title: 'Green Corridors & Pocket Parks',
-        description: 'Convert underused lots along Commonwealth Ave into shaded pocket parks.',
+        description: "Convert underused lots around Boac's heritage core into shaded pocket parks.",
         impact: '-1.8°C',
         impactLabel: 'Projected local drop',
-        metric: '12',
+        metric: '9',
         metricLabel: 'Sites identified',
-        progress: 22,
+        progress: 18,
     },
     {
         id: 'permeable-pavements',
         icon: 'fa-water',
         status: 'Planned',
         title: 'Permeable Pavements',
-        description: 'Replace impervious pavement in Novaliches Proper flood-heat overlap zones.',
+        description: "Replace impervious pavement in Romblon's port district flood-heat overlap zones.",
         impact: '-0.9°C',
         impactLabel: 'Projected local drop',
-        metric: '3.2',
+        metric: '2.6',
         metricSuffix: 'km',
         metricLabel: 'Road length',
-        progress: 8,
+        progress: 6,
     },
 ];
 
 export const canopySnapshot: CanopySnapshot = {
     barData: [
-        { name: 'Diliman', value: 42 },
-        { name: 'Batasan Hills', value: 35 },
-        { name: 'Fairview', value: 33 },
-        { name: 'Novaliches', value: 28 },
-        { name: 'Payatas', value: 18 },
-        { name: 'Cubao', value: 14 },
+        { name: 'Macalas (Romblon)', value: 44 },
+        { name: 'Bantad (Boac)', value: 41 },
+        { name: 'Cobrador (Romblon)', value: 38 },
+        { name: 'Santa Maria (Mamburao)', value: 36 },
+        { name: 'Tampus (Boac)', value: 35 },
+        { name: 'Guinobatan (Calapan)', value: 34 },
     ],
     trend: {
         labels: ['2021', '2022', '2023', '2024', '2025', '2026'],
-        values: [34, 33, 32, 31.6, 31.4, 31.2],
+        values: [29.1, 28.7, 28.2, 27.6, 27.0, 26.3],
     },
     landCover: [
-        { label: 'Built-up', value: 52, color: '#ff2d55' },
-        { label: 'Vegetation', value: 31, color: '#00ff84' },
-        { label: 'Bare Soil', value: 10, color: '#ffd23f' },
-        { label: 'Water Bodies', value: 7, color: '#5aa9ff' },
+        { label: 'Built-up', value: 42, color: '#ff2d55' },
+        { label: 'Vegetation', value: 38, color: '#00ff84' },
+        { label: 'Bare Soil', value: 9, color: '#ffd23f' },
+        { label: 'Water Bodies', value: 11, color: '#5aa9ff' },
     ],
     priorityZones: [
-        { name: 'Payatas', cover: 12, priority: 'Critical', tags: ['Needs Trees', 'High Heat'] },
-        { name: 'Cubao', cover: 15, priority: 'High', tags: ['Needs Trees', 'Residential'] },
-        { name: 'Batasan Hills', cover: 22, priority: 'Medium', tags: ['School Zone', 'Residential'] },
-        { name: 'Fairview', cover: 29, priority: 'Moderate', tags: ['Residential'] },
+        { name: 'Poblacion (Calapan)', cover: 12, priority: 'Critical', tags: ['Needs Trees', 'High Heat'] },
+        { name: 'San Pedro (Puerto Princesa)', cover: 10, priority: 'Critical', tags: ['Needs Trees', 'Commercial'] },
+        { name: 'Poblacion (Boac)', cover: 20, priority: 'High', tags: ['Heritage Core', 'Low Shade'] },
+        { name: 'Poblacion (Romblon)', cover: 21, priority: 'High', tags: ['Port Area', 'Residential'] },
     ],
 };
 

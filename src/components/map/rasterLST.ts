@@ -1,6 +1,6 @@
 /**
  * Thermal raster — GEE Landsat LST (A) primary, TiTiler COG (B fallback).
- * Global overlay, no PH crop — entire MapLibre. Honest LST (30m), not OpenWeather air temp.
+ * MIMAROPA-bounded overlay. Honest LST (30m), not OpenWeather air temp.
  * Frontend just consumes backend proxy `/api/layers/lst/tiles/{z}/{x}/{y}.png?date=...`
  * which internally tries GEE → TiTiler → synthetic (all via same URL).
  */
@@ -31,7 +31,7 @@ function apiUrl(path: string): string {
 }
 
 export function lstTileUrl(date: string = '2023-12-06'): string {
-    // Entire MapLibre, no crop. Backend internally: GEE (A) → TiTiler (B) → synthetic.
+    // MIMAROPA view. Backend internally: GEE (A) → TiTiler (B) → synthetic.
     return apiUrl(`/api/layers/lst/tiles/{z}/{x}/{y}.png?date=${encodeURIComponent(date)}`);
 }
 

@@ -1,6 +1,6 @@
 """GEE Landsat LST (A) + TiTiler COG fallback (B).
 
-A: Uses earthengine-api with service account to compute honest 30m LST for PH.
+A: Uses earthengine-api with service account to compute honest 30m LST for MIMAROPA.
    Image: LANDSAT/LC08/C02/T1_L2 + LC09, ST_B10*0.00341802+149 → BT → mono-window via NDVI emissivity.
    B: If GEE not configured / quota / error, falls back to public TiTiler COG (Landsat PDS) — same data, no GEE.
 
@@ -25,10 +25,11 @@ logger = logging.getLogger(__name__)
 _GEE_INITIALIZED = False
 _GEE_MAPID_CACHE: dict[str, Tuple[str, str, float]] = {}  # date_str -> (mapid, token, expiry_ts)
 
-# Hardcoded PH Landsat scene for B fallback — Manila 116/045, 2023-12-06 Level-2 ST_B10 COG
-# TiTiler will bilinear resample and apply palette; this is real LST, not synthetic.
-FALLBACK_COG_URL = "https://landsat-pds.s3.amazonaws.com/c1/L8/116/045/LC08_L2SP_116045_20231206_20231206_02_T1_ST_B10.TIF"
-# For broader PH, we could use STAC, but this one scene covers Metro Manila + surroundings well enough for demo fallback.
+# Hardcoded MIMAROPA Landsat scene for B fallback — central region (116/051,
+# 2023-12-17) covering Mindoro, Marinduque and Romblon. TiTiler resamples and
+# applies the palette; this is real LST, not synthetic. GEE (A) mosaics the
+# whole region when configured.
+FALLBACK_COG_URL = "https://landsatlook.usgs.gov/data/collection02/level-2/standard/oli-tirs/2023/116/051/LC08_L2SP_116051_20231217_20240103_02_T1/LC08_L2SP_116051_20231217_20240103_02_T1_ST_B10.TIF"
 
 def _parse_date(date_raw: str | None) -> datetime:
     if not date_raw or date_raw.lower() in ("now", "current"):
@@ -84,8 +85,8 @@ def _get_gee_image(date: datetime):
     """Build honest LST image for PH extent for given date."""
     import ee  # type: ignore
 
-    # Philippines bounds for clip
-    ph = ee.Geometry.Rectangle([116.9, 4.6, 126.6, 21.2])
+    # MIMAROPA bounds for clip (Palawan through the Romblon islands)
+    ph = ee.Geometry.Rectangle([116.9, 7.6, 122.8, 13.95])
     # Use 30-day window around requested date (Landsat 16-day revisit)
     start = ee.Date(date.strftime("%Y-%m-%d")).advance(-15, "day")
     end = ee.Date(date.strftime("%Y-%m-%d")).advance(15, "day")
@@ -169,7 +170,7 @@ def fetch_gee_tile(z: int, x: int, y: int, date_raw: str | None) -> bytes | None
 
 
 def fetch_titiler_tile(z: int, x: int, y: int) -> bytes | None:
-    """Fallback B: public TiTiler COG for Manila scene. Returns PNG or None."""
+    """Fallback B: public TiTiler COG for the central MIMAROPA scene."""
     if not settings.titiler_enabled:
         return None
     # TiTiler demo: /cog/tiles/{z}/{x}/{y}.png?url=COG&bidx=1&resampling=bilinear&colormap_name=turbo&min=15&max=45
@@ -177,11 +178,9 @@ def fetch_titiler_tile(z: int, x: int, y: int) -> bytes | None:
     # Use COG URL + bilinear + turbo
     base = settings.titiler_base_url.rstrip("/")
     cog = FALLBACK_COG_URL
-    # For ST_B10, DN is scaled Kelvin*0.00341802+149, so 15-45 C is 288-318K → DN ~ (K-149)/0.00341802
-    # But TiTiler expects raw DN, we can just set min/max in DN units: 15C→  (15+273.15-149)/0.00341802 ≈ 40700, 45C→ 49500
-    # Simpler: use min/max in scaled units via rescale? For demo, use 10000→15000 as placeholder.
-    # Instead use colormap with rescale 15,45 and let TiTiler stretch.
-    url = f"{base}/cog/tiles/{z}/{x}/{y}.png?url={cog}&bidx=1&resampling=bilinear&colormap_name=turbo&min=15&max=45&return_mask=true"
+    # ST_B10 is scaled Kelvin*0.00341802+149. The 15-45 °C palette range is
+    # ~40700-49500 in raw DN, so rescale on those values rather than °C.
+    url = f"{base}/cog/tiles/{z}/{x}/{y}.png?url={cog}&bidx=1&resampling=bilinear&colormap_name=turbo&rescale=40700,49500&return_mask=true"
     try:
         with httpx.Client(timeout=8.0) as client:
             r = client.get(url)

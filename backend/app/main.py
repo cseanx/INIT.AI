@@ -30,7 +30,7 @@ app.add_middleware(
     allow_origins=settings.cors_origin_list,
     # Local dev ports via regex; custom production domain must match
     # explicitly so dashboard CORS list edits can't silently break login.
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?|https://(www\.)?initai\.site",
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?|https://(www\.)?(?:initai|initai2)\.site",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

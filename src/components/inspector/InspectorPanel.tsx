@@ -15,16 +15,16 @@ import { useBentoFx } from '../common/BentoCard';
 ========================== */
 
 const SELECTED = {
-    name: 'Brgy. Batasan Hills, Quezon City, NCR',
-    surfaceTemp: 38.4,
-    airTemp: 32.1,
+    name: 'Brgy. Poblacion, Calapan City, Oriental Mindoro',
+    surfaceTemp: 38.6,
+    airTemp: 33.2,
     updated: '4h ago',
-    humidity: 61,
-    wind: 12,
-    uvIndex: 8,
-    canopy: 16,
-    impervious: 78,
-    exposedPopulation: '214K',
+    humidity: 74,
+    wind: 10,
+    uvIndex: 9,
+    canopy: 12,
+    impervious: 82,
+    exposedPopulation: '96K',
 };
 
 const HOURLY_LABELS = Array.from({ length: 24 }, (_, i) =>
@@ -41,12 +41,12 @@ const HOTSPOTS = [...barangays].sort((a, b) => b.temp - a.temp).slice(0, 5);
 const RECOMMENDATIONS = [
     {
         icon: 'fa-seedling',
-        text: 'Prioritize urban tree planting along Commonwealth Ave corridor',
+        text: 'Prioritize urban tree planting along the Poblacion–Camilmil corridor',
         note: '-2.1°C projected local drop',
     },
     {
         icon: 'fa-road',
-        text: 'Deploy cool pavement on the Batasan–Sauyo road section',
+        text: 'Deploy cool pavement in the Calapan port district',
         note: '-0.9°C projected local drop',
     },
 ];
@@ -332,9 +332,9 @@ export default function InspectorPanel({
                 <Accordion icon="fa-fire-flame-curved" title="Top Hotspots">
                     {HOTSPOTS.map((hotspot, i) => (
                         <button
-                            key={hotspot.name}
+                            key={`${hotspot.city ?? ''}-${hotspot.name}`}
                             type="button"
-                            title={`Jump to ${hotspot.name}`}
+                            title={`Jump to ${hotspot.name}${hotspot.city ? `, ${hotspot.city}` : ''}`}
                             className="group flex w-full items-center gap-[10px] rounded-[12px] border border-white/6 bg-white/[.02] p-[9px_12px] text-left transition duration-200 hover:bg-white/6"
                         >
                             <span className="w-[16px] shrink-0 text-[11px] font-bold text-[#666]">
@@ -345,6 +345,9 @@ export default function InspectorPanel({
                             ></span>
                             <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium">
                                 {hotspot.name}
+                                {hotspot.city ? (
+                                    <span className="text-[#777]"> · {hotspot.city}</span>
+                                ) : null}
                             </span>
                             <span className="shrink-0 text-[12.5px] font-bold text-[#ff8c42]">
                                 {hotspot.temp.toFixed(1)}°

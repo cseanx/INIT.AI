@@ -13,17 +13,18 @@ import {
 } from './layers';
 
 /**
- * Philippines travel box. The camera cannot leave this area (with a little
- * sea margin around the archipelago), so users can't wander the world.
+ * MIMAROPA travel box. The camera cannot leave Region IV-B (with a small sea
+ * margin around Palawan, the Mindoro provinces, Marinduque and Romblon), so
+ * users can't wander outside the deployment's scope.
  */
-const PHILIPPINES_BOUNDS: [[number, number], [number, number]] = [
-    [116.9, 4.6],
-    [126.6, 21.2],
+const MIMAROPA_BOUNDS: [[number, number], [number, number]] = [
+    [116.9, 7.6],
+    [122.8, 13.95],
 ];
 
 const TRAVEL_LIMITS: [[number, number], [number, number]] = [
-    [113.0, 2.0],
-    [130.5, 23.5],
+    [116.0, 7.0],
+    [123.5, 14.6],
 ];
 
 /** Dark satellite basemap + OpenWeather global thermal (no crop, entire MapLibre). */
@@ -146,9 +147,9 @@ export default function MapView({ className = '', children, onLayerStateChange }
         const map = new MapLibreMap({
             container,
             style: satelliteStyle(),
-            bounds: PHILIPPINES_BOUNDS,
+            bounds: MIMAROPA_BOUNDS,
             fitBoundsOptions: { padding: 36, duration: 0 },
-            minZoom: 4.2,
+            minZoom: 5.4,
             maxZoom: 17,
             maxBounds: TRAVEL_LIMITS,
             attributionControl: { compact: true },
@@ -221,7 +222,7 @@ export default function MapView({ className = '', children, onLayerStateChange }
         };
     }, []);
 
-    // City selector compatibility (§8): keep thermal active, update center/bounds.
+    // Area selector compatibility (§8): keep thermal active, update center/bounds.
     useEffect(() => {
         const map = mapRef.current;
         if (!mapReady || !map) return;
@@ -317,7 +318,7 @@ export default function MapView({ className = '', children, onLayerStateChange }
     }, []);
 
     function resetView() {
-        mapRef.current?.fitBounds(PHILIPPINES_BOUNDS, { padding: 36, duration: 600 });
+        mapRef.current?.fitBounds(MIMAROPA_BOUNDS, { padding: 36, duration: 600 });
     }
 
     function handleToggle(layer: MapLayerDef, visible: boolean) {
@@ -355,8 +356,8 @@ export default function MapView({ className = '', children, onLayerStateChange }
                     <button
                         type="button"
                         className={CTRL_BTN_CLASSES}
-                        title="Reset view to the Philippines"
-                        aria-label="Reset view to the Philippines"
+                        title="Reset view to MIMAROPA"
+                        aria-label="Reset view to MIMAROPA"
                         onClick={resetView}
                     >
                         <i className="fa-solid fa-location-crosshairs"></i>

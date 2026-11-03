@@ -6,7 +6,7 @@ export default function MiniHotspotList({ hotspots }: { hotspots: Barangay[] }) 
         <div className="flex flex-col gap-[10px]">
             {hotspots.map((hotspot) => (
                 <div
-                    key={hotspot.name}
+                    key={`${hotspot.city ?? ''}-${hotspot.name}`}
                     className="flex items-center justify-between rounded-[16px] border border-white/6 bg-white/[.03] p-[14px_16px] transition duration-200 hover:bg-white/6"
                 >
                     <div className="flex items-center gap-[14px]">
@@ -15,7 +15,10 @@ export default function MiniHotspotList({ hotspots }: { hotspots: Barangay[] }) 
                         ></span>
                         <div>
                             <strong className="block text-sm font-semibold">{hotspot.name}</strong>
-                            <small className="text-xs text-[#888]">{hotspot.driver}</small>
+                            <small className="text-xs text-[#888]">
+                                {hotspot.city ? `${hotspot.city} · ` : ''}
+                                {hotspot.driver}
+                            </small>
                         </div>
                     </div>
                     <span

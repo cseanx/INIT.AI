@@ -55,7 +55,7 @@ export default function Canopy() {
                             <LandCoverChart data={canopy} />
                         </div>
                         <p className="mt-[14px] text-center text-xs text-[#777]">
-                            City-wide, 2026 satellite classification
+                            MIMAROPA-wide, 2026 satellite classification
                         </p>
                     </Card>
                     <Card>

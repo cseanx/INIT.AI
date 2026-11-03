@@ -14,6 +14,7 @@ export default function CanopyTable({ barangays }: { barangays: Barangay[] }) {
                 <thead>
                     <tr>
                         <th className={TH_CLASSES}>Barangay</th>
+                        <th className={TH_CLASSES}>LGU</th>
                         <th className={TH_CLASSES}>Canopy %</th>
                         <th className={TH_CLASSES}>Canopy Area</th>
                         <th className={TH_CLASSES}>5-Yr Change</th>
@@ -30,11 +31,15 @@ export default function CanopyTable({ barangays }: { barangays: Barangay[] }) {
                               : 'high';
                         return (
                             <tr
-                                key={b.name}
+                                key={`${b.city ?? ''}-${b.name}`}
                                 className="transition duration-200 hover:bg-white/[.03]"
                             >
                                 <td className={TD_CLASSES}>
                                     <strong>{b.name}</strong>
+                                </td>
+                                <td className={TD_CLASSES}>
+                                    <span className="block text-[12.5px]">{b.city ?? '—'}</span>
+                                    <small className="text-[11px] text-[#888]">{b.province ?? ''}</small>
                                 </td>
                                 <td className={TD_CLASSES}>{b.canopy}%</td>
                                 <td className={TD_CLASSES}>{b.area.toLocaleString()} ha</td>

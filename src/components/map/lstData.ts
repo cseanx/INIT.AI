@@ -51,36 +51,37 @@ interface MockCellSpec {
     temperature_c: number | null;
 }
 
-/** Sample grid across Luzon / Visayas / Mindanao. Values are plausible
+/** Sample grid across the five MIMAROPA provinces. Values are plausible
  *  mid-afternoon surface temperatures (urban cores run hottest). One cell
  *  carries no reading (persistent cloud cover) to exercise graceful
  *  handling of missing values. */
 const MOCK_CELLS: MockCellSpec[] = [
-    // Luzon
-    { id: 'lst-001', name: 'Metro Manila Core', province: 'Metro Manila', region: 'NCR', box: [120.90, 14.45, 121.15, 14.70], temperature_c: 42.3 },
-    { id: 'lst-002', name: 'Quezon City Plateau', province: 'Metro Manila', region: 'NCR', box: [121.00, 14.62, 121.18, 14.78], temperature_c: 40.1 },
-    { id: 'lst-003', name: 'Manila Bay Coastal', province: 'Metro Manila', region: 'NCR', box: [120.85, 14.48, 121.00, 14.58], temperature_c: 33.6 },
-    { id: 'lst-004', name: 'Baguio Highlands', province: 'Benguet', region: 'CAR', box: [120.52, 16.36, 120.68, 16.48], temperature_c: 24.9 },
-    { id: 'lst-005', name: 'Ilocos Coastal Plain', province: 'Ilocos Norte', region: 'Region I', box: [120.35, 17.90, 120.75, 18.30], temperature_c: 34.8 },
-    { id: 'lst-006', name: 'Cagayan Valley', province: 'Isabela', region: 'Region II', box: [121.40, 16.60, 122.10, 17.20], temperature_c: 37.2 },
-    { id: 'lst-007', name: 'Bicol Pacific Slope', province: 'Albay', region: 'Region V', box: [123.20, 13.05, 123.70, 13.45], temperature_c: 35.4 },
-    { id: 'lst-008', name: 'Sierra Madre Range', province: 'Aurora', region: 'Region III', box: [121.50, 15.60, 122.00, 16.20], temperature_c: 28.7 },
-    { id: 'lst-009', name: 'Polillo Cloud Cover', province: 'Quezon', region: 'Region IV-A', box: [121.80, 14.70, 122.20, 14.95], temperature_c: null },
-    // Visayas
-    { id: 'lst-010', name: 'Cebu Metro Corridor', province: 'Cebu', region: 'Region VII', box: [123.70, 10.20, 124.05, 10.55], temperature_c: 38.9 },
-    { id: 'lst-011', name: 'Iloilo Basin', province: 'Iloilo', region: 'Region VI', box: [122.40, 10.55, 122.75, 10.85], temperature_c: 36.1 },
-    { id: 'lst-012', name: 'Western Negros Fields', province: 'Negros Occidental', region: 'Region VI', box: [122.80, 10.20, 123.30, 10.80], temperature_c: 32.4 },
-    { id: 'lst-013', name: 'Leyte Gulf Shore', province: 'Leyte', region: 'Region VIII', box: [124.80, 10.90, 125.15, 11.25], temperature_c: 31.8 },
-    { id: 'lst-014', name: 'Bohol Interior', province: 'Bohol', region: 'Region VII', box: [124.00, 9.60, 124.60, 10.10], temperature_c: 34.0 },
-    // Mindanao
-    { id: 'lst-015', name: 'Davao Urban Spread', province: 'Davao del Sur', region: 'Region XI', box: [125.45, 7.00, 125.80, 7.30], temperature_c: 35.2 },
-    { id: 'lst-016', name: 'Bukidnon Highlands', province: 'Bukidnon', region: 'Region X', box: [124.80, 7.80, 125.40, 8.40], temperature_c: 27.5 },
-    { id: 'lst-017', name: 'Zamboanga Peninsula', province: 'Zamboanga del Sur', region: 'Region IX', box: [122.90, 7.40, 123.40, 7.90], temperature_c: 33.3 },
-    { id: 'lst-018', name: 'Socsksargen Flatlands', province: 'South Cotabato', region: 'Region XII', box: [124.60, 6.20, 125.20, 6.70], temperature_c: 36.8 },
+    // Occidental Mindoro
+    { id: 'lst-001', name: 'Mamburao Urban Core', province: 'Occidental Mindoro', region: 'MIMAROPA', box: [120.55, 13.18, 120.65, 13.27], temperature_c: 37.4 },
+    { id: 'lst-002', name: 'San Jose Agricultural Plain', province: 'Occidental Mindoro', region: 'MIMAROPA', box: [120.95, 12.30, 121.10, 12.45], temperature_c: 35.8 },
+    { id: 'lst-003', name: 'Sablayan Coastal', province: 'Occidental Mindoro', region: 'MIMAROPA', box: [120.70, 12.75, 120.85, 12.90], temperature_c: 34.6 },
+    // Oriental Mindoro
+    { id: 'lst-004', name: 'Calapan City Core', province: 'Oriental Mindoro', region: 'MIMAROPA', box: [121.14, 13.37, 121.24, 13.47], temperature_c: 38.1 },
+    { id: 'lst-005', name: 'Naujan Lake', province: 'Oriental Mindoro', region: 'MIMAROPA', box: [121.25, 13.12, 121.45, 13.27], temperature_c: 32.9 },
+    { id: 'lst-006', name: 'Puerto Galera Coast', province: 'Oriental Mindoro', region: 'MIMAROPA', box: [120.92, 13.47, 121.03, 13.55], temperature_c: 33.7 },
+    // Marinduque
+    { id: 'lst-007', name: 'Boac Town Core', province: 'Marinduque', region: 'MIMAROPA', box: [121.80, 13.41, 121.89, 13.49], temperature_c: 36.2 },
+    { id: 'lst-008', name: 'Gasan Coast', province: 'Marinduque', region: 'MIMAROPA', box: [121.84, 13.28, 121.93, 13.36], temperature_c: 34.8 },
+    { id: 'lst-009', name: 'Santa Cruz Uplands', province: 'Marinduque', region: 'MIMAROPA', box: [122.00, 13.33, 122.12, 13.45], temperature_c: 32.6 },
+    // Romblon
+    { id: 'lst-010', name: 'Romblon Town', province: 'Romblon', region: 'MIMAROPA', box: [122.24, 12.55, 122.31, 12.62], temperature_c: 35.6 },
+    { id: 'lst-011', name: 'Odiongan', province: 'Romblon', region: 'MIMAROPA', box: [121.97, 12.38, 122.06, 12.47], temperature_c: 34.9 },
+    { id: 'lst-012', name: 'Sibuyan Interior', province: 'Romblon', region: 'MIMAROPA', box: [122.40, 12.30, 122.60, 12.50], temperature_c: 31.8 },
+    // Palawan
+    { id: 'lst-013', name: 'Puerto Princesa Core', province: 'Palawan', region: 'MIMAROPA', box: [118.70, 9.70, 118.82, 9.82], temperature_c: 39.0 },
+    { id: 'lst-014', name: 'El Nido', province: 'Palawan', region: 'MIMAROPA', box: [119.35, 11.14, 119.45, 11.24], temperature_c: 35.1 },
+    { id: 'lst-015', name: 'Coron', province: 'Palawan', region: 'MIMAROPA', box: [120.15, 11.95, 120.25, 12.05], temperature_c: 34.4 },
+    { id: 'lst-016', name: "Brooke's Point", province: 'Palawan', region: 'MIMAROPA', box: [117.78, 8.75, 117.88, 8.85], temperature_c: 33.9 },
+    { id: 'lst-017', name: 'Taytay Cloud Cover', province: 'Palawan', region: 'MIMAROPA', box: [119.45, 10.75, 119.60, 10.90], temperature_c: null },
 ];
 
-const MOCK_TIMESTAMP = '2026-08-19T14:30:00+08:00';
-const MOCK_SOURCE = 'INIT.AI mock composite (pre-deployment)';
+const MOCK_TIMESTAMP = '2026-11-02T14:30:00+08:00';
+const MOCK_SOURCE = 'INIT.AI mock composite (MIMAROPA demo)';
 
 function boxToRing([minLng, minLat, maxLng, maxLat]: [number, number, number, number]): number[][] {
     return [

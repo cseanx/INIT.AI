@@ -124,7 +124,7 @@ export default function Register() {
                             <label className="mb-2 block text-sm text-[#d4d4d4]">LGU / Organization</label>
                             <input
                                 type="text"
-                                placeholder="Quezon City Local Government"
+                                placeholder="MIMAROPA Local Government"
                                 required
                                 value={organization}
                                 onChange={(e) => setOrganization(e.target.value)}
