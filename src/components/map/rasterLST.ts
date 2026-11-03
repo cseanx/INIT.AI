@@ -36,7 +36,7 @@ export function lstTileUrl(date: string = '2023-12-06'): string {
 }
 
 export function lstSourceLabel(): string {
-    return 'GEE Landsat LST (30m) → TiTiler fallback';
+    return 'GEE Landsat LST (30m) → TiTiler/synthetic fallback';
 }
 export const HAS_OPENWEATHER_KEY = false; // kept for legend compatibility, not used for tiles now
 

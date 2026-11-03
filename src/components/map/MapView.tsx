@@ -23,8 +23,8 @@ const MIMAROPA_BOUNDS: [[number, number], [number, number]] = [
 ];
 
 const TRAVEL_LIMITS: [[number, number], [number, number]] = [
-    [116.0, 7.0],
-    [123.5, 14.6],
+    [116.6, 7.3],
+    [123.1, 14.2],
 ];
 
 /** Dark satellite basemap + OpenWeather global thermal (no crop, entire MapLibre). */

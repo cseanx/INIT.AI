@@ -260,7 +260,11 @@ export const api = {
         const all = local.length
             ? [...local, ...remote.map(fromBackendReport)]
             : remote.map(fromBackendReport);
-        return all.filter(isMimaropaReport);
+        const scoped = all.filter(isMimaropaReport);
+        // The shared production database may only contain the original NCR
+        // demo reports. Keep the MIMAROPA page populated with its bundled
+        // demo briefs until a MIMAROPA report is created.
+        return scoped.length ? scoped : reports;
     },
     getReport: async (id: number | string): Promise<Report> =>
         fromBackendReport(await authFetch<unknown>(`/api/reports/${id}`)),
