@@ -6,7 +6,7 @@
 
 [![Status](https://img.shields.io/badge/Status-Testnet_Alpha-18181b?style=flat-square)](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) [![Stellar](https://img.shields.io/badge/Stellar-Soroban-7D00FF?style=flat-square&logo=stellar&logoColor=white)](https://developers.stellar.org/docs/learn/fundamentals/contract-development) [![React](https://img.shields.io/badge/React-19-20232a?style=flat-square&logo=react&logoColor=61DAFB)](https://react.dev) [![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev) [![FastAPI](https://img.shields.io/badge/FastAPI-0.1-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com) [![Rust](https://img.shields.io/badge/Rust-Soroban-dea584?style=flat-square&logo=rust&logoColor=black)](https://soroban.stellar.org) [![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](LICENSE)
 
-[Live dApp](https://www.mimaropa.initai.site) · [Contract on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) · [Run Locally](#getting-started) · [Canonical Spec](#canonicalization-specification-initai-canonical-v1)
+[Live dApp](https://mimaropa.initai.site) · [Contract on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) · [Run Locally](#getting-started) · [Canonical Spec](#canonicalization-specification-initai-canonical-v1)
 
 > **Important:** INIT.AI is a prototype on **Stellar Testnet** only. Attestations are wallet-submitted, not LGU-certified. Mainnet, production audit, and official endorsement are not claimed.
 
@@ -282,7 +282,7 @@ One table for reviewers - everything needed to verify this project:
 | Contract ID | [`CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4`](https://stellar.expert/explorer/testnet/contract/CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4) |
 | Contract source | [`contracts/soroban/`](contracts/soroban/) (Rust + soroban-sdk 27, unit-tested, `prev_hash` on-chain) |
 | WASM artifact | `target/wasm32v1-none/release/initai_spatial_attestation.wasm` — **28,844 bytes**, **SHA-256** `19f8b4bddb717f60aa70116e0c6c0e86e45e3488f0d307dafa277c8534ba210e` — built `2026-08-31` with **on-chain `prev_hash`** via `stellar contract build` / `cargo build --target wasm32v1-none --release` (Rust `1.98.0`, `soroban-sdk 27.0.1`, `opt-level="z"` + `lto=true`) — `target/` is gitignored; verify with `Get-FileHash -Algorithm SHA256` or `sha256sum` — wasm hash `19f8b4...` matches deploy (Soroban deploys are immutable) |
-| Live dApp | [https://www.mimaropa.initai.site](https://www.mimaropa.initai.site) |
+| Live dApp | [https://mimaropa.initai.site](https://mimaropa.initai.site) |
 | API documentation | [https://api.initai.site/docs](https://api.initai.site/docs) (FastAPI/OpenAPI) |
 | Canonicalization spec | [`docs/canonical-v1.md`](docs/canonical-v1.md) (`initai-canonical-v1`) + [spec section](#canonicalization-specification-initai-canonical-v1) - rules + `backend/app/services/report_hash.py` (reports) + `backend/app/services/geojson_hash.py` (GeoJSON annex) |
 | Test vectors | [`backend/tests/test_report_hash.py`](backend/tests/test_report_hash.py) (6 report vectors) + [`backend/tests/test_geojson_hash.py`](backend/tests/test_geojson_hash.py) (9 GeoJSON vectors) |
@@ -375,7 +375,7 @@ matches the current content (tamper-evidence working as intended).
 ## Product
 
 > **Product Link**
-> [INIT.AI Vercel Deployment](https://www.mimaropa.initai.site)
+> [INIT.AI Vercel Deployment](https://mimaropa.initai.site)
 
 ---
 
