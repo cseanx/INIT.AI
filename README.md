@@ -261,23 +261,21 @@ alone. Walking the chain: `verify(latest_hash)` → `prev_hash` → `verify(prev
 
 ### MIMAROPA deployment (mimaropa.initai.site)
 
-This branch is the MIMAROPA build. It is served at `https://mimaropa.initai.site` from the existing `init-ai` Vercel project.
+This branch is the MIMAROPA build. The frontend is served at `https://mimaropa.initai.site` from the existing `init-ai` Vercel project, and the dedicated API is served at `https://api.mimaropa.initai.site` from the new `backend-init-ai-mimaropa` project.
 
-- The domain is assigned to the `feat/mimaropa-scope` branch, so every push to the branch updates the MIMAROPA site while `initai.site` stays on `main`.
-- A Deployment Protection Exception keeps the custom domain public; generated preview URLs remain protected.
-- `VITE_API_URL` and the Stellar Testnet values (`VITE_STELLAR_*`, `VITE_SOROBAN_CONTRACT_ID`) are branch-scoped Preview environment variables pointing at `https://api.initai.site` and the deployed Soroban contract.
+- Both projects use `feat/mimaropa-scope` as their production branch, so every push to the branch updates the MIMAROPA site and API while `initai.site` stays on `main`.
+- A Deployment Protection Exception keeps the frontend custom domain public; generated preview URLs remain protected.
+- `VITE_API_URL` now points at `https://api.mimaropa.initai.site`; the Stellar Testnet values (`VITE_STELLAR_*`, `VITE_SOROBAN_CONTRACT_ID`) are branch-scoped Preview environment variables.
 - The heat map opens on **Calapan City, Oriental Mindoro** by default; the selector can widen the view to the region or another province.
-- The backend CORS allowlist accepts `https://mimaropa.initai.site` and still accepts `https://www.initai.site`.
-
-If the project is ever split into its own Vercel project, set its production branch to `feat/mimaropa-scope` and copy the frontend environment variables (`VITE_API_URL`, the Stellar Testnet values, and the optional OpenWeather key). Reports whose city is outside MIMAROPA are filtered out of the frontend.
+- Both backends' CORS allowlists accept `https://mimaropa.initai.site`; `https://www.initai.site` remains allowed on the main API.
 
 ### Database scope
 
-The MIMAROPA site currently shares `api.initai.site` and its production Neon database with `www.initai.site`. Accounts, preferences, saved reports, and attestation records are therefore shared between the two sites. The MIMAROPA frontend filters out non-MIMAROPA reports, but reports created there are still stored in the shared database and can appear on the main deployment.
+The MIMAROPA deployment uses its own **`mimaropa` database inside a separate Neon branch**, created from the preview branch rather than the production database. It was migrated with `alembic upgrade head` and seeded with `python -m app.db.seed` (5 cities, 25 barangays, 4 mitigation projects, 5 reports). Accounts, preferences, saved reports, and attestation records are isolated from `www.initai.site`.
 
-For real isolation, provision a separate Neon database, deploy a dedicated backend with its own `DATABASE_URL`, and point `VITE_API_URL` at that backend. The branch already contains the MIMAROPA seed data (`alembic upgrade head`, then `python -m app.db.seed`) and the same canonical hashing/Stellar verification pipeline.
+The database is separate at the database/Neon-branch level, not a standalone Neon project. If you want project-level ownership and billing isolation, move it to a dedicated Neon project by restoring a dump and changing the backend's `DATABASE_URL`.
 
-Report IDs are database-local. If MIMAROPA keeps the shared Soroban contract, namespace its report IDs or deploy a separate contract so revision chains cannot collide with the main database's IDs.
+Report IDs are database-local. The dedicated backend currently pins the same Soroban contract, so MIMAROPA report IDs start at 1 alongside the main database's IDs. For strict on-chain isolation, namespace the report IDs or deploy a separate contract before recording production attestations.
 
 # 6. Product Showcase
 
