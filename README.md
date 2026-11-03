@@ -261,13 +261,14 @@ alone. Walking the chain: `verify(latest_hash)` → `prev_hash` → `verify(prev
 
 ### MIMAROPA deployment (mimaropa.initai.site)
 
-This branch is the MIMAROPA build. It runs as a **separate Vercel project** from the same repository and is served at `https://www.mimaropa.initai.site`.
+This branch is the MIMAROPA build. It is served at `https://mimaropa.initai.site` from the existing `init-ai` Vercel project.
 
-1. Import `cseanx/INIT.AI` as a new Vercel project and set `feat/mimaropa-scope` as its production branch.
-2. Copy the frontend environment variables from the existing project (`VITE_API_URL=https://api.initai.site`, the Stellar Testnet values, and the optional OpenWeather key).
-3. Add `mimaropa.initai.site` as a domain on the new project. `initai.site` already uses Vercel nameservers, so no registrar change is needed.
-4. Deploy the backend from this branch (or merge the CORS change) so `api.initai.site` accepts the `mimaropa.initai.site` origin.
-5. Keep the shared API/database or point `VITE_API_URL` at a dedicated MIMAROPA backend. Reports whose city is outside MIMAROPA are filtered out of the frontend.
+- The domain is assigned to the `feat/mimaropa-scope` branch, so every push to the branch updates the MIMAROPA site while `initai.site` stays on `main`.
+- A Deployment Protection Exception keeps the custom domain public; generated preview URLs remain protected.
+- `VITE_API_URL` is set as a branch-scoped Preview environment variable to `https://api.initai.site`.
+- The backend CORS allowlist accepts `https://mimaropa.initai.site` and still accepts `https://www.initai.site`.
+
+If the project is ever split into its own Vercel project, set its production branch to `feat/mimaropa-scope` and copy the frontend environment variables (`VITE_API_URL`, the Stellar Testnet values, and the optional OpenWeather key). Reports whose city is outside MIMAROPA are filtered out of the frontend.
 
 # 6. Product Showcase
 
