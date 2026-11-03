@@ -277,6 +277,8 @@ The MIMAROPA site currently shares `api.initai.site` and its production Neon dat
 
 For real isolation, provision a separate Neon database, deploy a dedicated backend with its own `DATABASE_URL`, and point `VITE_API_URL` at that backend. The branch already contains the MIMAROPA seed data (`alembic upgrade head`, then `python -m app.db.seed`) and the same canonical hashing/Stellar verification pipeline.
 
+Report IDs are database-local. If MIMAROPA keeps the shared Soroban contract, namespace its report IDs or deploy a separate contract so revision chains cannot collide with the main database's IDs.
+
 # 6. Product Showcase
 
 ## Evidence Index
