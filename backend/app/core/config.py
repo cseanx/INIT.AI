@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     session_cookie_name: str = "initai_session"
     session_ttl_days: int = 7
     # Frontend and API live on different sites (www.initai.site or
-    # www.initai2.site vs api.initai.site), so the cookie must be SameSite=None +
+    # mimaropa.initai.site vs api.initai.site), so the cookie must be SameSite=None +
     # Secure — "lax" is silently dropped by browsers on cross-site fetches,
     # which made every refresh log the user out.
     session_cookie_secure: bool = True

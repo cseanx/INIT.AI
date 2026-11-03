@@ -150,7 +150,7 @@ fall back to bundled mock data when the API is unreachable; writes require a
 live backend and an authenticated session.
 
 Cross-site cookies: the frontend (`*.vercel.app`, `initai.site`, or
-`initai2.site`) and this API live on different sites, so the session cookie
+`mimaropa.initai.site`) and this API live on different sites, so the session cookie
 is issued `SameSite=None; Secure` (see `app/core/config.py`).
 
 ## Notes
