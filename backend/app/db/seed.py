@@ -40,10 +40,16 @@ DEMO_USERS = [
     },
 ]
 
-# One pilot city/municipality per MIMAROPA province.
+# Provincial pilots plus the Mindoro municipalities used by the
+# Mindoro-weighted hotspot demo.
 CITIES = [
     ("Calapan City", "Oriental Mindoro"),
     ("Mamburao", "Occidental Mindoro"),
+    ("San Jose", "Occidental Mindoro"),
+    ("Sablayan", "Occidental Mindoro"),
+    ("Naujan", "Oriental Mindoro"),
+    ("Pinamalayan", "Oriental Mindoro"),
+    ("Puerto Galera", "Oriental Mindoro"),
     ("Boac", "Marinduque"),
     ("Romblon", "Romblon"),
     ("Puerto Princesa City", "Palawan"),
@@ -53,17 +59,45 @@ CITIES = [
 BARANGAYS: dict[str, list[tuple[str, float, float]]] = {
     "Calapan City": [
         ("Poblacion", 38.6, 12.0),
+        ("Ibaba East", 38.9, 10.0),
+        ("Poblacion II", 37.9, 14.0),
         ("Camilmil", 37.4, 16.0),
+        ("Lumangbayan", 36.5, 20.0),
         ("San Vicente", 36.2, 22.0),
         ("San Antonio", 35.1, 28.0),
         ("Guinobatan", 34.3, 34.0),
     ],
     "Mamburao": [
         ("Poblacion", 36.8, 18.0),
+        ("Fatima", 36.2, 22.0),
         ("Payompon", 35.9, 24.0),
+        ("Tayamaan", 35.7, 26.0),
         ("Balansay", 35.3, 29.0),
+        ("Tangkalan", 35.0, 30.0),
         ("Talabaan", 34.8, 31.0),
         ("Santa Maria", 34.1, 36.0),
+    ],
+    "San Jose": [
+        ("Poblacion", 39.8, 9.0),
+        ("Labangan", 38.1, 14.0),
+        ("Bubog", 36.9, 19.0),
+    ],
+    "Sablayan": [
+        ("Poblacion", 38.7, 11.0),
+        ("Batong Buhay", 37.4, 17.0),
+        ("Buenavista", 35.8, 25.0),
+    ],
+    "Naujan": [
+        ("Poblacion", 38.0, 15.0),
+        ("Bancuro", 36.0, 23.0),
+    ],
+    "Pinamalayan": [
+        ("Poblacion", 37.7, 16.0),
+        ("Marfranc", 35.9, 24.0),
+    ],
+    "Puerto Galera": [
+        ("Poblacion", 37.0, 18.0),
+        ("Sabang", 36.3, 21.0),
     ],
     "Boac": [
         ("Poblacion", 35.8, 20.0),

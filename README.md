@@ -273,7 +273,7 @@ This branch is the MIMAROPA build. The frontend is served at `https://mimaropa.i
 
 ### Database scope
 
-The MIMAROPA deployment uses its own **`mimaropa` database inside a separate Neon branch**, created from the preview branch rather than the production database. It was migrated with `alembic upgrade head` and seeded with `python -m app.db.seed` (5 cities, 25 barangays, 4 mitigation projects, 5 reports). Accounts, preferences, saved reports, and attestation records are isolated from `www.initai.site`.
+The MIMAROPA deployment uses its own **`mimaropa` database inside a separate Neon branch**, created from the preview branch rather than the production database. It was migrated with `alembic upgrade head` and seeded with `python -m app.db.seed` (10 cities, 43 barangays, 4 mitigation projects, 5 reports). Accounts, preferences, saved reports, and attestation records are isolated from `www.initai.site`.
 
 The database is separate at the database/Neon-branch level, not a standalone Neon project. If you want project-level ownership and billing isolation, move it to a dedicated Neon project by restoring a dump and changing the backend's `DATABASE_URL`.
 
