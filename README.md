@@ -390,25 +390,28 @@ matches the current content (tamper-evidence working as intended).
 
 ## Product Screenshots
 
+Screenshots from the current MIMAROPA deployment: the Calapan City pilot,
+the Mindoro-weighted hotspot ranking, and the Stellar Testnet verification flow.
+
 ### Dashboard
 
-![INIT.AI Dashboard](/public/assets/images/Dashboard.png)
+![INIT.AI MIMAROPA dashboard — Calapan City pilot](public/assets/images/Dashboard.png?v=2026-11-03)
 
 ### Heat Map
 
-![INIT.AI Heat Map](/public/assets/images/Heatmap.png)
+![INIT.AI heat map — Calapan City, Oriental Mindoro](public/assets/images/Heatmap.png?v=2026-11-03)
 
 ### Hotspots
 
-![INIT.AI Hotspots](/public/assets/images/Hotspots.png)
+![INIT.AI hotspots — Mindoro-weighted ranking](public/assets/images/Hotspots.png?v=2026-11-03)
 
 ### Canopy Analysis
 
-![INIT.AI Canopy Analysis](/public/assets/images/CanopyAnalysis.png)
+![INIT.AI canopy analysis — MIMAROPA](public/assets/images/CanopyAnalysis.png?v=2026-11-03)
 
 ### Stellar Verification
 
-![INIT.AI Stellar Verification](/public/assets/images/StellarReport.png)
+![INIT.AI Stellar Testnet verification](public/assets/images/StellarReport.png?v=2026-11-03)
 
 ---
 
@@ -519,36 +522,7 @@ No `benchmarks/reports/*.json` is committed — the table above is the verifiabl
 
 ---
 
-# 8. Team
-
-INIT.AI is developed by a three-person team.
-
-| Member   | Role                 | Responsibilities                                                                                  |
-| -------- | -------------------- | ------------------------------------------------------------------------------------------------- |
-| **Rain** | Project Manager      | Project direction, coordination, planning, and overall product management                         |
-| **Sean** | Full-stack Developer | Frontend, backend, database, system architecture, Stellar/Soroban integration, and implementation |
-| **Marc** | Quality Assurance    | Testing, validation, bug identification, usability checks, and quality assurance                  |
-
-### Links
-
-**Angelo Rain Regencia**
-Project Manager
-
-> [GitHub](https://github.com/angelorainregencia-code) [LinkedIn](www.linkedin.com/in/angelo-rain-regencia-142ab0241/)
-
-**Sean Astin Navarro**
-Full-stack Developer
-
-> [GitHub](https://github.com/cseanx) [LinkedIn](www.linkedin.com/in/cseanxdev)
-
-**Marc Joshua Valenzuela**
-Quality Assurance
-
-> [LinkedIn](www.linkedin.com/in/marc-joshua-valenzuela-449923427/)
-
----
-
-# 9. Project Status
+# 8. Project Status
 
 INIT.AI is currently under active development as a prototype.
 
@@ -566,7 +540,7 @@ Some features shown in the interface may represent prototype or mock data while 
 
 ---
 
-# 10. Vision
+# 9. Vision
 
 INIT.AI aims to make environmental intelligence more accessible to the cities and communities that need it.
 
