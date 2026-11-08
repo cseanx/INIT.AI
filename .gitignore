@@ -36,3 +36,16 @@ __pycache__/
 .pytest_cache/
 backend/.env
 .env*
+
+# Openchamber
+*.openchamber
+
+# Impeccable
+*.impeccable
+*.claude
+*.opencode
+*.pi
+/PRODUCT.md
+
+# documentation for personal use
+docs/
