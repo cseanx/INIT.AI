@@ -326,8 +326,8 @@ export default function Settings() {
                         <strong className="text-sm font-semibold">v0.1 Prototype</strong>
                     </div>
                     <div className="flex flex-col gap-1">
-                        <span className="text-[11.5px] uppercase tracking-[.04em] text-[#888]">Developed by</span>
-                        <strong className="text-sm font-semibold">RA!N SYSTEMS</strong>
+                        <span className="text-[11.5px] uppercase tracking-[.04em] text-[#888]">Prototype by</span>
+                        <strong className="text-sm font-semibold">PUPBC ISITE</strong>
                     </div>
                 </div>
             </Card>
