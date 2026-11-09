@@ -8,6 +8,7 @@ import StellarVerifyPanel from '../components/reports/StellarVerifyPanel';
 import { useApiData } from '../hooks/useApiData';
 import { api } from '../services/api';
 import { discardLocalReport, loadCurrentReport, loadStoredReports } from '../reports/reportService';
+import { reportPeriod, reportScope } from '../utils/reportScope';
 import type { Report, ReportPayload } from '../types';
 
 const PRIMARY_BTN_CLASSES =
@@ -34,7 +35,7 @@ const SECTION_META: Record<string, { icon: string; title: string }> = {
 function Stat({ label, value, icon }: { label: string; value: string; icon: string }) {
     return (
         <div className="rounded-[14px] border border-white/6 bg-white/[.03] p-[14px]">
-            <div className="flex items-center gap-[7px] text-[11px] text-[#888]">
+            <div className="flex items-center gap-[7px] text-[12px] text-[#888]">
                 <i className={`fa-solid ${icon} text-accent`}></i>
                 {label}
             </div>
@@ -215,8 +216,7 @@ export default function ReportEditor() {
     }
 
     const priorityCount = (hotspots ?? []).filter((b) => b.priority).length;
-    const period =
-        report.periodStart && report.periodEnd ? `${report.periodStart} to ${report.periodEnd}` : '—';
+    const period = reportPeriod(report.periodStart, report.periodEnd);
 
     return (
         <Page>
@@ -266,12 +266,7 @@ export default function ReportEditor() {
                                 </span>
                                 <span className="rounded-full border border-white/10 bg-white/[.04] px-[10px] py-[4px]">
                                     <i className="fa-solid fa-map-location-dot mr-[5px] text-accent"></i>
-                                    {report.area ?? '—'}
-                                </span>
-                                <span className="rounded-full border border-white/10 bg-white/[.04] px-[10px] py-[4px]">
-                                    <i className="fa-solid fa-city mr-[5px] text-accent"></i>
-                                    {report.city ?? '—'}
-                                    {report.coverage ? ` · ${report.coverage}` : ''}
+                                    {reportScope(report)}
                                 </span>
                                 <span className="rounded-full border border-white/10 bg-white/[.04] px-[10px] py-[4px]">
                                     <i className="fa-solid fa-calendar mr-[5px] text-accent"></i>
@@ -281,8 +276,8 @@ export default function ReportEditor() {
                                     <i className="fa-solid fa-user mr-[5px] text-accent"></i>
                                     {report.preparedBy ?? '—'}
                                 </span>
-                                <span className="rounded-full border border-mint/30 bg-mint/10 px-[10px] py-[4px] text-mint">
-                                    <i className="fa-solid fa-circle-check mr-[5px]"></i>
+                                <span className="rounded-full border border-white/8 bg-white/[.04] px-[10px] py-[4px] text-[#ddd]">
+                                    <i className={`fa-solid ${report.status === 'ready' ? 'fa-circle-check text-[#bbb]' : 'fa-clock text-gold'} mr-[5px]`}></i>
                                     {report.status === 'ready' ? 'Ready' : 'Processing'}
                                 </span>
                                 {!isRemote ? (
@@ -410,6 +405,7 @@ export default function ReportEditor() {
                             return (
                                 <SectionBlock key="mitigation" icon={meta.icon} title="Mitigation Recommendations">
                                     <textarea
+                                        aria-label="Mitigation recommendations"
                                         rows={5}
                                         value={recommendations}
                                         readOnly={viewMode}
@@ -423,7 +419,7 @@ export default function ReportEditor() {
                         if (section === 'Maps') {
                             return (
                                 <SectionBlock key="maps" icon={meta.icon} title="Maps">
-                                    <p className="text-[13px] text-[#777]">
+                                    <p className="text-[13px] text-[#999]">
                                         Attach map exports from the Heat Map page (surface temperature layer) and
                                         Canopy Assessment page (coverage layer) for this section.
                                     </p>
@@ -434,7 +430,7 @@ export default function ReportEditor() {
                         if (section === 'Charts') {
                             return (
                                 <SectionBlock key="charts" icon={meta.icon} title="Charts">
-                                    <p className="text-[13px] text-[#777]">
+                                    <p className="text-[13px] text-[#999]">
                                         Charts will be embedded here from the Dashboard (trends, severity
                                         distribution) and Hotspots page (drivers breakdown).
                                     </p>

@@ -3,7 +3,9 @@
 ========================== */
 
 export type Severity = 'critical' | 'high' | 'moderate';
-export type TrendTone = 'up' | 'down' | 'neutral';
+/** Sentiment of a trend, independent of arrow direction: canopy loss and
+ *  rising heat are negative even though one points down and one points up. */
+export type TrendTone = 'positive' | 'negative' | 'neutral';
 export type IconTone = 'red' | 'orange' | 'green' | 'blue';
 
 export type ThemePreference = 'system' | 'dark' | 'light';

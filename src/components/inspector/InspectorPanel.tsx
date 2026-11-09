@@ -1,8 +1,10 @@
 import { useMemo, useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { ChartConfiguration } from 'chart.js';
 import type { ResolvedTheme } from '../../types';
 import { barangays } from '../../data/mockData';
 import { usePreferences } from '../../preferences/PreferencesContext';
+import { useCity } from '../../contexts/CityContext';
 import { baseChartOptions, chartTheme } from '../../utils/chartTheme';
 import { SEVERITY_DOTS } from '../../utils/toneClasses';
 import ChartCanvas from '../common/ChartCanvas';
@@ -15,7 +17,7 @@ import { useBentoFx } from '../common/BentoCard';
 ========================== */
 
 const SELECTED = {
-    name: 'Brgy. Batasan Hills, Quezon City, NCR',
+    name: 'Brgy. Batasan Hills',
     surfaceTemp: 38.4,
     airTemp: 32.1,
     updated: '4h ago',
@@ -67,8 +69,8 @@ function heatRisk(temp: number): { label: string; className: string } {
 
 function SectionTitle({ icon, children }: { icon: string; children: ReactNode }) {
     return (
-        <h4 className="mb-[12px] flex items-center gap-[8px] text-[10.5px] font-semibold uppercase tracking-[.14em] text-[#888]">
-            <i className={`fa-solid ${icon} text-[11px] text-accent`}></i>
+        <h4 className="mb-[12px] flex items-center gap-[8px] text-[12px] font-semibold uppercase tracking-[.1em] text-[#aaa]">
+            <i className={`fa-solid ${icon} text-[12px] text-accent`}></i>
             {children}
         </h4>
     );
@@ -76,10 +78,10 @@ function SectionTitle({ icon, children }: { icon: string; children: ReactNode })
 
 function Pill({ icon, value, label }: { icon: string; value: string; label: string }) {
     return (
-        <span className="flex items-center gap-[8px] rounded-full border border-white/6 bg-white/[.04] px-[12px] py-[6px]">
-            <i className={`fa-solid ${icon} text-[10.5px] text-accent`}></i>
-            <span className="text-[12px] font-semibold">{value}</span>
-            <span className="text-[10.5px] text-[#888]">{label}</span>
+        <span className="flex items-center gap-[8px] rounded-full border border-white/8 bg-white/[.04] px-[12px] py-[6px]">
+            <i className={`fa-solid ${icon} text-[12px] text-accent`}></i>
+            <span className="text-[12.5px] font-semibold">{value}</span>
+            <span className="text-[12px] text-[#999]">{label}</span>
         </span>
     );
 }
@@ -101,11 +103,11 @@ function MetricBar({
     return (
         <div>
             <div className="mb-[6px] flex items-baseline justify-between gap-3">
-                <span className="text-[12.5px] text-[#bbb]">{label}</span>
+                <span className="text-[12.5px] text-[#ccc]">{label}</span>
                 <span className="shrink-0 text-[12.5px] font-bold">
                     {value}
                     {unit}
-                    <span className="ml-[6px] text-[10.5px] font-medium text-[#888]">· {note}</span>
+                    <span className="ml-[6px] text-[12px] font-medium text-[#999]">· {note}</span>
                 </span>
             </div>
             <div className="h-[6px] overflow-hidden rounded-full bg-white/8">
@@ -143,7 +145,7 @@ function Accordion({
                     {title}
                 </span>
                 <i
-                    className={`fa-solid fa-chevron-down text-[10px] text-[#777] transition-transform duration-300 ${
+                    className={`fa-solid fa-chevron-down text-[11.5px] text-[#999] transition-transform duration-300 ${
                         open ? '' : '-rotate-90'
                     }`}
                 ></i>
@@ -224,6 +226,8 @@ export default function InspectorPanel({
     onToggle: () => void;
 }) {
     const { resolvedTheme } = usePreferences();
+    const { selected: city } = useCity();
+    const navigate = useNavigate();
     const sparklineConfig = useSparklineConfig(resolvedTheme);
     const risk = heatRisk(SELECTED.surfaceTemp);
     const bentoFx = useBentoFx();
@@ -232,16 +236,22 @@ export default function InspectorPanel({
         <div
             ref={bentoFx.ref}
             style={bentoFx.style}
-            className={`${bentoFx.className} relative flex h-full flex-col overflow-hidden rounded-[28px] border border-white/8 bg-white/5 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,.35)]`}
+            className={`${bentoFx.className} relative flex h-full flex-col overflow-hidden rounded-[24px] border border-white/8 bg-white/5 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,.35)] sm:rounded-[28px]`}
         >
             {/* Pinned header */}
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/8 p-[15px_18px]">
-                <h3 className="text-[14.5px] font-semibold">Inspector</h3>
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/8 p-[14px_16px] sm:p-[15px_18px]">
+                <div className="flex items-center gap-2">
+                    <h3 className="text-[14.5px] font-semibold">Inspector</h3>
+                    <span className="rounded-full border border-white/10 bg-white/[.04] px-2 py-[2px] text-[12px] font-semibold uppercase tracking-[.06em] text-[#999]">
+                        Demo area
+                    </span>
+                </div>
                 <button
                     type="button"
                     onClick={onToggle}
                     title="Collapse panel"
-                    className="flex h-[30px] w-[30px] items-center justify-center rounded-[10px] border border-white/8 bg-white/5 text-[12px] text-[#999] transition duration-200 hover:bg-white/9 hover:text-white"
+                    aria-label="Collapse inspector panel"
+                    className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/8 bg-white/5 text-[12px] text-[#999] transition duration-200 hover:bg-white/9 hover:text-white max-[1099px]:hidden"
                 >
                     <i className="fa-solid fa-angles-right"></i>
                 </button>
@@ -253,35 +263,35 @@ export default function InspectorPanel({
                 <div className="rounded-[16px] border border-white/6 bg-white/[.03] p-[16px]">
                     <div className="mb-[12px] flex items-start justify-between gap-3">
                         <strong className="min-w-0 text-[13.5px] font-semibold leading-snug">
-                            {SELECTED.name}
+                            {SELECTED.name}, {city}
                         </strong>
                         <span
-                            className={`shrink-0 rounded-full px-[11px] py-[5px] text-[10.5px] font-bold uppercase tracking-[.08em] ${risk.className}`}
+                            className={`shrink-0 rounded-full px-[11px] py-[5px] text-[12px] font-bold uppercase tracking-[.06em] ${risk.className}`}
                         >
                             {risk.label}
                         </span>
                     </div>
-                    <div className="flex items-end gap-[18px]">
+                    <div className="flex flex-wrap items-end gap-x-[18px] gap-y-3">
                         <div>
-                            <span className="text-[34px] font-bold leading-none">
+                            <span className="text-[32px] font-bold leading-none tabular-nums">
                                 {SELECTED.surfaceTemp.toFixed(1)}°C
                             </span>
-                            <span className="mt-[6px] block text-[11px] text-[#888]">
-                                Surface temp
+                            <span className="mt-[6px] block text-[12px] text-[#999]">
+                                Modeled surface temp
                             </span>
                         </div>
                         <div className="pb-[3px]">
-                            <span className="text-[20px] font-semibold text-[#bbb]">
+                            <span className="text-[20px] font-semibold tabular-nums text-[#ccc]">
                                 {SELECTED.airTemp.toFixed(1)}°C
                             </span>
-                            <span className="mt-[4px] block text-[11px] text-[#888]">
+                            <span className="mt-[4px] block text-[12px] text-[#999]">
                                 Ambient air
                             </span>
                         </div>
                     </div>
-                    <span className="mt-[12px] block text-[10.5px] text-[#666]">
+                    <span className="mt-[12px] block text-[12px] leading-snug text-[#999]">
                         <i className="fa-solid fa-clock mr-[5px]"></i>
-                        Updated {SELECTED.updated} · AI-derived estimate
+                        Demo observation · updated {SELECTED.updated} · not a sensor reading
                     </span>
                 </div>
 
@@ -315,13 +325,13 @@ export default function InspectorPanel({
                         tone="orange"
                     />
                     <div className="flex items-center justify-between rounded-[12px] border border-white/6 bg-white/[.02] p-[10px_12px]">
-                        <span className="flex items-center gap-[8px] text-[12.5px] text-[#bbb]">
+                        <span className="flex items-center gap-[8px] text-[12.5px] text-[#ccc]">
                             <i className="fa-solid fa-people-group text-sky"></i>
                             Pop. exposed to high heat
                         </span>
                         <span className="text-[13px] font-bold">
                             ≈ {SELECTED.exposedPopulation}
-                            <small className="ml-[4px] text-[10px] font-medium text-[#888]">
+                            <small className="ml-[4px] text-[12px] font-medium text-[#999]">
                                 residents
                             </small>
                         </span>
@@ -334,10 +344,12 @@ export default function InspectorPanel({
                         <button
                             key={hotspot.name}
                             type="button"
-                            title={`Jump to ${hotspot.name}`}
+                            title={`Open ${hotspot.name} in Hotspots`}
+                            aria-label={`Open ${hotspot.name} in Hotspots`}
+                            onClick={() => navigate('/hotspots')}
                             className="group flex w-full items-center gap-[10px] rounded-[12px] border border-white/6 bg-white/[.02] p-[9px_12px] text-left transition duration-200 hover:bg-white/6"
                         >
-                            <span className="w-[16px] shrink-0 text-[11px] font-bold text-[#666]">
+                            <span className="w-[16px] shrink-0 text-[12px] font-bold text-[#999]">
                                 {i + 1}
                             </span>
                             <span
@@ -349,15 +361,15 @@ export default function InspectorPanel({
                             <span className="shrink-0 text-[12.5px] font-bold text-[#ff8c42]">
                                 {hotspot.temp.toFixed(1)}°
                             </span>
-                            <i className="fa-solid fa-location-crosshairs shrink-0 text-[11px] text-[#555] transition duration-200 group-hover:text-accent"></i>
+                            <i className="fa-solid fa-arrow-right shrink-0 text-[12px] text-[#999] transition duration-200 group-hover:text-accent"></i>
                         </button>
                     ))}
                 </Accordion>
 
                 {/* Recommended actions */}
                 <div className="rounded-[16px] border border-white/6 bg-white/[.03] p-[14px]">
-                    <h4 className="mb-[10px] flex items-center gap-[8px] text-[10.5px] font-semibold uppercase tracking-[.14em] text-[#888]">
-                        <i className="fa-solid fa-lightbulb text-[11px] text-accent"></i>
+                    <h4 className="mb-[10px] flex items-center gap-[8px] text-[12px] font-semibold uppercase tracking-[.1em] text-[#aaa]">
+                        <i className="fa-solid fa-lightbulb text-[12px] text-accent"></i>
                         Recommended Actions
                     </h4>
                     {RECOMMENDATIONS.map((rec) => (
@@ -372,18 +384,26 @@ export default function InspectorPanel({
                                 <strong className="block text-[12.5px] font-semibold leading-snug">
                                     {rec.text}
                                 </strong>
-                                <small className="mt-[3px] block text-[11px] text-[#888]">
+                                <small className="mt-[3px] block text-[12px] text-[#999]">
                                     {rec.note}
                                 </small>
                             </div>
                         </div>
                     ))}
                     <div className="mt-[12px] flex flex-col gap-[10px]">
-                        <button type="button" className={PRIMARY_BTN_CLASSES}>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/reports/new')}
+                            className={PRIMARY_BTN_CLASSES}
+                        >
                             <i className="fa-solid fa-file-lines mr-[8px]"></i>
                             Generate Heat Report
                         </button>
-                        <button type="button" className={SECONDARY_BTN_CLASSES}>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/mitigation')}
+                            className={SECONDARY_BTN_CLASSES}
+                        >
                             <i className="fa-solid fa-bullseye mr-[8px]"></i>
                             View Mitigation Plan
                         </button>

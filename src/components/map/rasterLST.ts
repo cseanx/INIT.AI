@@ -56,11 +56,11 @@ export async function fetchLSTPoint(
     lat: number,
     lng: number,
     date: string = '2023-12-06',
-): Promise<{ temperature_c: number | null; timestamp: string } | null> {
+): Promise<{ temperature_c: number | null; timestamp: string; source?: string } | null> {
     try {
         const res = await fetch(apiUrl(`/api/layers/lst/point?lat=${lat}&lng=${lng}&date=${encodeURIComponent(date)}`));
         if (!res.ok) return null;
-        return (await res.json()) as { temperature_c: number | null; timestamp: string };
+        return (await res.json()) as { temperature_c: number | null; timestamp: string; source?: string };
     } catch {
         return null;
     }

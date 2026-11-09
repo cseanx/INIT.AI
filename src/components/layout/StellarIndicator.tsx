@@ -55,8 +55,8 @@ export default function StellarIndicator() {
     return (
         <div ref={rootRef} className="relative flex flex-col items-end gap-[5px]">
             {/* Network badge */}
-            <span className="inline-flex items-center gap-[5px] rounded-full border border-[#ffb03a]/30 bg-[#ffb03a]/10 px-[10px] py-[3px] text-[9.5px] font-bold uppercase tracking-[.1em] text-[#ffb03a]">
-                <i className="fa-solid fa-satellite text-[8px]"></i>
+            <span className="inline-flex items-center gap-[5px] rounded-full border border-[#ffb03a]/30 bg-[#ffb03a]/10 px-[9px] py-[3px] text-[12px] font-bold uppercase tracking-[.08em] text-[#ffb03a] sm:px-[10px] sm:text-[12px]">
+                <i className="fa-solid fa-satellite text-[11px]"></i>
                 Testnet Demo
             </span>
 
@@ -64,7 +64,7 @@ export default function StellarIndicator() {
             {!connected ? (
                 wallet.connecting ? (
                     <span className="inline-flex items-center gap-[6px] px-[10px] py-[4px] text-[12px] font-semibold text-[#999]">
-                        <i className="fa-solid fa-spinner fa-spin text-[10px]"></i>
+                        <i className="fa-solid fa-spinner fa-spin text-[11.5px]"></i>
                         Connecting...
                     </span>
                 ) : wallet.error ? (
@@ -74,7 +74,7 @@ export default function StellarIndicator() {
                         onClick={() => void wallet.connect()}
                         className={`${LINE2_CLASSES} border border-[rgba(255,45,85,.3)] bg-[rgba(255,45,85,.08)] text-[#ff7a94] hover:bg-[rgba(255,45,85,.16)]`}
                     >
-                        <i className="fa-solid fa-triangle-exclamation text-[10px]"></i>
+                        <i className="fa-solid fa-triangle-exclamation text-[11.5px]"></i>
                         Connection failed
                     </button>
                 ) : (
@@ -83,7 +83,7 @@ export default function StellarIndicator() {
                         onClick={() => void wallet.connect()}
                         className={`${LINE2_CLASSES} border border-white/10 bg-white/[.04] text-accent hover:bg-white/8`}
                     >
-                        <i className="fa-solid fa-wallet text-[10px]"></i>
+                        <i className="fa-solid fa-wallet text-[11.5px]"></i>
                         Connect Wallet
                     </button>
                 )
@@ -98,7 +98,7 @@ export default function StellarIndicator() {
                     <span className="inline-block h-[6px] w-[6px] rounded-full bg-mint shadow-[0_0_6px_rgba(0,255,132,.8)]"></span>
                     {shortAddress(wallet.address as string)}
                     <i
-                        className={`fa-solid fa-chevron-down text-[9px] transition duration-200 ${
+                        className={`fa-solid fa-chevron-down text-[11px] transition duration-200 ${
                             menuOpen ? 'rotate-180' : ''
                         }`}
                     ></i>
@@ -111,23 +111,24 @@ export default function StellarIndicator() {
                     role="menu"
                     className="wallet-menu absolute right-0 top-full z-[60] mt-[10px] w-[264px] rounded-[14px] border border-white/10 bg-[#101010] p-[12px] shadow-[0_16px_40px_rgba(0,0,0,.55)]"
                 >
-                    <p className="mb-[8px] text-[10px] font-semibold uppercase tracking-[.14em] text-[#777]">
+                    <p className="mb-[8px] text-[12px] font-semibold uppercase tracking-[.12em] text-[#999]">
                         Stellar Wallet
                     </p>
 
                     <div className="mb-[10px] rounded-[10px] border border-white/8 bg-white/[.04] p-[10px]">
                         <div className="flex items-center justify-between gap-[8px]">
-                            <span className="min-w-0 flex-1 break-all text-[11.5px] leading-snug text-[#ddd]">
+                            <span className="min-w-0 flex-1 break-all text-[12px] leading-snug text-[#ddd]">
                                 {wallet.address}
                             </span>
                             <button
                                 type="button"
                                 onClick={handleCopy}
                                 title="Copy address"
-                                className="shrink-0 cursor-pointer border-none bg-transparent text-[#888] transition hover:text-white"
+                                aria-label="Copy wallet address"
+                                className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center border-none bg-transparent text-[#999] transition hover:text-white"
                             >
                                 <i
-                                    className={`fa-solid ${copied ? 'fa-check text-mint' : 'fa-copy'} text-[11px]`}
+                                    className={`fa-solid ${copied ? 'fa-check text-mint' : 'fa-copy'} text-[12px]`}
                                 ></i>
                             </button>
                         </div>
@@ -153,7 +154,7 @@ export default function StellarIndicator() {
                         rel="noreferrer"
                         className="mb-[4px] flex items-center gap-[8px] rounded-[10px] px-[8px] py-[7px] text-[12.5px] text-[#ddd] transition hover:bg-white/6 hover:text-white"
                     >
-                        <i className="fa-solid fa-arrow-up-right-from-square w-[14px] text-center text-[11px] text-accent"></i>
+                        <i className="fa-solid fa-arrow-up-right-from-square w-[14px] text-center text-[12px] text-accent"></i>
                         View on Stellar Expert
                     </a>
 
@@ -165,7 +166,7 @@ export default function StellarIndicator() {
                         }}
                         className="flex w-full cursor-pointer items-center gap-[8px] rounded-[10px] border-none bg-transparent px-[8px] py-[7px] text-left text-[12.5px] text-[#ff7a94] transition hover:bg-[rgba(255,45,85,.1)]"
                     >
-                        <i className="fa-solid fa-right-from-bracket w-[14px] text-center text-[11px]"></i>
+                        <i className="fa-solid fa-right-from-bracket w-[14px] text-center text-[12px]"></i>
                         Disconnect Wallet
                     </button>
                 </div>

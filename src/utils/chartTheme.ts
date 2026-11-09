@@ -31,6 +31,18 @@ export function chartTheme(theme: 'dark' | 'light' = 'dark') {
  * See https://www.chartjs.org/docs/latest/configuration/animations.html
  */
 export function baseChartOptions() {
+    // Respect the OS motion preference: render charts instantly, no stagger.
+    const reducedMotion =
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+        } as const;
+    }
+
     let delayed = false;
 
     return {

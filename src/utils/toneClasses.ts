@@ -12,8 +12,8 @@ export const STAT_ICON_TONES: Record<IconTone, string> = {
 };
 
 export const TREND_TONES: Record<TrendTone, string> = {
-    up: 'text-accent',
-    down: 'text-mint',
+    positive: 'text-mint',
+    negative: 'text-[#ff5577]',
     neutral: 'text-sky',
 };
 

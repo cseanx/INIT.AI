@@ -27,7 +27,7 @@ export const ROUTES: RouteMeta[] = [
         label: 'Heat Map',
         icon: 'fa-earth-americas',
         title: 'Heat Map',
-        sub: 'Live surface temperature across monitored barangays',
+        sub: 'Landsat land-surface temperature · demo scene',
     },
     {
         path: '/hotspots',
@@ -64,7 +64,7 @@ export const SETTINGS_ROUTE: RouteMeta = {
     label: 'Settings',
     icon: 'fa-gear',
     title: 'Settings',
-    sub: 'Manage your profile, notifications, and preferences',
+    sub: 'Manage your profile, security, and preferences',
 };
 
 export const CREATE_REPORT_ROUTE: RouteMeta = {
@@ -77,10 +77,10 @@ export const CREATE_REPORT_ROUTE: RouteMeta = {
 
 export const REPORT_EDIT_ROUTE: RouteMeta = {
     path: '/report/edit',
-    label: 'Report Editor',
+    label: 'Report',
     icon: 'fa-pen-to-square',
-    title: 'Report Editor',
-    sub: 'Review and refine the generated report',
+    title: 'Report',
+    sub: 'Review, edit, and attest a generated report',
 };
 
 export function metaFor(pathname: string): RouteMeta {
@@ -102,13 +102,19 @@ export function SidebarNavLink({
     to,
     icon,
     children,
+    onClick,
 }: {
     to: string;
     icon: string;
     children: ReactNode;
+    onClick?: () => void;
 }) {
     return (
-        <NavLink to={to} className={({ isActive }) => NavLinkClasses({ isActive })}>
+        <NavLink
+            to={to}
+            onClick={onClick}
+            className={({ isActive }) => NavLinkClasses({ isActive })}
+        >
             <i className={`fa-solid ${icon} w-[22px] shrink-0 text-center text-lg`}></i>
             <span className="whitespace-nowrap transition-all duration-[.25s]">{children}</span>
             <div className="nav-tooltip" role="tooltip">

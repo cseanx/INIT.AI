@@ -37,8 +37,8 @@ export default function ForgotPassword() {
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
             <div className="absolute h-[700px] w-[700px] rounded-full bg-[rgba(var(--accent-glow),.28)] blur-[120px] animate-glow-one"></div>
             <Particles />
-            <main className="relative z-10 flex h-screen w-full items-center justify-center px-4">
-                <section className="w-[430px] rounded-[28px] border border-white/8 bg-white/5 p-[40px] backdrop-blur-[25px] shadow-[0_0_60px_rgba(var(--accent-glow),.12),0_20px_80px_rgba(0,0,0,.45)]">
+            <main className="relative z-10 flex min-h-[100dvh] w-full items-center justify-center px-4 py-8">
+                <section className="w-full max-w-[430px] rounded-[24px] border border-white/8 bg-white/5 p-6 backdrop-blur-[25px] shadow-[0_0_60px_rgba(var(--accent-glow),.12),0_20px_80px_rgba(0,0,0,.45)] sm:rounded-[28px] sm:p-[40px]">
                     <div className="mb-6 flex items-center gap-3">
                         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-white">
                             <i className="fa-solid fa-key"></i>
@@ -52,11 +52,13 @@ export default function ForgotPassword() {
                         Enter your email and we&apos;ll send you a secure link to reset your password. The link expires in 1 hour and can only be used once.
                     </p>
                     <form onSubmit={handleSubmit}>
-                        <label className="mb-2 block text-sm text-[#d4d4d4]">Email Address</label>
+                        <label htmlFor="forgot-email" className="mb-2 block text-sm text-[#d4d4d4]">Email Address</label>
                         <input
+                            id="forgot-email"
                             type="email"
                             placeholder="you@lgu.gov.ph"
                             required
+                            autoComplete="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className={INPUT_CLASSES}

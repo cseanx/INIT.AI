@@ -140,7 +140,7 @@
     border-radius: 50%;
     background: radial-gradient(
         circle,
-        rgba(var(--accent-glow), .28),
+        rgba(var(--accent-glow), .30),
         rgba(var(--accent-glow), .15),
         transparent 70%
     );
@@ -155,9 +155,10 @@
     position: fixed;
     inset: 0;
     background-image:
+        radial-gradient(700px 480px at 12% 96%, rgba(var(--accent-glow), .08), transparent 70%),
         linear-gradient(rgba(255, 255, 255, .02) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, .02) 1px, transparent 1px);
-    background-size: 55px 55px;
+    background-size: 100% 100%, 55px 55px, 55px 55px;
     pointer-events: none;
     z-index: -1;
 }
@@ -739,7 +740,7 @@ nav a span,
 }
 
 .pz-badge {
-    @apply shrink-0 rounded-full px-[11px] py-1 text-[11px] font-semibold;
+    @apply shrink-0 rounded-full px-[11px] py-1 text-[12px] font-semibold;
 }
 
 .pz-badge.critical {
@@ -767,7 +768,7 @@ nav a span,
 }
 
 .mini-tag {
-    @apply rounded-full border border-white/8 bg-white/5 px-[10px] py-1 text-[10.5px] font-medium text-[#aaa];
+    @apply rounded-full border border-white/8 bg-white/5 px-[10px] py-1 text-[11.5px] font-medium text-[#aaa];
 }
 
 /* ==========================
@@ -776,6 +777,315 @@ nav a span,
 
 .panel-grid > .glass-panel {
     margin-bottom: 0;
+}
+
+/* ==========================
+   HOT GLASS FOUNDATION (Phase A)
+   The shared surface recipes for the Obsidian Glassmorphism direction.
+   Red glow is ambient/state, never a static decoration on every panel.
+   ========================== */
+
+.glass-surface {
+    background: rgba(255, 255, 255, .055);
+    border: 1px solid rgba(255, 255, 255, .12);
+    box-shadow: 0 16px 44px rgba(0, 0, 0, .45);
+    backdrop-filter: blur(14px) saturate(130%);
+    -webkit-backdrop-filter: blur(14px) saturate(130%);
+}
+
+/* "Hot" variant — hero/feature cards only (max ~2 per view). */
+.glass-hot {
+    background: linear-gradient(
+        135deg,
+        rgba(var(--accent-glow), .16),
+        rgba(var(--accent-glow), .05)
+    );
+    border-color: rgba(var(--accent-glow), .30);
+    box-shadow:
+        0 16px 44px rgba(0, 0, 0, .45),
+        0 0 26px rgba(var(--accent-glow), .14),
+        inset 0 1px 0 rgba(255, 255, 255, .07);
+}
+
+/* Toned-down hover: 1px lift, border/background brighten, NO added glow. */
+.glass-hover {
+    transition:
+        transform .18s ease,
+        background-color .18s ease,
+        border-color .18s ease,
+        box-shadow .18s ease;
+}
+
+.glass-hover:hover {
+    transform: translateY(-1px);
+    background-color: rgba(255, 255, 255, .085);
+    border-color: rgba(255, 255, 255, .22);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, .50);
+}
+
+/* Light-mode counterparts — same recipes over the light field. */
+[data-theme='light'] .glass-surface {
+    background: rgba(255, 255, 255, .72);
+    border-color: rgba(20, 25, 35, .12);
+    box-shadow: 0 10px 28px rgba(20, 25, 35, .11);
+}
+
+[data-theme='light'] .glass-hot {
+    background: linear-gradient(
+        135deg,
+        rgba(var(--accent-glow), .12),
+        rgba(255, 255, 255, .65)
+    );
+    border-color: rgba(var(--accent-glow), .30);
+    box-shadow: 0 10px 28px rgba(20, 25, 35, .11), 0 0 22px rgba(var(--accent-glow), .10);
+}
+
+[data-theme='light'] .glass-hover:hover {
+    background-color: rgba(255, 255, 255, .88);
+    border-color: rgba(20, 25, 35, .22);
+    box-shadow: 0 12px 32px rgba(20, 25, 35, .16);
+}
+
+/* ==========================
+   TYPE WRAPPING
+   Headings balance; body copy avoids orphans. Progressive enhancement.
+   ========================== */
+
+h1,
+h2,
+h3,
+h4 {
+    text-wrap: balance;
+}
+
+p {
+    text-wrap: pretty;
+}
+
+/* ==========================
+   SKIP LINK
+   ========================== */
+
+.skip-link {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 9999;
+    transform: translateY(-160%);
+    border-radius: 10px;
+    background: var(--color-primary);
+    color: #fff;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: transform .2s ease;
+}
+
+.skip-link:focus-visible {
+    transform: translateY(0);
+}
+
+/* ==========================
+   DATA TABLES
+   The first column stays put while the rest scrolls sideways on narrow
+   screens, so a report or barangay name never leaves the viewport.
+   ========================== */
+
+.table-wrap {
+    position: relative;
+    border-radius: 12px;
+}
+
+/* Desktop: no distinct first-column surface — rows stay uniform. The
+   sticky treatment (opaque background + edge shadow) only applies while
+   tables scroll horizontally on the compact shell. */
+.data-table .sticky-col {
+    position: static;
+}
+
+@media (max-width: 899px) {
+    .data-table .sticky-col {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: rgba(12, 12, 15, .97);
+        backdrop-filter: blur(16px);
+        box-shadow: 12px 0 20px -18px rgba(0, 0, 0, .9);
+    }
+
+    [data-theme='light'] .data-table .sticky-col {
+        background: rgba(250, 251, 253, .98);
+        box-shadow: 12px 0 20px -18px rgba(20, 25, 35, .5);
+    }
+}
+
+/* ==========================
+   MOBILE SHELL (under 900px)
+   The fixed rail becomes an off-canvas drawer. Collapsed preference is
+   ignored here — labels must be readable in the field.
+   ========================== */
+
+@media (max-width: 899px) {
+    .sidebar {
+        position: fixed;
+        top: 8px;
+        bottom: 8px;
+        left: 8px;
+        height: auto;
+        width: 272px;
+        max-width: calc(100vw - 32px);
+        padding: 18px;
+        z-index: 60;
+        transform: translateX(calc(-100% - 24px));
+        visibility: hidden;
+        transition: transform .3s cubic-bezier(0.32, 0.72, 0, 1), visibility 0s .3s;
+    }
+
+    .sidebar.mobile-open {
+        transform: translateX(0);
+        visibility: visible;
+        transition: transform .3s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    /* Force the expanded treatment even when the stored preference is
+       "collapsed" — there is nowhere to collapse to on a phone. */
+    .sidebar.collapsed {
+        width: 272px;
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .sidebar.collapsed .logo {
+        gap: 15px;
+    }
+
+    .sidebar.collapsed .logo-text {
+        opacity: 1;
+        max-width: 200px;
+    }
+
+    .sidebar.collapsed nav a,
+    .sidebar.collapsed .sidebar-bottom a {
+        padding: 12px;
+        gap: 16px;
+    }
+
+    .sidebar.collapsed nav a span,
+    .sidebar.collapsed .sidebar-bottom span {
+        opacity: 1;
+        max-width: 200px;
+    }
+
+    .sidebar.collapsed .toggle-btn {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .sidebar.collapsed .account-info,
+    .sidebar.collapsed .account-chevron {
+        display: block;
+    }
+
+    .sidebar.collapsed .account-trigger {
+        padding: 9px;
+        gap: 12px;
+    }
+
+    .sidebar .nav-tooltip {
+        display: none;
+    }
+}
+
+/* Touch devices get comfortable targets without bloating desktop chrome. */
+@media (pointer: coarse) {
+    .data-table button {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
+/* Dark chrome that must stay dark in light mode (e.g. the anomaly panel).
+   Scoping the ink token back to white keeps every white/N utility intact. */
+[data-theme='light'] .keep-dark {
+    --color-white: #ffffff;
+}
+
+[data-theme='light'] .keep-dark .text-\[\#888\],
+[data-theme='light'] .keep-dark .text-\[\#999\],
+[data-theme='light'] .keep-dark .text-\[\#bbb\],
+[data-theme='light'] .keep-dark .text-\[\#ccc\],
+[data-theme='light'] .keep-dark .text-\[\#ddd\] {
+    color: #cfcfcf;
+}
+
+[data-theme='light'] .keep-dark .text-accent,
+[data-theme='light'] .keep-dark .text-\[\#ff5577\] {
+    color: #ff5577;
+}
+
+[data-theme='light'] .keep-dark .text-mint,
+[data-theme='light'] .keep-dark .text-\[\#00ff84\] {
+    color: #00ff84;
+}
+
+[data-theme='light'] .keep-dark .text-gold,
+[data-theme='light'] .keep-dark .text-\[\#ffd23f\] {
+    color: #ffd23f;
+}
+
+[data-theme='light'] .keep-dark .text-\[\#ffb03a\] {
+    color: #ffb03a;
+}
+
+[data-theme='light'] .keep-dark .text-\[\#ff7a94\] {
+    color: #ff7a94;
+}
+
+/* Keyboard focus is always visible and always brand-red. */
+:focus-visible {
+    outline: 2px solid rgba(var(--accent-glow), .65);
+    outline-offset: 2px;
+}
+
+::selection {
+    background: rgba(var(--accent-glow), .35);
+    color: #fff;
+}
+
+::placeholder {
+    color: #9a9a9a;
+    opacity: 1;
+}
+
+[data-theme='light'] ::placeholder {
+    color: #6b707a;
+}
+
+[data-theme='light'] ::selection {
+    background: rgba(var(--accent-glow), .25);
+    color: #181a20;
+}
+
+/* Respect the OS motion preference: keep state meaning, drop decoration. */
+@media (prefers-reduced-motion: reduce) {
+    .app::before,
+    .app::after {
+        animation: none !important;
+    }
+
+    .animate-view-in,
+    [class*='animate-'] {
+        animation: none !important;
+    }
+
+    .glass-hover:hover {
+        transform: none;
+    }
+
+    .global-spotlight,
+    .particle {
+        display: none !important;
+    }
 }
 
 .logo-circle.about-logo {
@@ -927,6 +1237,41 @@ html[data-theme='light'] {
     color: #3a3f47;
 }
 
+/* Semantic text hues need darker counterparts on the pale field — the
+   dark-mode neon values are unreadable over #eef1f6. */
+[data-theme='light'] .text-accent,
+[data-theme='light'] .text-\[\#ff5577\] {
+    color: #c01f43;
+}
+
+[data-theme='light'] .text-mint,
+[data-theme='light'] .text-\[\#00ff84\] {
+    color: #087a46;
+}
+
+[data-theme='light'] .text-gold,
+[data-theme='light'] .text-\[\#ffd23f\] {
+    color: #7d5a00;
+}
+
+[data-theme='light'] .text-orange,
+[data-theme='light'] .text-\[\#ff8c42\] {
+    color: #a8480b;
+}
+
+[data-theme='light'] .text-sky,
+[data-theme='light'] .text-\[\#5aa9ff\] {
+    color: #1d5f9e;
+}
+
+[data-theme='light'] .text-\[\#ffb03a\] {
+    color: #8a5a00;
+}
+
+[data-theme='light'] .text-\[\#ff7a94\] {
+    color: #b3123a;
+}
+
 /* Scrollbars */
 [data-theme='light'] ::-webkit-scrollbar-track {
     background: #e3e6ec;
@@ -959,4 +1304,14 @@ html[data-theme='light'] {
 
 [data-theme='light'] .hero-panel::before {
     background: radial-gradient(circle, rgba(var(--accent-glow), .09), transparent 70%);
+}
+
+/* The hero's demo note is a light-on-dark muted tint; give it a readable
+   dark-rose counterpart on the pale light-mode hero. */
+[data-theme='light'] .hero-demo-note {
+    color: #6f3b45;
+}
+
+[data-theme='light'] .hero-demo-note i {
+    color: #b03048;
 }

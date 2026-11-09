@@ -56,7 +56,7 @@ export default function HotspotFilter({
 
     function SectionLabel({ children }: { children: ReactNode }) {
         return (
-            <p className="px-[6px] pb-[6px] text-[10px] font-semibold uppercase tracking-[.14em] text-[#777]">
+            <p className="px-[6px] pb-[6px] text-[12px] font-semibold uppercase tracking-[.12em] text-[#999]">
                 {children}
             </p>
         );
@@ -75,9 +75,9 @@ export default function HotspotFilter({
                         : 'border-white/10 bg-white/[.04] text-[#aaa] hover:bg-white/8 hover:text-white'
                 }`}
             >
-                <i className="fa-solid fa-filter mr-[7px] text-[11px]"></i>
+                <i className="fa-solid fa-filter mr-[7px] text-[12px]"></i>
                 {filterLabel}
-                <i className="fa-solid fa-chevron-down ml-[8px] text-[10px] text-[#888]"></i>
+                <i className="fa-solid fa-chevron-down ml-[8px] text-[11.5px] text-[#888]"></i>
             </button>
 
             {open ? (
@@ -122,7 +122,7 @@ export default function HotspotFilter({
                             ></i>
                             {order === 'desc' ? 'Descending' : 'Ascending'}
                         </span>
-                        <i className="fa-solid fa-repeat text-[10px] text-[#777]"></i>
+                        <i className="fa-solid fa-repeat text-[11.5px] text-[#999]"></i>
                     </button>
                 </div>
             ) : null}

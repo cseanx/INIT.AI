@@ -100,11 +100,11 @@ export default function AccountMenu({ collapsed }: AccountMenuProps) {
                     <strong className="block truncate text-[13px] font-semibold">
                         {user?.name ?? 'Guest'}
                     </strong>
-                    <span className="block truncate text-[11px] text-[#888]">
+                    <span className="block truncate text-[12px] text-[#888]">
                         {user?.role ?? 'Not signed in'}
                     </span>
                 </div>
-                <i className="fa-solid fa-chevron-up account-chevron shrink-0 text-[11px] text-[#888] transition duration-200 ease-in-out"></i>
+                <i className="fa-solid fa-chevron-up account-chevron shrink-0 text-[12px] text-[#888] transition duration-200 ease-in-out"></i>
             </button>
 
             {createPortal(

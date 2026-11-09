@@ -13,6 +13,11 @@ const ROLE_OPTIONS = [
     { value: 'Field Coordinator', label: 'Field Coordinator' },
 ];
 
+const ROLE_HELP: Record<string, string> = {
+    'Climate Analyst': 'Analysis role — heat map, hotspots, canopy, and report composition.',
+    'Field Coordinator': 'Field role — barangay conditions, maps, and advisories.',
+};
+
 export default function Register() {
     const navigate = useNavigate();
     const { register } = useAuth();
@@ -78,8 +83,8 @@ export default function Register() {
             <div className="absolute -bottom-[150px] -right-[150px] h-[700px] w-[700px] rounded-full bg-[rgba(var(--accent-glow),.16)] blur-[120px] animate-glow-two"></div>
             <Particles />
 
-            <main className="relative z-10 flex min-h-screen w-full items-center justify-center px-4 py-10">
-                <section className="w-[520px] rounded-[28px] border border-white/8 bg-white/5 p-[40px] backdrop-blur-[25px] shadow-[0_0_60px_rgba(var(--accent-glow),.12),0_20px_80px_rgba(0,0,0,.45)]">
+            <main className="relative z-10 flex min-h-[100dvh] w-full items-center justify-center px-4 py-8 sm:py-10">
+                <section className="w-full max-w-[520px] rounded-[24px] border border-white/8 bg-white/5 p-6 backdrop-blur-[25px] shadow-[0_0_60px_rgba(var(--accent-glow),.12),0_20px_80px_rgba(0,0,0,.45)] sm:rounded-[28px] sm:p-[40px]">
                     <div className="logo mb-[30px] flex items-center gap-[15px]">
                         <div className="logo-circle flex h-[60px] w-[60px] shrink-0 items-center justify-center">
                             <img
@@ -99,33 +104,39 @@ export default function Register() {
                     </span>
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                         <div>
-                            <label className="mb-2 block text-sm text-[#d4d4d4]">Full Name</label>
+                            <label htmlFor="reg-name" className="mb-2 block text-sm text-[#d4d4d4]">Full Name</label>
                             <input
+                                id="reg-name"
                                 type="text"
                                 placeholder="Juan Dela Cruz"
                                 required
+                                autoComplete="name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 className={INPUT_CLASSES}
                             />
                         </div>
                         <div>
-                            <label className="mb-2 block text-sm text-[#d4d4d4]">Email Address</label>
+                            <label htmlFor="reg-email" className="mb-2 block text-sm text-[#d4d4d4]">Email Address</label>
                             <input
+                                id="reg-email"
                                 type="email"
                                 placeholder="you@lgu.gov.ph"
                                 required
+                                autoComplete="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className={INPUT_CLASSES}
                             />
                         </div>
                         <div>
-                            <label className="mb-2 block text-sm text-[#d4d4d4]">LGU / Organization</label>
+                            <label htmlFor="reg-org" className="mb-2 block text-sm text-[#d4d4d4]">LGU / Organization</label>
                             <input
+                                id="reg-org"
                                 type="text"
                                 placeholder="Quezon City Local Government"
                                 required
+                                autoComplete="organization"
                                 value={organization}
                                 onChange={(e) => setOrganization(e.target.value)}
                                 className={INPUT_CLASSES}
@@ -133,26 +144,38 @@ export default function Register() {
                         </div>
                         <div>
                             <label className="mb-2 block text-sm text-[#d4d4d4]">Role</label>
-                            <MenuSelect value={role} options={ROLE_OPTIONS} onChange={setRole} />
-                            <p className="mt-2 text-[11px] text-[#777]">LGU Administrator requires invitation and cannot be self-registered.</p>
+                            <MenuSelect
+                                value={role}
+                                options={ROLE_OPTIONS}
+                                onChange={setRole}
+                                ariaLabel="Role"
+                            />
+                            <p className="mt-2 text-[12px] leading-snug text-[#999]">
+                                {ROLE_HELP[role] ?? ''} LGU Administrator requires invitation and
+                                cannot be self-registered.
+                            </p>
                         </div>
                         <div>
-                            <label className="mb-2 block text-sm text-[#d4d4d4]">Password</label>
+                            <label htmlFor="reg-password" className="mb-2 block text-sm text-[#d4d4d4]">Password</label>
                             <input
+                                id="reg-password"
                                 type="password"
                                 placeholder="At least 8 characters"
                                 required
+                                autoComplete="new-password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 className={INPUT_CLASSES}
                             />
                         </div>
                         <div>
-                            <label className="mb-2 block text-sm text-[#d4d4d4]">Confirm Password</label>
+                            <label htmlFor="reg-confirm" className="mb-2 block text-sm text-[#d4d4d4]">Confirm Password</label>
                             <input
+                                id="reg-confirm"
                                 type="password"
                                 placeholder="Repeat password"
                                 required
+                                autoComplete="new-password"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 className={INPUT_CLASSES}

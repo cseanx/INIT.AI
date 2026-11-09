@@ -52,14 +52,15 @@ export default function ResetPassword() {
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
             <div className="absolute h-[700px] w-[700px] rounded-full bg-[rgba(var(--accent-glow),.28)] blur-[120px] animate-glow-one"></div>
             <Particles />
-            <main className="relative z-10 flex h-screen w-full items-center justify-center px-4">
-                <section className="w-[430px] rounded-[28px] border border-white/8 bg-white/5 p-[40px] backdrop-blur-[25px] shadow-[0_0_60px_rgba(var(--accent-glow),.12),0_20px_80px_rgba(0,0,0,.45)]">
+            <main className="relative z-10 flex min-h-[100dvh] w-full items-center justify-center px-4 py-8">
+                <section className="w-full max-w-[430px] rounded-[24px] border border-white/8 bg-white/5 p-6 backdrop-blur-[25px] shadow-[0_0_60px_rgba(var(--accent-glow),.12),0_20px_80px_rgba(0,0,0,.45)] sm:rounded-[28px] sm:p-[40px]">
                     <h2 className="mb-1 text-lg font-semibold">Reset Password</h2>
                     <p className="mb-6 text-[13px] text-[#9f9f9f]">Choose a new password for your account.</p>
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                         <div>
-                            <label className="mb-2 block text-sm text-[#d4d4d4]">Reset Token</label>
+                            <label htmlFor="reset-token" className="mb-2 block text-sm text-[#d4d4d4]">Reset Token</label>
                             <input
+                                id="reset-token"
                                 type="text"
                                 placeholder="Token from email link"
                                 required
@@ -67,25 +68,29 @@ export default function ResetPassword() {
                                 onChange={(e) => setToken(e.target.value)}
                                 className={INPUT_CLASSES}
                             />
-                            <p className="mt-1 text-[11px] text-[#777]">Copied automatically if you opened the email link.</p>
+                            <p className="mt-1 text-[12px] text-[#999]">Copied automatically if you opened the email link.</p>
                         </div>
                         <div>
-                            <label className="mb-2 block text-sm text-[#d4d4d4]">New Password</label>
+                            <label htmlFor="reset-password" className="mb-2 block text-sm text-[#d4d4d4]">New Password</label>
                             <input
+                                id="reset-password"
                                 type="password"
                                 placeholder="At least 8 characters"
                                 required
+                                autoComplete="new-password"
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
                                 className={INPUT_CLASSES}
                             />
                         </div>
                         <div>
-                            <label className="mb-2 block text-sm text-[#d4d4d4]">Confirm New Password</label>
+                            <label htmlFor="reset-confirm" className="mb-2 block text-sm text-[#d4d4d4]">Confirm New Password</label>
                             <input
+                                id="reset-confirm"
                                 type="password"
                                 placeholder="Repeat new password"
                                 required
+                                autoComplete="new-password"
                                 value={confirm}
                                 onChange={(e) => setConfirm(e.target.value)}
                                 className={INPUT_CLASSES}

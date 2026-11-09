@@ -2,16 +2,25 @@ import type { Barangay } from '../../types';
 import SeverityBadge from './SeverityBadge';
 
 const TH_CLASSES =
-    'border-b border-white/8 p-[12px_14px] text-left text-xs font-medium uppercase tracking-[.04em] text-[#888]';
+    'border-b border-white/8 p-[12px_14px] text-left text-[12px] font-medium uppercase tracking-[.04em] text-[#999]';
 const TD_CLASSES = 'border-b border-white/5 p-[14px]';
 
 export default function HotspotTable({ hotspots }: { hotspots: Barangay[] }) {
     return (
-        <div className="table-wrap overflow-x-auto">
-            <table className="data-table w-full border-collapse text-[13.5px]" id="hotspotsTable">
+        <>
+            <div
+                className="table-wrap overflow-x-auto"
+                role="region"
+                aria-label="Hotspots by barangay"
+                tabIndex={0}
+            >
+            <table
+                className="data-table w-full min-w-[760px] border-collapse text-[13.5px] max-[700px]:min-w-[820px]"
+                id="hotspotsTable"
+            >
                 <thead>
                     <tr>
-                        <th className={TH_CLASSES}>Barangay</th>
+                        <th className={`${TH_CLASSES} sticky-col`}>Barangay</th>
                         <th className={TH_CLASSES}>Peak Temp</th>
                         <th className={TH_CLASSES}>Severity</th>
                         <th className={TH_CLASSES}>Trend (7d)</th>
@@ -27,16 +36,20 @@ export default function HotspotTable({ hotspots }: { hotspots: Barangay[] }) {
                                 key={b.name}
                                 className="transition duration-200 hover:bg-white/[.03]"
                             >
-                                <td className={TD_CLASSES}>
+                                <td className={`${TD_CLASSES} sticky-col`}>
                                     <strong>{b.name}</strong>
                                 </td>
-                                <td className={TD_CLASSES}>{b.temp.toFixed(1)}°C</td>
+                                <td className={`${TD_CLASSES} font-semibold tabular-nums`}>
+                                    {b.temp.toFixed(1)}°C
+                                </td>
                                 <td className={TD_CLASSES}>
                                     <SeverityBadge severity={b.severity} />
                                 </td>
                                 <td className={TD_CLASSES}>
                                     <span
-                                        className={`flex items-center gap-[6px] ${trendUp ? 'text-accent' : 'text-mint'}`}
+                                        className={`flex items-center gap-[6px] tabular-nums ${
+                                            trendUp ? 'text-[#ff5577]' : 'text-mint'
+                                        }`}
                                     >
                                         <i
                                             className={`fa-solid fa-arrow-trend-${trendUp ? 'up' : 'down'}`}
@@ -46,12 +59,16 @@ export default function HotspotTable({ hotspots }: { hotspots: Barangay[] }) {
                                     </span>
                                 </td>
                                 <td className={TD_CLASSES}>{b.driver}</td>
-                                <td className={TD_CLASSES}>4h ago</td>
+                                <td className={`${TD_CLASSES} text-[#999]`}>4h ago</td>
                             </tr>
                         );
                     })}
                 </tbody>
             </table>
-        </div>
+            </div>
+            <p className="mt-2 text-[11.5px] text-[#999] min-[700px]:hidden">
+                Swipe the table sideways for trend, driver, and freshness columns.
+            </p>
+        </>
     );
 }

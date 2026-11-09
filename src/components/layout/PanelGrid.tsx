@@ -12,7 +12,7 @@ export default function PanelGrid({
 }: HTMLAttributes<HTMLElement>) {
     return (
         <section
-            className={`panel-grid mb-5 grid w-full grid-cols-[1.6fr_1fr] gap-5 max-[1200px]:grid-cols-1 ${className}`}
+            className={`panel-grid mb-4 grid w-full grid-cols-[1.6fr_1fr] gap-3.5 max-[1200px]:grid-cols-1 sm:mb-5 sm:gap-5 ${className}`}
             {...rest}
         >
             {children}

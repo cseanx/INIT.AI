@@ -7,7 +7,7 @@ import {
 } from './layers';
 
 const GROUP_HEAD_CLASSES =
-    'px-[6px] pb-[6px] text-[10px] font-semibold uppercase tracking-[.14em] text-[#777]';
+    'px-[6px] pb-[6px] text-[12px] font-semibold uppercase tracking-[.12em] text-[#999]';
 
 interface MapLayersPanelProps {
     state: Record<string, boolean>;
@@ -48,14 +48,14 @@ export default function MapLayersPanel({ state, onToggle }: MapLayersPanelProps)
                                 >
                                     <i
                                         className={`fa-solid ${layer.icon} w-[16px] text-center text-[12px] ${
-                                            checked ? 'text-accent' : 'text-[#666]'
+                                            checked ? 'text-accent' : 'text-[#999]'
                                         }`}
                                     ></i>
                                     <span className="min-w-0 flex-1 truncate text-[12.5px] text-white">
                                         {layer.label}
                                     </span>
                                     {!layer.available ? (
-                                        <span className="rounded-full border border-white/10 bg-white/[.05] px-[7px] py-[2px] text-[9.5px] font-bold uppercase tracking-[.06em] text-[#888]">
+                                        <span className="rounded-full border border-white/10 bg-white/[.05] px-[7px] py-[2px] text-[11.5px] font-bold uppercase tracking-[.06em] text-[#888]">
                                             Soon
                                         </span>
                                     ) : null}
@@ -71,8 +71,8 @@ export default function MapLayersPanel({ state, onToggle }: MapLayersPanelProps)
             ))}
 
             {pending?.pendingNote ? (
-                <p className="flex items-start gap-[8px] rounded-[10px] border border-[#ffb03a]/25 bg-[#ffb03a]/10 p-[9px_11px] text-[11.5px] leading-snug text-[#ffb03a]">
-                    <i className="fa-solid fa-circle-info mt-[2px] text-[11px]"></i>
+                <p className="flex items-start gap-[8px] rounded-[10px] border border-[#ffb03a]/25 bg-[#ffb03a]/10 p-[9px_11px] text-[12px] leading-snug text-[#ffb03a]">
+                    <i className="fa-solid fa-circle-info mt-[2px] text-[12px]"></i>
                     {pending.pendingNote}
                 </p>
             ) : null}

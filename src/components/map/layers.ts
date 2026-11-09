@@ -47,10 +47,11 @@ export const MAP_LAYERS: MapLayerDef[] = [
     },
     {
         id: 'lst',
-        label: 'Land Surface Temperature',
+        label: 'Land Surface Temperature (Landsat)',
         icon: 'fa-temperature-half',
         group: 'environmental',
-        // Continuous raster XYZ from GET /api/layers/lst/tiles/{z}/{x}/{y}.png (hourly, palette -40→40).
+        // Continuous raster XYZ from GET /api/layers/lst/tiles/{z}/{x}/{y}.png
+        // (Landsat C2 L2 ST_B10 30 m; synthetic fallback labelled in the legend).
         styleLayers: ['lst-raster'],
         available: true,
     },

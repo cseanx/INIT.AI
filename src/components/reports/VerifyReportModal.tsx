@@ -59,16 +59,16 @@ interface VerifyReportModalProps {
 const BACKDROP_CLASSES =
     'fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-[16px] backdrop-blur-[3px]';
 const CARD_CLASSES =
-    'w-[min(500px,100%)] rounded-[18px] border border-white/10 bg-[#101010] p-[22px] shadow-[0_24px_60px_rgba(0,0,0,.6)]';
+    'keep-dark w-[min(500px,100%)] rounded-[18px] border border-white/10 bg-[#101010] p-[22px] shadow-[0_24px_60px_rgba(0,0,0,.6)]';
 const LABEL_CLASSES =
-    'text-[10.5px] font-medium uppercase tracking-[.06em] text-[#777]';
+    'text-[12px] font-medium uppercase tracking-[.06em] text-[#999]';
 const VALUE_CLASSES = 'min-w-0 truncate text-[13px] text-white';
 const PRIMARY_BTN_CLASSES =
     'flex cursor-pointer items-center justify-center gap-2 rounded-[14px] border-none bg-gradient-to-r from-primary to-accent p-[11px_20px] text-[13px] font-semibold text-white shadow-[0_10px_30px_rgba(var(--accent-glow),.3)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(var(--accent-glow),.42)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0';
 const GHOST_BTN_CLASSES =
     'cursor-pointer rounded-[14px] border border-white/12 bg-white/[.04] p-[11px_20px] text-[13px] font-semibold text-[#ccc] transition duration-200 hover:bg-white/9 hover:text-white';
 const FEE_NOTE_CLASSES =
-    'flex items-start gap-[8px] rounded-[12px] border border-[#ffb03a]/25 bg-[#ffb03a]/10 p-[10px_12px] text-[11.5px] leading-relaxed text-[#ffb03a]';
+    'flex items-start gap-[8px] rounded-[12px] border border-[#ffb03a]/25 bg-[#ffb03a]/10 p-[10px_12px] text-[12px] leading-relaxed text-[#ffb03a]';
 
 const PROGRESS_STEPS: { key: Exclude<VerifyPhase, 'confirmation' | 'success' | 'failed'>; label: string }[] = [
     { key: 'preparing', label: 'Preparing attestation' },
@@ -145,7 +145,7 @@ function ProgressStepper({ phase }: { phase: VerifyPhase }) {
                     <li
                         key={step.key}
                         className={`flex items-center gap-[10px] text-[12.5px] ${
-                            current ? 'font-semibold text-accent' : done ? 'text-mint' : 'text-[#777]'
+                            current ? 'font-semibold text-accent' : done ? 'text-mint' : 'text-[#999]'
                         }`}
                     >
                         {done ? (
@@ -277,6 +277,53 @@ export default function VerifyReportModal({
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
     }, [open, handleClose]);
+
+    // Keep keyboard focus inside the open dialog and put it on the first
+    // control (Cancel in the confirmation step) instead of leaving it behind
+    // on the reports table.
+    useEffect(() => {
+        if (!open) return;
+        const dialog = document.querySelector<HTMLElement>(
+            '[role="dialog"][aria-modal="true"]',
+        );
+        const focusables = dialog
+            ? Array.from(
+                  dialog.querySelectorAll<HTMLElement>(
+                      'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+                  ),
+              )
+            : [];
+        const frame = window.requestAnimationFrame(() => {
+            (focusables[0] ?? dialog)?.focus();
+        });
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'Tab' || !dialog) return;
+            const currentFocusables = Array.from(
+                dialog.querySelectorAll<HTMLElement>(
+                    'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+                ),
+            );
+            if (currentFocusables.length === 0) {
+                event.preventDefault();
+                dialog.focus();
+                return;
+            }
+            const first = currentFocusables[0];
+            const last = currentFocusables[currentFocusables.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            window.cancelAnimationFrame(frame);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    }, [open, phase]);
 
     const busy = BUSY_PHASES.includes(phase);
 
@@ -438,14 +485,14 @@ export default function VerifyReportModal({
     if (busy) {
         return createPortal(
             <div className={BACKDROP_CLASSES}>
-                <div role="dialog" aria-modal="true" aria-label="Verifying report on Stellar" className={CARD_CLASSES}>
+                <div role="dialog" aria-modal="true" tabIndex={-1} aria-label="Verifying report on Stellar" className={CARD_CLASSES}>
                     <h4 className="mb-[16px] flex items-center gap-[9px] text-[14px] font-semibold">
                         <i className="fa-solid fa-cubes text-[13px] text-accent"></i>
                         Verifying on Stellar
                     </h4>
                     <ProgressStepper phase={phase} />
-                    <p className="mt-[16px] flex items-start gap-[8px] text-[11.5px] leading-relaxed text-[#888]">
-                        <i className="fa-solid fa-lightbulb mt-[2px] text-[11px] text-accent"></i>
+                    <p className="mt-[16px] flex items-start gap-[8px] text-[12px] leading-relaxed text-[#888]">
+                        <i className="fa-solid fa-lightbulb mt-[2px] text-[12px] text-accent"></i>
                         {phase === 'verifying'
                             ? 'Transaction landed — reading the proof back from the contract (verify(hash)) to confirm it.'
                             : phase === 'awaiting-signature'
@@ -465,6 +512,7 @@ export default function VerifyReportModal({
                 <div
                     role="dialog"
                     aria-modal="true"
+                    tabIndex={-1}
                     aria-label={isSignedOnly ? 'Transaction signed' : 'Report verified'}
                     className={CARD_CLASSES}
                 >
@@ -485,16 +533,16 @@ export default function VerifyReportModal({
                     </div>
                     {isSignedOnly && signedXdr ? (
                         <div className="mb-[6px] rounded-[10px] border border-white/10 bg-white/[.04] p-[10px_12px]">
-                            <p className="mb-[6px] text-[10.5px] font-medium uppercase tracking-[.06em] text-[#777]">
+                            <p className="mb-[6px] text-[12px] font-medium uppercase tracking-[.06em] text-[#999]">
                                 Signed transaction (XDR)
                             </p>
                             <p
-                                className="break-all font-mono text-[11px] leading-relaxed text-[#bbb]"
+                                className="break-all font-mono text-[12px] leading-relaxed text-[#bbb]"
                                 title={signedXdr}
                             >
                                 {shorten(signedXdr, 32, 32)}
                             </p>
-                            <p className="mt-[8px] text-[11.5px] leading-relaxed text-[#888]">
+                            <p className="mt-[8px] text-[12px] leading-relaxed text-[#888]">
                                 Submission to Testnet comes next — nothing has been written on-chain yet.
                             </p>
                         </div>
@@ -507,12 +555,12 @@ export default function VerifyReportModal({
                                 rel="noreferrer"
                                 title={explorerTxUrl(txHash)}
                             >
-                                <i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                                <i className="fa-solid fa-arrow-up-right-from-square text-[11.5px]"></i>
                                 Transaction {shorten(txHash)}
                             </a>
                             {chainRecord ? (
-                                <div className="mb-[6px] rounded-[10px] border border-mint/25 bg-mint/[.07] p-[10px_12px] text-[11.5px] leading-relaxed text-mint">
-                                    <i className="fa-solid fa-circle-check mr-[6px] text-[11px]"></i>
+                                <div className="mb-[6px] rounded-[10px] border border-mint/25 bg-mint/[.07] p-[10px_12px] text-[12px] leading-relaxed text-mint">
+                                    <i className="fa-solid fa-circle-check mr-[6px] text-[12px]"></i>
                                     Contract-verified on-chain — ledger {chainRecord.ledgerSequence}
                                     {chainRecord.prevHash ? (
                                         <>
@@ -526,7 +574,7 @@ export default function VerifyReportModal({
                                     )}
                                 </div>
                             ) : (
-                                <p className="mb-[6px] text-[11.5px] leading-relaxed text-[#888]">
+                                <p className="mb-[6px] text-[12px] leading-relaxed text-[#888]">
                                     Confirmed on Testnet. On-chain readback was unavailable just now — the
                                     transaction above is the proof; re-open to re-verify.
                                 </p>
@@ -535,7 +583,7 @@ export default function VerifyReportModal({
                     ) : null}
                     {persistWarning && (
                         <p className={`${FEE_NOTE_CLASSES} mb-[12px]`}>
-                            <i className="fa-solid fa-triangle-exclamation mt-[2px] text-[11px]"></i>
+                            <i className="fa-solid fa-triangle-exclamation mt-[2px] text-[12px]"></i>
                             <span>{persistWarning}</span>
                         </p>
                     )}
@@ -553,7 +601,7 @@ export default function VerifyReportModal({
     if (phase === 'failed') {
         return createPortal(
             <div className={BACKDROP_CLASSES}>
-                <div role="dialog" aria-modal="true" aria-label="Verification failed" className={CARD_CLASSES}>
+                <div role="dialog" aria-modal="true" tabIndex={-1} aria-label="Verification failed" className={CARD_CLASSES}>
                     <div className="mb-[12px] flex items-center gap-[12px]">
                         <span className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[rgba(255,45,85,.14)] text-[16px] text-[#ff5577]">
                             <i className="fa-solid fa-triangle-exclamation"></i>
@@ -566,8 +614,8 @@ export default function VerifyReportModal({
                     <p className="mb-[4px] break-words rounded-[12px] border border-[rgba(255,45,85,.3)] bg-[rgba(255,45,85,.08)] p-[10px_12px] text-[12px] leading-snug text-[#ff7a94]">
                         {flowError ?? 'An unexpected error occurred.'}
                     </p>
-                    <p className="mb-[4px] flex items-start gap-[7px] text-[11.5px] leading-relaxed text-[#888]">
-                        <i className="fa-solid fa-circle-info mt-[2px] text-[11px] text-accent"></i>
+                    <p className="mb-[4px] flex items-start gap-[7px] text-[12px] leading-relaxed text-[#888]">
+                        <i className="fa-solid fa-circle-info mt-[2px] text-[12px] text-accent"></i>
                         <span>{errorGuidance(errorKind)}</span>
                     </p>
                     <div className="mt-[16px] flex justify-end gap-[10px]">
@@ -579,7 +627,7 @@ export default function VerifyReportModal({
                             className={PRIMARY_BTN_CLASSES}
                             onClick={() => setPhase('confirmation')}
                         >
-                            <i className="fa-solid fa-rotate-right text-[11px]"></i> Try again
+                            <i className="fa-solid fa-rotate-right text-[12px]"></i> Try again
                         </button>
                     </div>
                 </div>
@@ -599,14 +647,14 @@ export default function VerifyReportModal({
                 if (event.target === event.currentTarget) handleClose();
             }}
         >
-            <div role="dialog" aria-modal="true" aria-label="Verify report on Stellar" className={CARD_CLASSES}>
+            <div role="dialog" aria-modal="true" tabIndex={-1} aria-label="Verify report on Stellar" className={CARD_CLASSES}>
                 <div className="mb-[16px] flex flex-wrap items-center justify-between gap-[10px]">
                     <h4 className="flex items-center gap-[9px] text-[14.5px] font-semibold">
                         <i className="fa-solid fa-cubes text-[13px] text-accent"></i>
                         Verify on Stellar
                     </h4>
-                    <span className="inline-flex items-center gap-[6px] rounded-full border border-mint/30 bg-mint/10 px-[10px] py-[4px] text-[11.5px] font-semibold text-mint">
-                        <i className="fa-solid fa-link text-[10px]"></i> Stellar Testnet
+                    <span className="inline-flex items-center gap-[6px] rounded-full border border-mint/30 bg-mint/10 px-[10px] py-[4px] text-[12px] font-semibold text-mint">
+                        <i className="fa-solid fa-link text-[11.5px]"></i> Stellar Testnet
                     </span>
                 </div>
 
@@ -616,7 +664,7 @@ export default function VerifyReportModal({
                     <InfoRow label="Report Hash">
                         {hashLoading ? (
                             <span className="text-[#888]">
-                                <i className="fa-solid fa-spinner fa-spin mr-[6px] text-[11px] text-accent"></i>
+                                <i className="fa-solid fa-spinner fa-spin mr-[6px] text-[12px] text-accent"></i>
                                 Loading…
                             </span>
                         ) : reportHash ? (
@@ -632,7 +680,7 @@ export default function VerifyReportModal({
                             <span className="text-[#888]">Loading…</span>
                         ) : prevHash ? (
                             <span className="font-mono" title={prevHash}>
-                                {shorten(prevHash)} <span className="text-[#777]">→ on-chain prev_hash</span>
+                                {shorten(prevHash)} <span className="text-[#999]">→ on-chain prev_hash</span>
                             </span>
                         ) : attestationHistory.length > 0 ? (
                             <span className="text-[#ffb03a]">Resolving…</span>
@@ -657,7 +705,7 @@ export default function VerifyReportModal({
                 </p>
 
                 <div className={`${FEE_NOTE_CLASSES} mb-[16px]`}>
-                    <i className="fa-solid fa-coins mt-[2px] text-[11px]"></i>
+                    <i className="fa-solid fa-coins mt-[2px] text-[12px]"></i>
                     <span>
                         A small network fee is charged by Stellar for the attestation transaction, paid from your
                         wallet's Testnet XLM balance. Testnet XLM is free and has no monetary value.
@@ -665,8 +713,8 @@ export default function VerifyReportModal({
                 </div>
 
                 {isAlreadyVerified ? (
-                    <p className="mb-[10px] flex items-start gap-[7px] rounded-[12px] border border-mint/30 bg-mint/10 p-[10px_12px] text-[11.5px] leading-relaxed text-mint">
-                        <i className="fa-solid fa-circle-check mt-[2px] text-[11px]"></i>
+                    <p className="mb-[10px] flex items-start gap-[7px] rounded-[12px] border border-mint/30 bg-mint/10 p-[10px_12px] text-[12px] leading-relaxed text-mint">
+                        <i className="fa-solid fa-circle-check mt-[2px] text-[12px]"></i>
                         <span>
                             This version is already verified on Stellar Testnet. The proof is greenlit on-chain — no
                             new transaction is needed. Edit the report to attest a new version.
@@ -688,7 +736,7 @@ export default function VerifyReportModal({
                 ) : null}
 
                 {!walletAddress ? (
-                    <p className="mb-[10px] flex items-center gap-[7px] text-[11.5px] text-[#888]">
+                    <p className="mb-[10px] flex items-center gap-[7px] text-[12px] text-[#888]">
                         <i className="fa-solid fa-wallet text-accent"></i>
                         Connect your wallet first using the indicator in the header.
                     </p>
@@ -713,7 +761,7 @@ export default function VerifyReportModal({
                         }
                         onClick={() => void handleContinue()}
                     >
-                        <i className="fa-solid fa-shield-halved text-[11px]"></i>
+                        <i className="fa-solid fa-shield-halved text-[12px]"></i>
                         {hashLoading ? 'Preparing…' : 'Continue'}
                     </button>
                 </div>

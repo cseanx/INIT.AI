@@ -3,7 +3,7 @@ import { Map as MapLibreMap, Popup } from 'maplibre-gl';
 import type { StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import MapLayersPanel from './MapLayersPanel';
-import { HAS_OPENWEATHER_KEY, LST_RASTER_LAYER_ID, LST_RASTER_SOURCE_ID, fetchLSTPoint, lstSourceLabel, lstTileUrl } from './rasterLST';
+import { LST_RASTER_LAYER_ID, LST_RASTER_SOURCE_ID, fetchLSTPoint, lstTileUrl } from './rasterLST';
 import { useCity } from '../../contexts/CityContext';
 import {
     MAP_LAYERS,
@@ -13,25 +13,18 @@ import {
 } from './layers';
 
 /**
- * Philippines travel box. The camera cannot leave this area (with a little
- * sea margin around the archipelago), so users can't wander the world.
+ * Travel box: the camera cannot leave the Philippines (with a little sea
+ * margin around the archipelago), so users can't wander the world.
  */
-const PHILIPPINES_BOUNDS: [[number, number], [number, number]] = [
-    [116.9, 4.6],
-    [126.6, 21.2],
-];
-
 const TRAVEL_LIMITS: [[number, number], [number, number]] = [
     [113.0, 2.0],
     [130.5, 23.5],
 ];
 
-/** Dark satellite basemap + OpenWeather global thermal (no crop, entire MapLibre). */
+/** Dark satellite basemap + Landsat LST raster (demo scene where unavailable). */
 function satelliteStyle(): StyleSpecification {
     const thermalTiles = [lstTileUrl()];
-    const thermalAttribution = HAS_OPENWEATHER_KEY
-        ? '© OpenWeather (temperature) · not satellite LST'
-        : '© OpenWeather — set VITE_OPENWEATHER_API_KEY to enable temperature';
+    const thermalAttribution = '© Esri · Landsat LST 30 m · demo scene';
 
     return {
         version: 8,
@@ -146,7 +139,7 @@ export default function MapView({ className = '', children, onLayerStateChange }
         const map = new MapLibreMap({
             container,
             style: satelliteStyle(),
-            bounds: PHILIPPINES_BOUNDS,
+            bounds: cityConfig.bounds,
             fitBoundsOptions: { padding: 36, duration: 0 },
             minZoom: 4.2,
             maxZoom: 17,
@@ -155,12 +148,15 @@ export default function MapView({ className = '', children, onLayerStateChange }
             trackResize: true,
         });
 
-        const dbg = window as unknown as Record<string, unknown>;
-        dbg.__initaiMap = map;
-
         function formatTemp(v: number | null): string {
             if (v == null || !Number.isFinite(v)) return '—';
             return `${v.toFixed(1)}°C`;
+        }
+
+        function sourceLabel(source?: string): string {
+            if (source === 'gee-landsat-lst') return 'Landsat LST (GEE)';
+            if (source === 'titiler-cog-landsat') return 'Landsat LST (TiTiler)';
+            return 'Synthetic demo fallback';
         }
 
         async function handleMapClick(e: { lngLat: { lng: number; lat: number } }) {
@@ -191,15 +187,14 @@ export default function MapView({ className = '', children, onLayerStateChange }
             if (!popup.isOpen()) return;
             const temp = data?.temperature_c ?? null;
             const hasReading = temp != null;
-            const ts = data?.timestamp ? new Date(data.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'now';
-            const src = lstSourceLabel();
+            const ts = data?.timestamp ? new Date(data.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'demo';
             popup.setHTML(
                 `<div class="lst-popup">
-                    <div class="lst-popup-title">${hasReading ? 'Temperature' : 'No data'}</div>
+                    <div class="lst-popup-title">${hasReading ? 'Land-surface temperature' : 'No data'}</div>
                     <div class="lst-popup-sub">${lat.toFixed(3)}, ${lng.toFixed(3)}</div>
                     <div class="lst-popup-temp${hasReading ? '' : ' empty'}">${hasReading ? formatTemp(temp) : '—'}</div>
-                    <div class="lst-popup-meta">Observed ${ts}</div>
-                    <div class="lst-popup-meta">Source: ${hasReading ? src : 'Unknown'} · ${HAS_OPENWEATHER_KEY ? 'not satellite LST' : 'demo'}</div>
+                    <div class="lst-popup-meta">Scene ${ts}</div>
+                    <div class="lst-popup-meta">Source: ${hasReading ? sourceLabel(data?.source) : 'Unknown'} · 16-day revisit</div>
                 </div>`,
             );
         }
@@ -317,7 +312,7 @@ export default function MapView({ className = '', children, onLayerStateChange }
     }, []);
 
     function resetView() {
-        mapRef.current?.fitBounds(PHILIPPINES_BOUNDS, { padding: 36, duration: 600 });
+        mapRef.current?.fitBounds(cityConfig.bounds, { padding: 36, duration: 600 });
     }
 
     function handleToggle(layer: MapLayerDef, visible: boolean) {
@@ -355,8 +350,8 @@ export default function MapView({ className = '', children, onLayerStateChange }
                     <button
                         type="button"
                         className={CTRL_BTN_CLASSES}
-                        title="Reset view to the Philippines"
-                        aria-label="Reset view to the Philippines"
+                        title={`Reset view to ${cityConfig.name}`}
+                        aria-label={`Reset view to ${cityConfig.name}`}
                         onClick={resetView}
                     >
                         <i className="fa-solid fa-location-crosshairs"></i>

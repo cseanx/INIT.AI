@@ -10,6 +10,7 @@ interface MenuSelectProps {
     value: string;
     options: MenuSelectOption[];
     onChange: (value: string) => void;
+    ariaLabel?: string;
 }
 
 const TRIGGER_CLASSES =
@@ -22,7 +23,7 @@ const OPTION_CLASSES =
  *  popups are browser-styled and cannot be themed). The popover renders in
  *  a portal with fixed positioning so sibling cards — which form their own
  *  stacking contexts via backdrop-blur — can never paint over / clip it. */
-export default function MenuSelect({ value, options, onChange }: MenuSelectProps) {
+export default function MenuSelect({ value, options, onChange, ariaLabel }: MenuSelectProps) {
     const [open, setOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
@@ -83,10 +84,11 @@ export default function MenuSelect({ value, options, onChange }: MenuSelectProps
                 onClick={toggleOpen}
                 aria-haspopup="listbox"
                 aria-expanded={open}
+                aria-label={ariaLabel}
             >
                 <span>{selected?.label ?? value}</span>
                 <i
-                    className={`fa-solid fa-chevron-down text-[11px] text-[#888] transition duration-200 ${
+                    className={`fa-solid fa-chevron-down text-[12px] text-[#888] transition duration-200 ${
                         open ? 'rotate-180' : ''
                     }`}
                 ></i>

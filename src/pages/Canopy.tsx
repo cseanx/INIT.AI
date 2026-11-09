@@ -21,9 +21,17 @@ export default function Canopy() {
 
     return (
         <Page>
-            <StatGrid>
-                {canopyStats.map((stat) => (
-                    <StatCard key={stat.label} stat={stat} />
+            <StatGrid columns={3}>
+                {canopyStats.map((stat, index) => (
+                    <StatCard
+                        key={stat.label}
+                        stat={stat}
+                        className={
+                            canopyStats.length % 2 === 1 && index === canopyStats.length - 1
+                                ? 'max-[1199px]:col-span-2 min-[1200px]:col-span-1'
+                                : ''
+                        }
+                    />
                 ))}
             </StatGrid>
 
@@ -31,17 +39,17 @@ export default function Canopy() {
                 <PanelGrid>
                     <Card>
                         <PanelHead title="Canopy Coverage by Barangay" />
-                        <div className="relative h-[280px]">
+                        <div className="relative h-[240px] sm:h-[280px]">
                             <CanopyBarChart data={canopy} />
                         </div>
                     </Card>
                     <Card>
                         <PanelHead title="5-Year Canopy Trend" />
-                        <div className="relative h-[280px]">
+                        <div className="relative h-[240px] sm:h-[280px]">
                             <CanopyTrendChart data={canopy} />
                         </div>
-                        <p className="mt-[14px] text-center text-xs font-semibold text-accent">
-                            Overall Canopy Change: -2.8% since 2021
+                        <p className="mt-[14px] text-center text-xs font-semibold text-[#ff5577]">
+                            Overall canopy change: −2.8% since 2021
                         </p>
                     </Card>
                 </PanelGrid>
@@ -51,10 +59,10 @@ export default function Canopy() {
                 <PanelGrid>
                     <Card>
                         <PanelHead title="Land Cover Composition" />
-                        <div className="relative h-[280px]">
+                        <div className="relative h-[240px] sm:h-[280px]">
                             <LandCoverChart data={canopy} />
                         </div>
-                        <p className="mt-[14px] text-center text-xs text-[#777]">
+                        <p className="mt-[14px] text-center text-xs text-[#888]">
                             City-wide, 2026 satellite classification
                         </p>
                     </Card>
@@ -72,7 +80,7 @@ export default function Canopy() {
                 </PanelGrid>
             ) : null}
 
-            <Card className="mx-5">
+            <Card>
                 <PanelHead title="Canopy Detail by Barangay" />
                 {barangays ? <CanopyTable barangays={barangays} /> : null}
             </Card>

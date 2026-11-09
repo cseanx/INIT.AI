@@ -4,7 +4,7 @@ import { CITY_CONFIG, useCity, type CityName } from '../../contexts/CityContext'
 const CITIES = Object.keys(CITY_CONFIG) as CityName[];
 
 const TRIGGER_CLASSES =
-    'flex cursor-pointer items-center gap-3 rounded-[16px] border border-white/5 bg-white/5 p-[14px_18px] text-white transition-all duration-200 hover:bg-white/8';
+    'flex cursor-pointer items-center gap-2 rounded-[14px] border border-white/8 bg-white/5 p-[10px_12px] text-[12.5px] text-white transition-all duration-200 hover:bg-white/8 sm:gap-3 sm:rounded-[16px] sm:p-[14px_18px] sm:text-[13.5px]';
 
 const MENU_CLASSES =
     'city-menu absolute right-0 top-full z-50 mt-2 flex min-w-[190px] flex-col gap-0.5 rounded-[14px] border border-white/10 bg-[#101010]/90 p-[6px] shadow-[0_16px_40px_rgba(0,0,0,.55)] backdrop-blur-2xl';
@@ -46,7 +46,9 @@ export default function CitySelector() {
                 onClick={() => setOpen((o) => !o)}
                 aria-haspopup="listbox"
                 aria-expanded={open}
+                aria-label={`City: ${selected}`}
             >
+                <i className="fa-solid fa-city text-[12px] text-accent sm:text-[12px]"></i>
                 <span>{selected}</span>
                 <i
                     className={`fa-solid fa-chevron-down text-xs text-[#888] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}

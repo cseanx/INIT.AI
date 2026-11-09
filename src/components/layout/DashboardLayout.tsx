@@ -20,6 +20,9 @@ import { usePreferences } from '../../preferences/PreferencesContext';
  * Pages are lazy-loaded, but once visited they stay mounted (hidden with
  * CSS) so charts and data survive navigation — returning to a page is
  * instant instead of rebuilding everything from scratch.
+ *
+ * Under 900px the sidebar becomes an off-canvas drawer. The content column
+ * is the only scroller on every size.
  */
 const PAGES: Record<string, LazyExoticComponent<ComponentType>> = {
     dashboard: lazy(() => import('../../pages/Dashboard')),
@@ -68,6 +71,7 @@ export default function DashboardLayout() {
     const [visited, setVisited] = useState<Set<string>>(
         () => new Set([pageKey(pathname)]),
     );
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const mainRef = useRef<HTMLElement>(null);
     const current = pageKey(pathname);
 
@@ -76,21 +80,49 @@ export default function DashboardLayout() {
     }, [current]);
 
     useEffect(() => {
+        setMobileNavOpen(false);
         mainRef.current?.scrollTo({ top: 0 });
     }, [pathname]);
 
+    // Keep the drawer from surviving a resize into desktop layout.
+    useEffect(() => {
+        const media = window.matchMedia('(min-width: 900px)');
+        const closeOnDesktop = () => {
+            if (media.matches) setMobileNavOpen(false);
+        };
+        media.addEventListener('change', closeOnDesktop);
+        return () => media.removeEventListener('change', closeOnDesktop);
+    }, []);
+
     return (
-        <div className="app isolate relative flex h-screen w-screen gap-3 overflow-hidden bg-[#0a0a0c] p-3">
+        <div className="app isolate relative flex h-[100dvh] w-full gap-2 overflow-hidden bg-[#0a0a0c] p-2 sm:gap-3 sm:p-3">
+            <a href="#main-content" className="skip-link">
+                Skip to main content
+            </a>
+
+            {mobileNavOpen ? (
+                <button
+                    type="button"
+                    aria-label="Close navigation"
+                    className="fixed inset-0 z-50 cursor-default border-none bg-black/65 backdrop-blur-[2px] min-[900px]:hidden"
+                    onClick={() => setMobileNavOpen(false)}
+                />
+            ) : null}
+
             <Sidebar
                 collapsed={collapsed}
+                mobileOpen={mobileNavOpen}
                 onToggle={() => setSidebarCollapsed(!collapsed)}
+                onClose={() => setMobileNavOpen(false)}
+                onNavigate={() => setMobileNavOpen(false)}
             />
             <main
                 ref={mainRef}
-                className="main-content flex min-w-0 flex-1 flex-col overflow-y-auto"
+                id="main-content"
+                className="main-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden"
             >
                 <BentoSection className="flex min-h-0 flex-1 flex-col">
-                    <Topbar />
+                    <Topbar onOpenNav={() => setMobileNavOpen(true)} />
                     {Object.entries(PAGES).map(([key, Page]) => {
                         if (!visited.has(key)) return null;
                         return (
