@@ -51,7 +51,7 @@ export const dashboardStats: StatCardData[] = [
 
 export const canopyStats: StatCardData[] = [
     { icon: 'fa-leaf', tone: 'green', value: '6,214', valueSuffix: ' ha', label: 'Total Canopy Area', trendIcon: 'fa-arrow-trend-down', trend: '−1.4% canopy (5yr)', trendTone: 'negative' },
-    { icon: 'fa-seedling', tone: 'red', value: '9', label: 'Priority Replanting Zones', trendIcon: 'fa-map-pin', trend: 'Flagged by AI model', trendTone: 'neutral' },
+    { icon: 'fa-seedling', tone: 'red', value: '4', label: 'Priority Replanting Zones', trendIcon: 'fa-map-pin', trend: 'Flagged by AI model', trendTone: 'neutral' },
     { icon: 'fa-droplet', tone: 'blue', value: '31.2', valueSuffix: '%', label: 'Impervious Surface', trendIcon: 'fa-arrow-trend-up', trend: '+0.8% built-up vs 2024', trendTone: 'negative' },
 ];
 

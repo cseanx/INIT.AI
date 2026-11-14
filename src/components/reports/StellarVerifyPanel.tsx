@@ -136,6 +136,9 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
     const [records, setRecords] = useState<ReportAttestationRecord[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
+    // SOW review step: the wallet prompt only opens after the user has seen
+    // exactly what will be signed.
+    const [reviewing, setReviewing] = useState(false);
 
     const refresh = useCallback(async () => {
         if (typeof report.id !== 'number') return;
@@ -358,34 +361,91 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
                             ) : null}
                         </p>
                     ) : null}
-                    <p className="mb-[14px] mt-[10px] max-w-[640px] text-[12.5px] leading-relaxed text-[#bbb]">
-                        Record a timestamped SHA-256 fingerprint of this exact report on Stellar
-                        Testnet. Anyone can later check that the report has not been altered; the
-                        chain proves existence, not the science.
-                    </p>
+                    {!reviewing ? (
+                        <>
+                            <p className="mb-[14px] mt-[10px] max-w-[640px] text-[12.5px] leading-relaxed text-[#bbb]">
+                                Record a timestamped SHA-256 fingerprint of this exact report on
+                                Stellar Testnet. Anyone can later check that the report has not been
+                                altered; the chain proves existence, not the science.
+                            </p>
 
-                    {att.error ? (
-                        <p className="mb-[12px] flex items-start gap-[8px] rounded-[10px] border border-[rgba(255,45,85,.3)] bg-[rgba(255,45,85,.08)] p-[10px_12px] text-[12px] leading-snug text-[#ff7a94]">
-                            <i className="fa-solid fa-triangle-exclamation mt-[2px] text-[12px]" aria-hidden="true"></i>
-                            Verification failed — {att.error}
-                            {saveError ? ` · ${saveError}` : ''}
-                        </p>
-                    ) : null}
-                    {!att.error && saveError ? (
-                        <p className="mb-[12px] rounded-[10px] border border-[#ffb03a]/25 bg-[#ffb03a]/10 p-[10px_12px] text-[12px] leading-snug text-[#ffb03a]">
-                            On-chain proof confirmed, but saving its details failed: {saveError}
-                        </p>
-                    ) : null}
+                            {att.error ? (
+                                <p className="mb-[12px] flex items-start gap-[8px] rounded-[10px] border border-[rgba(255,45,85,.3)] bg-[rgba(255,45,85,.08)] p-[10px_12px] text-[12px] leading-snug text-[#ff7a94]">
+                                    <i className="fa-solid fa-triangle-exclamation mt-[2px] text-[12px]" aria-hidden="true"></i>
+                                    Verification failed — {att.error}
+                                    {saveError ? ` · ${saveError}` : ''}
+                                </p>
+                            ) : null}
+                            {!att.error && saveError ? (
+                                <p className="mb-[12px] rounded-[10px] border border-[#ffb03a]/25 bg-[#ffb03a]/10 p-[10px_12px] text-[12px] leading-snug text-[#ffb03a]">
+                                    On-chain proof confirmed, but saving its details failed: {saveError}
+                                </p>
+                            ) : null}
 
-                    <button
-                        type="button"
-                        onClick={() => void handleVerify()}
-                        disabled={!message || loaded === false}
-                        className="flex min-h-[44px] w-auto cursor-pointer items-center gap-2 rounded-[14px] border-none bg-gradient-to-r from-primary to-accent p-[12px_22px] text-[13.5px] font-semibold text-white shadow-[0_10px_30px_rgba(var(--accent-glow),.3)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(var(--accent-glow),.42)] disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                        <i className="fa-solid fa-cubes text-[12px]" aria-hidden="true"></i>
-                        Verify on Stellar
-                    </button>
+                            <button
+                                type="button"
+                                onClick={() => setReviewing(true)}
+                                disabled={!message || loaded === false}
+                                className="flex min-h-[44px] w-auto cursor-pointer items-center gap-2 rounded-[14px] border-none bg-gradient-to-r from-primary to-accent p-[12px_22px] text-[13.5px] font-semibold text-white shadow-[0_10px_30px_rgba(var(--accent-glow),.3)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(var(--accent-glow),.42)] disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                <i className="fa-solid fa-cubes text-[12px]" aria-hidden="true"></i>
+                                Verify on Stellar
+                            </button>
+                        </>
+                    ) : (
+                        <div className="max-w-[640px] rounded-[14px] border border-white/10 bg-white/[.04] p-[14px_16px]">
+                            <p className="text-[13px] font-semibold text-white">
+                                Review before signing
+                            </p>
+                            <p className="mt-1 text-[12px] leading-relaxed text-[#aaa]">
+                                Signing opens your wallet for one Soroban attestation. Nothing is
+                                written until you confirm there.
+                            </p>
+                            <ul className="mt-3 flex flex-col gap-2 text-[12px] leading-snug text-[#bbb]">
+                                <li className="flex items-start gap-2">
+                                    <i className="fa-solid fa-check mt-[3px] text-[10px] text-mint" aria-hidden="true"></i>
+                                    The digest shown above is written once and can never be changed.
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <i className="fa-solid fa-check mt-[3px] text-[10px] text-mint" aria-hidden="true"></i>
+                                    Report content, titles, and place names stay off-chain.
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <i className="fa-solid fa-check mt-[3px] text-[10px] text-mint" aria-hidden="true"></i>
+                                    Network Stellar Testnet · contract{' '}
+                                    <span className="font-mono">
+                                        {CONTRACT_ID.slice(0, 6)}…{CONTRACT_ID.slice(-6)}
+                                    </span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <i className="fa-solid fa-wallet mt-[2px] text-[10px] text-accent" aria-hidden="true"></i>
+                                    {wallet.address
+                                        ? <>Signing wallet <span className="break-all font-mono">{wallet.address}</span></>
+                                        : 'Your wallet will be requested when you confirm.'}
+                                </li>
+                            </ul>
+                            <div className="mt-4 flex flex-wrap items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setReviewing(false);
+                                        void handleVerify();
+                                    }}
+                                    className="flex min-h-[44px] cursor-pointer items-center gap-2 rounded-[12px] border-none bg-gradient-to-r from-primary to-accent px-5 text-[13px] font-semibold text-white shadow-[0_10px_30px_rgba(var(--accent-glow),.3)] transition hover:-translate-y-0.5 disabled:opacity-40"
+                                >
+                                    <i className="fa-solid fa-pen-nib text-[12px]" aria-hidden="true"></i>
+                                    Confirm &amp; sign with Freighter
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setReviewing(false)}
+                                    className="min-h-[44px] cursor-pointer rounded-[12px] border border-white/12 bg-white/[.04] px-5 text-[13px] font-semibold text-white transition hover:bg-white/9"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
         </section>

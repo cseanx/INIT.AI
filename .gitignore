@@ -46,6 +46,7 @@ backend/.env
 *.opencode
 *.pi
 /PRODUCT.md
+/DESIGN.md
 
 # documentation for personal use
 docs/

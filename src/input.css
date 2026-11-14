@@ -807,21 +807,9 @@ nav a span,
         inset 0 1px 0 rgba(255, 255, 255, .07);
 }
 
-/* Toned-down hover: 1px lift, border/background brighten, NO added glow. */
-.glass-hover {
-    transition:
-        transform .18s ease,
-        background-color .18s ease,
-        border-color .18s ease,
-        box-shadow .18s ease;
-}
-
-.glass-hover:hover {
-    transform: translateY(-1px);
-    background-color: rgba(255, 255, 255, .085);
-    border-color: rgba(255, 255, 255, .22);
-    box-shadow: 0 18px 48px rgba(0, 0, 0, .50);
-}
+/* Hover feedback belongs to interactive elements (buttons, rows, chips);
+   container cards stay visually still so the bento border glow reads as
+   the only hover response. */
 
 /* Light-mode counterparts — same recipes over the light field. */
 [data-theme='light'] .glass-surface {
@@ -838,12 +826,6 @@ nav a span,
     );
     border-color: rgba(var(--accent-glow), .30);
     box-shadow: 0 10px 28px rgba(20, 25, 35, .11), 0 0 22px rgba(var(--accent-glow), .10);
-}
-
-[data-theme='light'] .glass-hover:hover {
-    background-color: rgba(255, 255, 255, .88);
-    border-color: rgba(20, 25, 35, .22);
-    box-shadow: 0 12px 32px rgba(20, 25, 35, .16);
 }
 
 /* ==========================
@@ -1076,10 +1058,6 @@ p {
     .animate-view-in,
     [class*='animate-'] {
         animation: none !important;
-    }
-
-    .glass-hover:hover {
-        transform: none;
     }
 
     .global-spotlight,

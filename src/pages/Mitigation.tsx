@@ -4,7 +4,8 @@ import { useApiData } from '../hooks/useApiData';
 import Page from '../components/layout/Page';
 import PanelHead from '../components/common/PanelHead';
 import Card from '../components/common/Card';
-import MitigationCard from '../components/mitigation/MitigationCard';
+import { LedgerList, LedgerRow } from '../components/common/LayoutPrimitives';
+import { MITIGATION_STATUS_BADGES } from '../utils/toneClasses';
 
 export default function Mitigation() {
     const projects = useApiData(api.getMitigation);
@@ -74,13 +75,65 @@ export default function Mitigation() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-5 max-[1200px]:grid-cols-1">
+                <LedgerList>
                     {projects
-                        ? projects.map((project) => (
-                              <MitigationCard key={project.id} project={project} />
-                          ))
+                        ? projects.map((project) => {
+                              const progressLabel =
+                                  project.status === 'In Progress'
+                                      ? 'implementation progress'
+                                      : 'planning readiness';
+                              return (
+                                  <LedgerRow
+                                      key={project.id}
+                                      media={
+                                          <span className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-gradient-to-br from-orange to-primary text-[13px] text-white">
+                                              <i className={`fa-solid ${project.icon}`}></i>
+                                          </span>
+                                      }
+                                      title={project.title}
+                                      subtitle={
+                                          <span className="line-clamp-2">{project.description}</span>
+                                      }
+                                      tags={[`${project.progress}% ${progressLabel}`]}
+                                      bar={{
+                                          value: project.progress,
+                                          label: `${project.progress}%`,
+                                      }}
+                                      meta={
+                                          <div className="flex items-center gap-4">
+                                              <div>
+                                                  <span className="block text-[15px] font-bold tabular-nums text-white">
+                                                      {project.impact}
+                                                  </span>
+                                                  <span className="block text-[11px] text-[#888]">
+                                                      {project.impactLabel}
+                                                  </span>
+                                              </div>
+                                              <div className="hidden sm:block">
+                                                  <span className="block text-[15px] font-bold tabular-nums text-white">
+                                                      {project.metric}
+                                                      {project.metricSuffix ? (
+                                                          <small className="text-[11px] text-[#999]">
+                                                              {project.metricSuffix}
+                                                          </small>
+                                                      ) : null}
+                                                  </span>
+                                                  <span className="block text-[11px] text-[#888]">
+                                                      {project.metricLabel}
+                                                  </span>
+                                              </div>
+                                              <span
+                                                  className={`rounded-full p-[5px_12px] text-[12px] font-semibold ${MITIGATION_STATUS_BADGES[project.status]}`}
+                                              >
+                                                  {project.status}
+                                              </span>
+                                          </div>
+                                      }
+                                  />
+                              );
+                          })
                         : null}
-                </div>
+                </LedgerList>
             </Card>
         </Page>
     );

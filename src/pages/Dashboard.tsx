@@ -1,9 +1,9 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Page from '../components/layout/Page';
 import StatGrid from '../components/layout/StatGrid';
-import PanelGrid from '../components/layout/PanelGrid';
 import PanelHead from '../components/common/PanelHead';
 import Card from '../components/common/Card';
+import { SplitPanel } from '../components/common/LayoutPrimitives';
 import { BentoCard } from '../components/common/BentoCard';
 import StatCard from '../components/dashboard/StatCard';
 import DashboardChart from '../components/dashboard/DashboardChart';
@@ -55,69 +55,42 @@ export default function Dashboard() {
                 </div>
 
                 <div className="relative z-10 flex w-full min-w-0 justify-end lg:w-[45%]">
-                    <div className="keep-dark relative w-full max-w-[420px] rounded-[22px] border border-white/10 bg-[rgba(20,20,25,0.5)] p-[18px] shadow-[0_20px_50px_rgba(0,0,0,.5)] backdrop-blur-md transition-colors duration-300 hover:border-red-500/30 sm:p-[22px]">
-                        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
-                        <div className="mb-[16px] flex flex-wrap items-start justify-between gap-3">
-                            <div className="flex items-center gap-2.5">
-                                <span className="relative flex h-2.5 w-2.5 shrink-0">
-                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75"></span>
-                                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_10px_rgba(255,45,85,.9)]"></span>
+                    <div className="flex w-full max-w-[400px] flex-col items-start">
+                        <div className="flex w-full items-center justify-between gap-3">
+                            <span className="flex items-center gap-2.5">
+                                <span className="relative flex h-2 w-2 shrink-0">
+                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-60"></span>
+                                    <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(255,45,85,.9)]"></span>
                                 </span>
-                                <span className="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-[12px] font-semibold tracking-[.06em] text-red-400">
-                                    CRITICAL ANOMALY
+                                <span className="text-[10.5px] font-semibold uppercase tracking-[.13em] text-red-400">
+                                    Payatas · critical hotspot
                                 </span>
-                            </div>
-                            <div className="flex shrink-0 flex-col items-end gap-1 text-[12px] leading-tight text-[#999]">
-                                <span>Demo reading</span>
-                                <span className="text-[#bbb]">Payatas, District 2</span>
-                            </div>
-                        </div>
-
-                        <div className="mb-1 flex items-baseline gap-2">
-                            <span className="font-mono text-[38px] font-bold leading-none text-white sm:text-[40px]">
-                                41.2°C
+                            </span>
+                            <span className="shrink-0 rounded-full border border-white/10 px-2 py-[3px] text-[9.5px] font-medium uppercase tracking-[.08em] text-white/55">
+                                Demo
                             </span>
                         </div>
-                        <p className="mb-[16px] text-[12.5px] font-medium text-red-400/90">
-                            +4.8°C above historical baseline
+
+                        <p className="mt-5 font-mono text-[56px] font-bold leading-none tracking-[-.05em] text-white sm:text-[62px]">
+                            41.2
+                            <span className="ml-1 align-top font-sans text-[20px] font-semibold tracking-normal text-white/70">
+                                °C
+                            </span>
                         </p>
 
-                        <div className="mb-[18px]">
-                            <div className="mb-2 flex items-center justify-between gap-3 text-[12px] font-medium">
-                                <span className="uppercase tracking-[.06em] text-[#999]">Risk level</span>
-                                <span className="text-right text-red-400">Extreme Caution / Danger</span>
-                            </div>
-                            <div className="h-[8px] overflow-hidden rounded-full border border-white/10 bg-white/5">
-                                <div className="h-full w-[86%] rounded-full bg-gradient-to-r from-amber-400 via-red-500 to-red-600 shadow-[0_0_12px_rgba(255,45,85,.5)]" />
-                            </div>
-                        </div>
+                        <p className="mt-3 text-[12.5px] font-medium text-red-400">
+                            +4.8°C <span className="font-normal text-white/60">above baseline</span>
+                            <span className="mx-1.5 text-white/30">·</span>
+                            <span className="font-normal text-white/60">12% canopy</span>
+                        </p>
 
-                        <div className="mb-[18px] flex items-start gap-2.5 rounded-[14px] border border-white/10 bg-white/[.03] p-[12px_14px]">
-                            <i className="fa-solid fa-robot mt-[2px] text-[13px] text-red-400"></i>
-                            <p className="text-[12.5px] leading-relaxed text-[#ccc]">
-                                High surface heat cluster identified over dense residential zone with
-                                12% canopy deficit. Vulnerability score: High.
-                            </p>
-                        </div>
-
-                        <div className="flex flex-col gap-2.5 sm:flex-row">
-                            <button
-                                type="button"
-                                onClick={() => navigate('/hotspots')}
-                                className="flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border-none bg-red-600/90 px-4 py-3 text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(255,45,85,.35)] transition duration-300 hover:-translate-y-0.5 hover:bg-red-500 hover:shadow-[0_12px_32px_rgba(255,45,85,.45)]"
-                            >
-                                <i className="fa-solid fa-fire text-[12px]"></i>
-                                Review Hotspots
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => navigate('/heatmap')}
-                                className="flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-[13px] font-semibold text-white backdrop-blur-md transition duration-300 hover:-translate-y-0.5 hover:border-red-500/30 hover:bg-white/10"
-                            >
-                                Locate on Map
-                                <span aria-hidden="true">↗</span>
-                            </button>
-                        </div>
+                        <Link
+                            to="/hotspots?q=Payatas"
+                            className="mt-6 inline-flex min-h-[44px] items-center gap-2 text-[13px] font-semibold text-white transition hover:text-red-300"
+                        >
+                            Inspect hotspot
+                            <i className="fa-solid fa-arrow-right text-[11px] text-red-400" aria-hidden="true"></i>
+                        </Link>
                     </div>
                 </div>
             </BentoCard>
@@ -128,32 +101,37 @@ export default function Dashboard() {
                 ))}
             </StatGrid>
 
-            <PanelGrid>
-                <Card>
-                    <PanelHead
-                        title="Priority Hotspots"
-                        actions={
-                            <button
-                                className="flex min-h-[44px] items-center gap-[6px] text-[13px] text-accent"
-                                onClick={() => navigate('/hotspots')}
-                            >
-                                View all <i className="fa-solid fa-arrow-right"></i>
-                            </button>
-                        }
-                    />
-                    <MiniHotspotList hotspots={priorityHotspots} />
-                </Card>
-
-                <Card>
-                    <PanelHead title="Canopy vs Heat" />
-                    <div className="relative h-[180px]">
-                        {barangays ? <DashboardChart data={barangays} /> : null}
-                    </div>
-                    <p className="mt-[14px] text-center text-xs text-[#888]">
-                        Inverse correlation across all monitored barangays
-                    </p>
-                </Card>
-            </PanelGrid>
+            <Card>
+                <SplitPanel
+                    left={
+                        <>
+                            <PanelHead
+                                title="Priority Hotspots"
+                                actions={
+                                    <button
+                                        className="flex min-h-[44px] items-center gap-[6px] text-[13px] text-accent"
+                                        onClick={() => navigate('/hotspots')}
+                                    >
+                                        View all <i className="fa-solid fa-arrow-right"></i>
+                                    </button>
+                                }
+                            />
+                            <MiniHotspotList hotspots={priorityHotspots} />
+                        </>
+                    }
+                    right={
+                        <>
+                            <PanelHead title="Canopy vs Heat" />
+                            <div className="relative h-[180px] sm:h-[200px]">
+                                {barangays ? <DashboardChart data={barangays} /> : null}
+                            </div>
+                            <p className="mt-[10px] text-center text-xs text-[#888]">
+                                Inverse correlation across all monitored barangays
+                            </p>
+                        </>
+                    }
+                />
+            </Card>
         </Page>
     );
 }

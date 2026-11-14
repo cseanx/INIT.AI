@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import type { ChartConfiguration } from 'chart.js';
 import type { CanopySnapshot, ResolvedTheme } from '../../types';
 import { baseChartOptions, chartTheme } from '../../utils/chartTheme';
@@ -97,6 +97,7 @@ function useLineConfig(
 function useDoughnutConfig(
     data: CanopySnapshot,
     resolvedTheme: ResolvedTheme,
+    showLegend = true,
 ) {
     return useMemo<ChartConfiguration<'doughnut'>>(() => {
         const th = chartTheme(resolvedTheme);
@@ -120,7 +121,7 @@ function useDoughnutConfig(
                 // reads best as one continuous sweep completing the ring,
                 // not each wedge popping in independently.
                 animation: {
-                    // animateRotate sweeps the whole arc set from 0° like a
+                    // animateRotate sweeps the whole arc set from 0Â° like a
                     // clock filling in; animateScale grows it from the
                     // center at the same time for a bit more presence.
                     animateRotate: true,
@@ -130,6 +131,7 @@ function useDoughnutConfig(
                 },
                 plugins: {
                     legend: {
+                        display: showLegend,
                         position: 'bottom',
                         labels: { color: th.text, boxWidth: 10, font: { size: 10.5 }, padding: 12 },
                     },
@@ -141,7 +143,7 @@ function useDoughnutConfig(
                 },
             },
         };
-    }, [data, resolvedTheme]);
+    }, [data, resolvedTheme, showLegend]);
 }
 
 export function CanopyBarChart({ data }: { data: CanopySnapshot }) {
@@ -154,7 +156,7 @@ export function CanopyTrendChart({ data }: { data: CanopySnapshot }) {
     return <ChartCanvas id="canopyLineChart" config={useLineConfig(data, resolvedTheme)} />;
 }
 
-export function LandCoverChart({ data }: { data: CanopySnapshot }) {
+export function LandCoverChart({ data, showLegend = true }: { data: CanopySnapshot; showLegend?: boolean }) {
     const { resolvedTheme } = usePreferences();
-    return <ChartCanvas id="landCoverChart" config={useDoughnutConfig(data, resolvedTheme)} />;
+    return <ChartCanvas id="landCoverChart" config={useDoughnutConfig(data, resolvedTheme, showLegend)} />;
 }
