@@ -384,6 +384,9 @@ matches the current content (tamper-evidence working as intended).
 
 ![INIT.AI Canopy Analysis](/public/assets/images/CanopyAnalysis.png)
 
+###
+![INIT.AI Mitigation](/public/assets/images/Mitigation.png)
+
 ### Stellar Verification
 
 ![INIT.AI Stellar Verification](/public/assets/images/StellarReport.png)
