@@ -6,7 +6,7 @@
 
 [![Status](https://img.shields.io/badge/Status-Testnet_Alpha-18181b?style=flat-square)](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) [![Stellar](https://img.shields.io/badge/Stellar-Soroban-7D00FF?style=flat-square&logo=stellar&logoColor=white)](https://developers.stellar.org/docs/learn/fundamentals/contract-development) [![React](https://img.shields.io/badge/React-19-20232a?style=flat-square&logo=react&logoColor=61DAFB)](https://react.dev) [![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev) [![FastAPI](https://img.shields.io/badge/FastAPI-0.1-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com) [![Rust](https://img.shields.io/badge/Rust-Soroban-dea584?style=flat-square&logo=rust&logoColor=black)](https://soroban.stellar.org) [![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](LICENSE)
 
-[Live dApp](https://www.initai.site) Â· [Contract on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) Â· [Run Locally](#getting-started) Â· [Canonical Spec](#canonicalization-specification-initai-canonical-v1)
+[Live dApp](https://www.initai.site) · [Contract on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) · [Run Locally](#getting-started) · [Canonical Spec](#canonicalization-specification-initai-canonical-v1)
 
 > **Important:** INIT.AI is a prototype on **Stellar Testnet** only. Attestations are wallet-submitted, not LGU-certified. Mainnet, production audit, and official endorsement are not claimed.
 
