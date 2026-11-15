@@ -16,6 +16,12 @@ export function chartTheme(theme: 'dark' | 'light' = 'dark') {
         yellow: '#ffd23f',
         green: '#00ff84',
         blue: '#5aa9ff',
+        /* Annotation (least-squares fit) and tooltip chrome, per theme. */
+        fit: theme === 'light' ? 'rgba(24,26,32,.24)' : 'rgba(255,255,255,.22)',
+        tooltipBg: theme === 'light' ? 'rgba(255,255,255,.98)' : 'rgba(14,14,16,.96)',
+        tooltipBorder: theme === 'light' ? 'rgba(20,25,35,.12)' : 'rgba(255,255,255,.12)',
+        tooltipTitle: theme === 'light' ? '#181a20' : '#ffffff',
+        tooltipBody: theme === 'light' ? '#5a5f69' : '#b8b8b8',
     };
 }
 

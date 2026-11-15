@@ -263,6 +263,9 @@
    ========================== */
 
 .inspector-scroll {
+    /* The app shell is user-select: none; a reading surface should let
+       people copy its numbers. */
+    user-select: text;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, .18) transparent;
 }

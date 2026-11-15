@@ -5,6 +5,7 @@ import MapView from '../components/map/MapView';
 import HeatLegend from '../components/map/HeatLegend';
 import LstLegend from '../components/map/LstLegend';
 import InspectorPanel from '../components/inspector/InspectorPanel';
+import { INSPECTOR_SUMMARY } from '../components/inspector/inspectorData';
 import { useBentoFx } from '../components/common/BentoCard';
 import { useCity } from '../contexts/CityContext';
 import { useApiData } from '../hooks/useApiData';
@@ -67,13 +68,15 @@ export default function HeatMap() {
                 </div>
 
                 {/* Inspector card */}
-                <div className="flex shrink-0 overflow-hidden rounded-[24px] min-[1100px]:rounded-[28px]">
+                <div className="flex w-full shrink-0 overflow-hidden rounded-[24px] min-[1100px]:w-auto min-[1100px]:rounded-[28px]">
                     <div
-                        className={`h-full min-w-0 overflow-hidden transition-[width,opacity] duration-[.35s] ease-[cubic-bezier(0.32,0.72,0,1)] max-[1099px]:!w-full max-[1099px]:!opacity-100 ${
-                            inspectorOpen ? 'w-[340px] opacity-100' : 'w-0 opacity-0'
+                        className={`h-auto min-w-0 overflow-hidden transition-[width,opacity] duration-[.35s] ease-[cubic-bezier(0.32,0.72,0,1)] max-[1099px]:!w-full max-[1099px]:!opacity-100 ${
+                            inspectorOpen
+                                ? 'w-[372px] opacity-100 min-[1360px]:w-[400px]'
+                                : 'w-0 opacity-0'
                         }`}
                     >
-                        <div className="h-[560px] w-full shrink-0 min-[1100px]:h-full min-[1100px]:w-[340px]">
+                        <div className="h-auto w-full shrink-0 min-[1100px]:h-full min-[1100px]:w-[372px] min-[1360px]:w-[400px]">
                             <InspectorPanel
                                 onToggle={() => setInspectorOpen(!inspectorOpen)}
                             />
@@ -83,13 +86,26 @@ export default function HeatMap() {
                         <button
                             type="button"
                             onClick={() => setInspectorOpen(true)}
-                            title="Open inspector panel"
-                            aria-label="Open inspector panel"
-                            className="flex w-[44px] shrink-0 cursor-pointer flex-col items-center justify-center gap-[16px] rounded-[28px] border border-white/8 bg-white/5 text-[#888] backdrop-blur-2xl transition duration-200 hover:bg-white/8 hover:text-accent max-[1099px]:hidden"
+                            title={`Open inspector · ${INSPECTOR_SUMMARY.area}, ${INSPECTOR_SUMMARY.temp.toFixed(1)}°C`}
+                            aria-label={`Open inspector panel for ${INSPECTOR_SUMMARY.area}, ${INSPECTOR_SUMMARY.temp.toFixed(1)}°C`}
+                            aria-expanded="false"
+                            aria-controls="inspector-body"
+                            className="group flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-between rounded-[28px] border border-white/8 bg-white/5 py-[12px] text-[#888] backdrop-blur-2xl transition duration-200 hover:bg-white/8 hover:text-accent max-[1099px]:hidden"
                         >
-                            <i className="fa-solid fa-angles-right text-[16px]"></i>
-                            <span className="rotate-180 text-[12px] font-semibold uppercase tracking-[.18em] [writing-mode:vertical-rl]">
+                            <span className="flex h-[32px] w-[32px] items-center justify-center rounded-[10px] border border-white/8 bg-white/5 text-[11px] transition duration-200 group-hover:bg-white/9 group-hover:text-white">
+                                <i className="fa-solid fa-angles-left" aria-hidden="true"></i>
+                            </span>
+                            <span className="rotate-180 text-[11px] font-semibold uppercase tracking-[.18em] [writing-mode:vertical-rl]">
                                 Inspector
+                            </span>
+                            <span className="flex flex-col items-center gap-[5px]">
+                                <span
+                                    className={`h-[6px] w-[6px] rounded-full ${INSPECTOR_SUMMARY.risk.dot}`}
+                                    aria-hidden="true"
+                                ></span>
+                                <span className="text-[10px] font-semibold tabular-nums text-[#ccc]">
+                                    {INSPECTOR_SUMMARY.temp.toFixed(1)}°
+                                </span>
                             </span>
                         </button>
                     )}

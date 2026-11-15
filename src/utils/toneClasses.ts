@@ -14,7 +14,8 @@ export const STAT_ICON_TONES: Record<IconTone, string> = {
 export const TREND_TONES: Record<TrendTone, string> = {
     positive: 'text-mint',
     negative: 'text-[#ff5577]',
-    neutral: 'text-sky',
+    // Status lines ("Updated 4h ago") are metadata, not an info accent.
+    neutral: 'text-[#999]',
 };
 
 export const SEVERITY_BADGES: Record<Severity, string> = {

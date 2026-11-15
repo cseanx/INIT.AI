@@ -221,6 +221,9 @@ export interface StatCardData {
     valueSuffix?: string;
     label: string;
     trendIcon: string;
+    /** The delta or status itself — the part that carries meaning. */
     trend: string;
+    /** Muted context after the delta ("vs last month"). */
+    trendNote?: string;
     trendTone: TrendTone;
 }

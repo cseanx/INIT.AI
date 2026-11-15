@@ -7,6 +7,10 @@ import {
 
 Chart.register(...registerables);
 
+// Chart.js otherwise falls back to a system sans, so axis labels and
+// tooltips read as a different typeface from the rest of the console.
+Chart.defaults.font.family = '"Outfit", system-ui, sans-serif';
+
 interface ChartCanvasProps {
     id: string;
     config: ChartConfiguration;
@@ -95,7 +99,9 @@ export default function ChartCanvas({ id, config, className }: ChartCanvasProps)
         return () => document.removeEventListener('page-visible', onPageVisible);
     }, []);
 
-    // Pause rendering while the browser tab is hidden.
+    // Pause rendering while the browser tab is hidden. A stopped entrance
+    // animation would otherwise freeze at its first frame, so replay it
+    // when the tab becomes visible again.
     useEffect(() => {
         function onVisibilityChange() {
             const chart = chartRef.current;
@@ -103,7 +109,9 @@ export default function ChartCanvas({ id, config, className }: ChartCanvasProps)
             if (document.hidden) {
                 chart.stop();
             } else {
-                chart.render();
+                // Land on the current data immediately; a returning user
+                // should not wait through a replay of the entrance.
+                chart.update('none');
             }
         }
         document.addEventListener('visibilitychange', onVisibilityChange);

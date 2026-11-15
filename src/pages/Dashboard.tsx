@@ -120,15 +120,14 @@ export default function Dashboard() {
                         </>
                     }
                     right={
-                        <>
+                        <div className="flex h-full min-h-[260px] flex-col">
                             <PanelHead title="Canopy vs Heat" />
-                            <div className="relative h-[180px] sm:h-[200px]">
-                                {barangays ? <DashboardChart data={barangays} /> : null}
-                            </div>
-                            <p className="mt-[10px] text-center text-xs text-[#888]">
-                                Inverse correlation across all monitored barangays
-                            </p>
-                        </>
+                            {barangays ? (
+                                <DashboardChart data={barangays} />
+                            ) : (
+                                <div className="min-h-[200px] flex-1" aria-hidden="true" />
+                            )}
+                        </div>
                     }
                 />
             </Card>

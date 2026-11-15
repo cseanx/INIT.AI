@@ -43,16 +43,16 @@ export const priorityHotspots: Barangay[] = [
 ];
 
 export const dashboardStats: StatCardData[] = [
-    { icon: 'fa-temperature-high', tone: 'red', value: '34.6', valueSuffix: '°C', label: 'Avg. Surface Temp', trendIcon: 'fa-arrow-trend-up', trend: '+2.1° vs last month', trendTone: 'negative' },
-    { icon: 'fa-fire', tone: 'orange', value: '17', label: 'Active Hotspots', trendIcon: 'fa-arrow-trend-up', trend: '3 new this week', trendTone: 'negative' },
-    { icon: 'fa-tree', tone: 'green', value: '21.0', valueSuffix: '%', label: 'Canopy Coverage', trendIcon: 'fa-arrow-trend-down', trend: '−1.4% canopy vs 2024', trendTone: 'negative' },
+    { icon: 'fa-temperature-high', tone: 'red', value: '34.6', valueSuffix: '°C', label: 'Avg. Surface Temp', trendIcon: 'fa-arrow-trend-up', trend: '+2.1°', trendNote: 'vs last month', trendTone: 'negative' },
+    { icon: 'fa-fire', tone: 'orange', value: '17', label: 'Active Hotspots', trendIcon: 'fa-arrow-trend-up', trend: '3 new', trendNote: 'this week', trendTone: 'negative' },
+    { icon: 'fa-tree', tone: 'green', value: '21.0', valueSuffix: '%', label: 'Canopy Coverage', trendIcon: 'fa-arrow-trend-down', trend: '−1.4%', trendNote: 'canopy vs 2024', trendTone: 'negative' },
     { icon: 'fa-map-location-dot', tone: 'blue', value: '142', label: 'Barangays Monitored', trendIcon: 'fa-satellite', trend: 'Updated 4h ago', trendTone: 'neutral' },
 ];
 
 export const canopyStats: StatCardData[] = [
-    { icon: 'fa-leaf', tone: 'green', value: '6,214', valueSuffix: ' ha', label: 'Total Canopy Area', trendIcon: 'fa-arrow-trend-down', trend: '−1.4% canopy (5yr)', trendTone: 'negative' },
+    { icon: 'fa-leaf', tone: 'green', value: '6,214', valueSuffix: ' ha', label: 'Total Canopy Area', trendIcon: 'fa-arrow-trend-down', trend: '−1.4%', trendNote: 'canopy (5yr)', trendTone: 'negative' },
     { icon: 'fa-seedling', tone: 'red', value: '4', label: 'Priority Replanting Zones', trendIcon: 'fa-map-pin', trend: 'Flagged by AI model', trendTone: 'neutral' },
-    { icon: 'fa-droplet', tone: 'blue', value: '31.2', valueSuffix: '%', label: 'Impervious Surface', trendIcon: 'fa-arrow-trend-up', trend: '+0.8% built-up vs 2024', trendTone: 'negative' },
+    { icon: 'fa-droplet', tone: 'blue', value: '31.2', valueSuffix: '%', label: 'Impervious Surface', trendIcon: 'fa-arrow-trend-up', trend: '+0.8%', trendNote: 'built-up vs 2024', trendTone: 'negative' },
 ];
 
 export const reports: Report[] = [
