@@ -37,8 +37,19 @@ def _get_report(db: Session, report_id: int) -> Report:
     return report
 
 
+def _selected_network(network: str | None) -> str:
+    """Validate the requested network for read endpoints."""
+    selected = (network or settings.stellar_network).strip().lower()
+    if selected not in ("testnet", "mainnet"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="network must be 'testnet' or 'mainnet'.",
+        )
+    return selected
+
+
 def _serialize_with_attestations(
-    db: Session, reports: Sequence[Report]
+    db: Session, reports: Sequence[Report], network: str
 ) -> list[ReportOut]:
     """Serialize reports with their Stellar attestation summary.
 
@@ -62,6 +73,7 @@ def _serialize_with_attestations(
             .where(
                 ReportAttestation.report_id.in_(ids),
                 ReportAttestation.status == "confirmed",
+                ReportAttestation.network == network,
             )
             .order_by(ReportAttestation.created_at.desc())
         ).all()
@@ -86,17 +98,27 @@ def _serialize_with_attestations(
 @router.get("", response_model=list[ReportOut])
 def list_reports(
     limit: int = Query(100, ge=1, le=500),
+    network: str | None = Query(None, description="testnet or mainnet"),
     db: Session = Depends(get_db),
 ) -> list[ReportOut]:
     statement = select(Report).options(
         joinedload(Report.barangay)
     ).order_by(Report.created_at.desc())
-    return _serialize_with_attestations(db, fetch_all(db, statement, limit))
+    selected = _selected_network(network)
+    return _serialize_with_attestations(
+        db, fetch_all(db, statement, limit), selected
+    )
 
 
 @router.get("/{report_id}", response_model=ReportOut)
-def get_report(report_id: int, db: Session = Depends(get_db)) -> ReportOut:
-    return _serialize_with_attestations(db, [_get_report(db, report_id)])[0]
+def get_report(
+    report_id: int,
+    network: str | None = Query(None, description="testnet or mainnet"),
+    db: Session = Depends(get_db),
+) -> ReportOut:
+    return _serialize_with_attestations(
+        db, [_get_report(db, report_id)], _selected_network(network)
+    )[0]
 
 
 @router.get(
@@ -118,18 +140,30 @@ def get_attestation_message(report_id: int, db: Session = Depends(get_db)) -> Re
 
 
 @router.get("/{report_id}/attestation", response_model=list[ReportAttestationOut])
-def list_attestations(report_id: int, db: Session = Depends(get_db)) -> list[ReportAttestation]:
+def list_attestations(
+    report_id: int,
+    network: str | None = Query(None, description="testnet or mainnet"),
+    db: Session = Depends(get_db),
+) -> list[ReportAttestation]:
     _get_report(db, report_id)  # 404 guard
+    selected = _selected_network(network)
     statement = (
         select(ReportAttestation)
-        .where(ReportAttestation.report_id == report_id)
+        .where(
+            ReportAttestation.report_id == report_id,
+            ReportAttestation.network == selected,
+        )
         .order_by(ReportAttestation.created_at.desc())
     )
     return list(db.scalars(statement))
 
 
 @router.get("/{report_id}/xdr-prepare", response_model=XdrPrepareResponse)
-def get_xdr_prepare(report_id: int, db: Session = Depends(get_db)) -> XdrPrepareResponse:
+def get_xdr_prepare(
+    report_id: int,
+    network: str | None = Query(None, description="testnet or mainnet (default: deployment default)"),
+    db: Session = Depends(get_db),
+) -> XdrPrepareResponse:
     """Week 2: unsigned XDR preparation parameters (server-authoritative).
 
     Returns everything the frontend needs to build the unsigned `attest`
@@ -143,6 +177,26 @@ def get_xdr_prepare(report_id: int, db: Session = Depends(get_db)) -> XdrPrepare
     signing, and the backend never holds keys. Public by design (no auth) —
     same visibility as `attestation-message`.
     """
+    selected = (network or settings.stellar_network).strip().lower()
+    try:
+        network_cfg = settings.stellar_config(selected)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
+    if not network_cfg.enabled:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                f"Stellar {network_cfg.label} is not enabled on this deployment"
+                + (
+                    " — set STELLAR_MAINNET_CONTRACT_ID and STELLAR_MAINNET_ACK=true."
+                    if network_cfg.is_mainnet
+                    else "."
+                )
+            ),
+        )
+
     report = _get_report(db, report_id)
     current_hash = attestation_hash(report)
     canonical = canonical_json(report)
@@ -153,6 +207,7 @@ def get_xdr_prepare(report_id: int, db: Session = Depends(get_db)) -> XdrPrepare
             .where(
                 ReportAttestation.report_id == report.id,
                 ReportAttestation.status == "confirmed",
+                ReportAttestation.network == selected,
             )
             .order_by(ReportAttestation.created_at.desc())
         )
@@ -167,8 +222,8 @@ def get_xdr_prepare(report_id: int, db: Session = Depends(get_db)) -> XdrPrepare
         report_id=str(report.id),
         hash=current_hash,
         prev_hash=prev_hash,
-        contract_id=settings.stellar_contract_id,
-        network=settings.stellar_network,
+        contract_id=network_cfg.contract_id,
+        network=network_cfg.network,
         function="attest",
         args=[
             {"name": "submitter", "type": "Address", "value": "<connected-wallet-G…>"},
@@ -178,7 +233,7 @@ def get_xdr_prepare(report_id: int, db: Session = Depends(get_db)) -> XdrPrepare
         ],
         fee="10000",
         timeout_seconds=120,
-        rpc_url=settings.stellar_rpc_endpoint,
+        rpc_url=network_cfg.rpc_url,
         canonical_payload=canonical,
     )
 
@@ -214,31 +269,44 @@ def record_attestation(
             ),
         )
 
-    # Trust nothing: confirm on the configured network that this exact
+    # Trust nothing: confirm on the requested network that this exact
     # transaction exists, succeeded, and invoked attest() with this wallet,
-    # hash and report ref. The contract id is pinned to THIS deployment's
-    # configured value — the client-supplied id is only cross-checked for a
-    # clear error message.
-    if body.network != settings.stellar_network:
+    # hash and report ref. Each network's contract id is pinned to THIS
+    # deployment's configured value — the client-supplied id is only
+    # cross-checked for a clear error message.
+    try:
+        network_cfg = settings.stellar_config(body.network)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
+    if not network_cfg.enabled:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=(
-                f"This deployment records Stellar {settings.stellar_network_label} "
-                f"attestations, not '{body.network}'."
+                f"Stellar {network_cfg.label} is not enabled on this deployment"
+                + (
+                    " — set STELLAR_MAINNET_CONTRACT_ID and STELLAR_MAINNET_ACK=true."
+                    if network_cfg.is_mainnet
+                    else "."
+                )
             ),
         )
-    if body.contract_id != settings.stellar_contract_id:
+    if body.contract_id != network_cfg.contract_id:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=(
-                "Unknown contract id â€” this deployment verifies attestations "
-                f"against {settings.stellar_contract_id}."
+                f"Unknown {network_cfg.label} contract id — this deployment verifies "
+                f"attestations against {network_cfg.contract_id}."
             ),
         )
     # Validate prev_hash linkage off-chain for friendly errors before Horizon check.
     if body.prev_hash is not None:
         prev_record = db.scalar(
-            select(ReportAttestation).where(ReportAttestation.stellar_hash == body.prev_hash)
+            select(ReportAttestation).where(
+                ReportAttestation.stellar_hash == body.prev_hash,
+                ReportAttestation.network == network_cfg.network,
+            )
         )
         if prev_record is None:
             raise HTTPException(
@@ -259,13 +327,13 @@ def record_attestation(
     try:
         horizon_meta = verify_attest_transaction(
             body.tx_hash,
-            expected_contract_id=settings.stellar_contract_id,
+            expected_contract_id=network_cfg.contract_id,
             expected_hash_hex=body.report_hash,
             expected_report_ref=str(report.id),
             expected_wallet=body.wallet,
             expected_prev_hash_hex=body.prev_hash,
-            horizon_base=settings.stellar_horizon_url,
-            network_label=settings.stellar_network_label,
+            horizon_base=network_cfg.horizon_url,
+            network_label=network_cfg.label,
         )
     except TransactionVerificationError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
@@ -273,7 +341,10 @@ def record_attestation(
     verification_meta = {**(body.meta or {}), **horizon_meta, "verified_at": datetime.now(timezone.utc).isoformat()}
 
     existing = db.scalar(
-        select(ReportAttestation).where(ReportAttestation.stellar_hash == body.report_hash)
+        select(ReportAttestation).where(
+            ReportAttestation.stellar_hash == body.report_hash,
+            ReportAttestation.network == network_cfg.network,
+        )
     )
     if existing is not None:
         if existing.report_id != report.id:
@@ -283,8 +354,8 @@ def record_attestation(
             )
         # Idempotent re-submit: refresh chain pointers/metadata.
         existing.tx_hash = body.tx_hash
-        existing.contract_id = settings.stellar_contract_id
-        existing.network = body.network
+        existing.contract_id = network_cfg.contract_id
+        existing.network = network_cfg.network
         existing.wallet = body.wallet
         existing.prev_hash = body.prev_hash
         existing.status = "confirmed"
@@ -299,8 +370,8 @@ def record_attestation(
         stellar_hash=body.report_hash,
         prev_hash=body.prev_hash,
         tx_hash=body.tx_hash,
-        contract_id=settings.stellar_contract_id,
-        network=settings.stellar_network,
+        contract_id=network_cfg.contract_id,
+        network=network_cfg.network,
         wallet=body.wallet,
         status="confirmed",
         meta=verification_meta,
@@ -329,6 +400,7 @@ def create_report(
 def update_report(
     report_id: int,
     body: ReportUpdate,
+    network: str | None = Query(None, description="testnet or mainnet"),
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ) -> ReportOut:
@@ -339,7 +411,9 @@ def update_report(
     db.refresh(report)
     # Re-serialize after the content change: an edit may invalidate existing
     # proofs (attestedCurrent flips to False for the new content hash).
-    return _serialize_with_attestations(db, [report])[0]
+    return _serialize_with_attestations(
+        db, [report], _selected_network(network)
+    )[0]
 
 
 @router.delete("/{report_id}", status_code=status.HTTP_204_NO_CONTENT)

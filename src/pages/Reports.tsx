@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { NETWORK_LABEL, STELLAR_ENABLED } from '../services/stellar/client';
+import { STELLAR_ENABLED } from '../services/stellar/client';
+import { useStellarNetwork } from '../services/stellar/NetworkContext';
 import { useStellarWallet } from '../hooks/useStellarWallet';
 import Page from '../components/layout/Page';
 import PanelHead from '../components/common/PanelHead';
@@ -17,6 +18,7 @@ type ReportFilter = 'all' | 'attested' | 'stale';
 
 export default function Reports() {
     const navigate = useNavigate();
+    const { network, config } = useStellarNetwork();
     const [reports, setReports] = useState<Report[] | null>(null);
     const [filter, setFilter] = useState<ReportFilter>('all');
     const wallet = useStellarWallet();
@@ -24,7 +26,7 @@ export default function Reports() {
     const [verifyTarget, setVerifyTarget] = useState<Report | null>(null);
 
     const load = useCallback(async () => {
-        const baseReports = await api.getReports();
+        const baseReports = await api.getReports(network);
         // The deployed Vercel backend may be on an older image that does not
         // yet serialize `attestationCount/attestedCurrent/attestedAt` in
         // `ReportOut`. Enrich on the client so the Verified pill is not stuck
@@ -39,7 +41,7 @@ export default function Reports() {
                     try {
                         const [msg, atts] = await Promise.all([
                             api.reports.attestationMessage(r.id),
-                            api.reports.listAttestations(r.id),
+                            api.reports.listAttestations(r.id, network),
                         ]);
                         const confirmed = atts.filter((a) => a.status === 'confirmed');
                         const attestedCurrent = confirmed.some((a) => a.stellarHash === msg.hash);
@@ -61,7 +63,7 @@ export default function Reports() {
         } catch {
             setReports(baseReports);
         }
-    }, []);
+    }, [network]);
 
     useEffect(() => {
         load();
@@ -166,7 +168,7 @@ export default function Reports() {
                             {health.proofs}
                         </strong>
                         <span className="mt-1 block text-[12px] text-[#888]">
-                            {NETWORK_LABEL} attestations
+                            {config.label} attestations
                         </span>
                     </div>
                 </div>
@@ -175,7 +177,7 @@ export default function Reports() {
                     <p className="flex items-center gap-2">
                         <i className="fa-solid fa-shield-halved text-[12px] text-accent"></i>
                         “Attested” means the report&apos;s current content hash matches a confirmed
-                        Stellar {NETWORK_LABEL} proof. Editing the report makes the proof stale.
+                        Stellar {config.label} proof. Editing the report makes the proof stale.
                     </p>
                     {filter !== 'all' ? (
                         <button

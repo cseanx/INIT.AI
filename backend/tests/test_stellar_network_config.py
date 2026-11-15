@@ -43,6 +43,26 @@ def test_mainnet_refuses_testnet_contract_id():
         _settings(stellar_network="mainnet", stellar_mainnet_ack=True)
 
 
+def test_mainnet_contract_requires_ack_when_toggle_configured():
+    with pytest.raises(ValidationError):
+        _settings(stellar_mainnet_contract_id=MAINNET_CONTRACT)
+
+
+def test_dual_network_resolution():
+    settings = _settings(
+        stellar_mainnet_contract_id=MAINNET_CONTRACT,
+        stellar_mainnet_ack=True,
+    )
+    assert settings.stellar_network == "testnet"
+    testnet = settings.stellar_config("testnet")
+    mainnet = settings.stellar_config("mainnet")
+    assert testnet.enabled and testnet.contract_id.startswith("C")
+    assert mainnet.enabled and mainnet.contract_id == MAINNET_CONTRACT
+    assert mainnet.horizon_url == "https://horizon.stellar.org"
+    assert mainnet.rpc_url == "https://soroban-mainnet.stellar.org"
+    assert not settings.stellar_config("testnet").is_mainnet
+
+
 def test_mainnet_resolves_mainnet_endpoints():
     settings = _settings(
         stellar_network="mainnet",

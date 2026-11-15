@@ -231,15 +231,20 @@ export const api = {
         fromApi('/api/canopy', canopySnapshot, isCanopySnapshot),
     getMitigation: (): Promise<MitigationProject[]> =>
         fromApi('/api/mitigation', mitigationProjects, isMitigationProjectArray),
-getReports: async (): Promise<Report[]> => {
-        const remote = await fromApi('/api/reports', reports, isReportArray);
+getReports: async (network?: string): Promise<Report[]> => {
+        const qs = network ? `?network=${encodeURIComponent(network)}` : '';
+        const remote = await fromApi(`/api/reports${qs}`, reports, isReportArray);
         const local = loadStoredReports();
         return local.length
             ? [...local, ...remote.map(fromBackendReport)]
             : remote.map(fromBackendReport);
     },
-    getReport: async (id: number | string): Promise<Report> =>
-        fromBackendReport(await authFetch<unknown>(`/api/reports/${id}`)),
+    getReport: async (id: number | string, network?: string): Promise<Report> =>
+        fromBackendReport(
+            await authFetch<unknown>(
+                `/api/reports/${id}${network ? `?network=${encodeURIComponent(network)}` : ''}`,
+            ),
+        ),
 
     reports: {
         create: async (payload: ReportPayload): Promise<Report> =>
@@ -249,12 +254,19 @@ getReports: async (): Promise<Report[]> => {
                     body: JSON.stringify(payload),
                 }),
             ),
-        update: async (id: number, patch: Partial<ReportPayload>): Promise<Report> =>
+        update: async (
+            id: number,
+            patch: Partial<ReportPayload>,
+            network?: string,
+        ): Promise<Report> =>
             fromBackendReport(
-                await authFetch<unknown>(`/api/reports/${id}`, {
-                    method: 'PUT',
-                    body: JSON.stringify(patch),
-                }),
+                await authFetch<unknown>(
+                    `/api/reports/${id}${network ? `?network=${encodeURIComponent(network)}` : ''}`,
+                    {
+                        method: 'PUT',
+                        body: JSON.stringify(patch),
+                    },
+                ),
             ),
         remove: (id: number): Promise<void> =>
             authFetch<void>(`/api/reports/${id}`, { method: 'DELETE' }),
@@ -264,12 +276,19 @@ getReports: async (): Promise<Report[]> => {
             authFetch<AttestationMessage>(`/api/reports/${id}/attestation-message`),
 
         /** Week 2: unsigned XDR preparation params (hash + prevHash + contract + args). */
-        xdrPrepare: (id: number | string): Promise<XdrPrepareParams> =>
-            authFetch<XdrPrepareParams>(`/api/reports/${id}/xdr-prepare`),
+        xdrPrepare: (id: number | string, network?: string): Promise<XdrPrepareParams> =>
+            authFetch<XdrPrepareParams>(
+                `/api/reports/${id}/xdr-prepare${network ? `?network=${encodeURIComponent(network)}` : ''}`,
+            ),
 
         /** Persisted proof history (public). */
-        listAttestations: (id: number | string): Promise<ReportAttestationRecord[]> =>
-            authFetch<unknown>(`/api/reports/${id}/attestation`).then((data) =>
+        listAttestations: (
+            id: number | string,
+            network?: string,
+        ): Promise<ReportAttestationRecord[]> =>
+            authFetch<unknown>(
+                `/api/reports/${id}/attestation${network ? `?network=${encodeURIComponent(network)}` : ''}`,
+            ).then((data) =>
                 Array.isArray(data) &&
                 data.every((r) => typeof r?.stellarHash === 'string' && typeof r?.txHash === 'string')
                     ? (data as ReportAttestationRecord[])
@@ -375,10 +394,10 @@ getReports: async (): Promise<Report[]> => {
 
     stellar: {
         /** Week 2: pre-flight simulation proxy (structured codes, see docs/rpc-errors.md). */
-        simulate: (xdr: string): Promise<SimulateResult> =>
+        simulate: (xdr: string, network?: string): Promise<SimulateResult> =>
             authFetch<SimulateResult>('/api/stellar/simulate', {
                 method: 'POST',
-                body: JSON.stringify({ xdr }),
+                body: JSON.stringify(network ? { xdr, network } : { xdr }),
             }),
 
         /** Week 2: deterministic GeoJSON hashing pipeline. */

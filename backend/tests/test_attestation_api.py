@@ -122,13 +122,13 @@ def test_requires_authentication(client):
     assert res.status_code == 401
 
 
-def test_rejects_network_mismatch(client):
-    """This deployment is configured for Testnet; a Mainnet claim is refused."""
+def test_rejects_disabled_mainnet(client):
+    """Mainnet claims are refused while the Mainnet contract is not configured."""
     tc, _ = client
     body = {**VALID_BODY, "network": "mainnet"}
     res = tc.post("/api/reports/1/attestation", json=body)
     assert res.status_code == 422
-    assert "Testnet" in res.json()["detail"]
+    assert "Mainnet is not enabled" in res.json()["detail"]
 
 
 def test_rejects_unknown_network(client):

@@ -1,11 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStellarWallet } from '../../services/stellar/WalletContext';
-import {
-    NETWORK_IS_MAINNET,
-    NETWORK_LABEL,
-    STELLAR_ENABLED,
-    explorerAccountUrl,
-} from '../../services/stellar/client';
+import { useStellarNetwork } from '../../services/stellar/NetworkContext';
+import { STELLAR_ENABLED, explorerAccountUrl, type StellarNetwork } from '../../services/stellar/client';
 
 /** GAB3...X9K2-style shortening for header display. */
 function shortAddress(address: string): string {
@@ -15,24 +11,28 @@ function shortAddress(address: string): string {
 const LINE2_CLASSES =
     'inline-flex cursor-pointer items-center gap-[6px] rounded-full px-[10px] py-[4px] text-[12px] font-semibold transition duration-200';
 
-/** Compact network badge + wallet indicator for the global topbar.
- *  Shows "Mainnet" on a mainnet build and "Testnet Demo" otherwise.
+type OpenMenu = 'network' | 'wallet' | null;
+
+/** Compact network toggle + wallet indicator for the global topbar.
+ *  The badge opens a Testnet/Mainnet menu; Mainnet is disabled until a
+ *  Mainnet contract id is configured for the build.
  *  Renders nothing when the Stellar integration is disabled. */
 export default function StellarIndicator() {
     const wallet = useStellarWallet();
-    const [menuOpen, setMenuOpen] = useState(false);
+    const { network, config, available, setNetwork } = useStellarNetwork();
+    const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
     const [copied, setCopied] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!menuOpen) return;
+        if (!openMenu) return;
         function onDocumentClick(e: MouseEvent) {
             if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-                setMenuOpen(false);
+                setOpenMenu(null);
             }
         }
         function onKeyDown(e: KeyboardEvent) {
-            if (e.key === 'Escape') setMenuOpen(false);
+            if (e.key === 'Escape') setOpenMenu(null);
         }
         document.addEventListener('click', onDocumentClick);
         document.addEventListener('keydown', onKeyDown);
@@ -40,7 +40,7 @@ export default function StellarIndicator() {
             document.removeEventListener('click', onDocumentClick);
             document.removeEventListener('keydown', onKeyDown);
         };
-    }, [menuOpen]);
+    }, [openMenu]);
 
     if (!STELLAR_ENABLED) return null;
 
@@ -54,24 +54,95 @@ export default function StellarIndicator() {
         });
     }
 
+    function chooseNetwork(next: StellarNetwork) {
+        if (!available[next]) return;
+        setNetwork(next);
+        setOpenMenu(null);
+    }
+
     return (
         <div ref={rootRef} className="relative flex flex-col items-end gap-[5px]">
-            {/* Network badge */}
-            <span
-                className={
-                    NETWORK_IS_MAINNET
-                        ? 'inline-flex items-center gap-[5px] rounded-full border border-mint/30 bg-mint/10 px-[9px] py-[3px] text-[12px] font-bold uppercase tracking-[.08em] text-mint sm:px-[10px] sm:text-[12px]'
-                        : 'inline-flex items-center gap-[5px] rounded-full border border-[#ffb03a]/30 bg-[#ffb03a]/10 px-[9px] py-[3px] text-[12px] font-bold uppercase tracking-[.08em] text-[#ffb03a] sm:px-[10px] sm:text-[12px]'
-                }
-                title={
-                    NETWORK_IS_MAINNET
-                        ? 'Stellar Mainnet — attestations cost real XLM'
-                        : 'Stellar Testnet — free test XLM, no monetary value'
-                }
-            >
-                <i className="fa-solid fa-satellite text-[11px]"></i>
-                {NETWORK_IS_MAINNET ? 'Mainnet' : 'Testnet Demo'}
-            </span>
+            {/* Network badge — opens the Testnet/Mainnet toggle */}
+            <div className="relative">
+                <button
+                    type="button"
+                    onClick={() => setOpenMenu((m) => (m === 'network' ? null : 'network'))}
+                    aria-haspopup="menu"
+                    aria-expanded={openMenu === 'network'}
+                    title={
+                        config.isMainnet
+                            ? 'Stellar Mainnet — attestations cost real XLM. Click to switch.'
+                            : 'Stellar Testnet — free test XLM. Click to switch.'
+                    }
+                    className={`inline-flex cursor-pointer items-center gap-[5px] rounded-full border px-[9px] py-[3px] text-[12px] font-bold uppercase tracking-[.08em] transition duration-200 sm:px-[10px] sm:text-[12px] ${
+                        config.isMainnet
+                            ? 'border-mint/30 bg-mint/10 text-mint hover:bg-mint/20'
+                            : 'border-[#ffb03a]/30 bg-[#ffb03a]/10 text-[#ffb03a] hover:bg-[#ffb03a]/20'
+                    }`}
+                >
+                    <i className="fa-solid fa-satellite text-[11px]"></i>
+                    {config.isMainnet ? 'Mainnet' : 'Testnet Demo'}
+                    <i
+                        className={`fa-solid fa-chevron-down text-[9px] opacity-70 transition duration-200 ${
+                            openMenu === 'network' ? 'rotate-180' : ''
+                        }`}
+                    ></i>
+                </button>
+
+                {openMenu === 'network' ? (
+                    <div
+                        role="menu"
+                        aria-label="Stellar network"
+                        className="absolute right-0 top-full z-[70] mt-[8px] w-[248px] rounded-[14px] border border-white/10 bg-[#101010] p-[8px] shadow-[0_16px_40px_rgba(0,0,0,.55)]"
+                    >
+                        <p className="px-[8px] py-[6px] text-[11px] font-semibold uppercase tracking-[.12em] text-[#888]">
+                            Stellar network
+                        </p>
+                        {(['testnet', 'mainnet'] as StellarNetwork[]).map((option) => {
+                            const isActive = network === option;
+                            const isAvailable = available[option];
+                            return (
+                                <button
+                                    key={option}
+                                    type="button"
+                                    role="menuitemradio"
+                                    aria-checked={isActive}
+                                    disabled={!isAvailable}
+                                    onClick={() => chooseNetwork(option)}
+                                    className={`flex w-full items-start gap-[9px] rounded-[10px] px-[9px] py-[8px] text-left transition ${
+                                        isActive
+                                            ? 'bg-white/[.07]'
+                                            : 'hover:bg-white/[.04]'
+                                    } ${isAvailable ? 'cursor-pointer' : 'cursor-not-allowed opacity-45'}`}
+                                >
+                                    <span
+                                        className={`mt-[3px] inline-block h-[7px] w-[7px] shrink-0 rounded-full ${
+                                            option === 'mainnet' ? 'bg-mint' : 'bg-[#ffb03a]'
+                                        }`}
+                                    ></span>
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block text-[12.5px] font-semibold text-[#eee]">
+                                            {option === 'mainnet' ? 'Mainnet' : 'Testnet'}
+                                        </span>
+                                        <span className="block text-[11px] leading-snug text-[#888]">
+                                            {option === 'mainnet'
+                                                ? isAvailable
+                                                    ? 'Real XLM fees. Proofs are permanent.'
+                                                    : 'No Mainnet contract configured yet.'
+                                                : isAvailable
+                                                  ? 'Free test XLM via friendbot.'
+                                                  : 'No Testnet contract configured.'}
+                                        </span>
+                                    </span>
+                                    {isActive ? (
+                                        <i className="fa-solid fa-check mt-[3px] text-[11px] text-mint"></i>
+                                    ) : null}
+                                </button>
+                            );
+                        })}
+                    </div>
+                ) : null}
+            </div>
 
             {/* Line 2 — state */}
             {!connected ? (
@@ -103,8 +174,8 @@ export default function StellarIndicator() {
             ) : (
                 <button
                     type="button"
-                    onClick={() => setMenuOpen((o) => !o)}
-                    aria-expanded={menuOpen}
+                    onClick={() => setOpenMenu((m) => (m === 'wallet' ? null : 'wallet'))}
+                    aria-expanded={openMenu === 'wallet'}
                     aria-haspopup="menu"
                     className={`${LINE2_CLASSES} border border-mint/30 bg-mint/10 text-mint hover:bg-mint/20`}
                 >
@@ -112,14 +183,14 @@ export default function StellarIndicator() {
                     {shortAddress(wallet.address as string)}
                     <i
                         className={`fa-solid fa-chevron-down text-[11px] transition duration-200 ${
-                            menuOpen ? 'rotate-180' : ''
+                            openMenu === 'wallet' ? 'rotate-180' : ''
                         }`}
                     ></i>
                 </button>
             )}
 
             {/* Connected wallet popover */}
-            {connected && menuOpen ? (
+            {connected && openMenu === 'wallet' ? (
                 <div
                     role="menu"
                     className="wallet-menu absolute right-0 top-full z-[60] mt-[10px] w-[264px] rounded-[14px] border border-white/10 bg-[#101010] p-[12px] shadow-[0_16px_40px_rgba(0,0,0,.55)]"
@@ -150,7 +221,7 @@ export default function StellarIndicator() {
                     <div className="mb-[10px] flex flex-col gap-[6px] text-[12px]">
                         <div className="flex items-center justify-between">
                             <span className="text-[#888]">Network</span>
-                            <span className="font-semibold text-[#ddd]">Stellar {NETWORK_LABEL}</span>
+                            <span className="font-semibold text-[#ddd]">Stellar {config.label}</span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-[#888]">Status</span>
@@ -162,7 +233,7 @@ export default function StellarIndicator() {
                     </div>
 
                     <a
-                        href={explorerAccountUrl(wallet.address as string)}
+                        href={explorerAccountUrl(wallet.address as string, network)}
                         target="_blank"
                         rel="noreferrer"
                         className="mb-[4px] flex items-center gap-[8px] rounded-[10px] px-[8px] py-[7px] text-[12.5px] text-[#ddd] transition hover:bg-white/6 hover:text-white"
@@ -174,7 +245,7 @@ export default function StellarIndicator() {
                     <button
                         type="button"
                         onClick={() => {
-                            setMenuOpen(false);
+                            setOpenMenu(null);
                             wallet.disconnect();
                         }}
                         className="flex w-full cursor-pointer items-center gap-[8px] rounded-[10px] border-none bg-transparent px-[8px] py-[7px] text-left text-[12.5px] text-[#ff7a94] transition hover:bg-[rgba(255,45,85,.1)]"

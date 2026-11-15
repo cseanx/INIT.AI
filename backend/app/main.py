@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.db.base import Base
 from app.db.ensure import (
     ensure_attestation_columns,
+    ensure_attestation_indexes,
     ensure_report_columns,
     ensure_user_columns,
 )
@@ -21,6 +22,7 @@ Base.metadata.create_all(engine)
 # Additive column sync for tables that already exist in older databases.
 ensure_report_columns(engine)
 ensure_attestation_columns(engine)
+ensure_attestation_indexes(engine)
 ensure_user_columns(engine)
 
 app = FastAPI(title="INIT.AI API", version="0.1.0")

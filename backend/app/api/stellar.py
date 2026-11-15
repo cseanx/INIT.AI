@@ -8,7 +8,7 @@ Week 2 adds: GeoJSON hashing + RPC simulation proxy (both stdlib-only).
 import re
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic.alias_generators import to_camel
 from sqlalchemy import select
@@ -50,6 +50,8 @@ class SimulateRequest(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     xdr: str
+    # Requested network; defaults to the deployment's primary network.
+    network: str | None = None
 
     @field_validator("xdr")
     @classmethod
@@ -114,11 +116,22 @@ def simulate(body: SimulateRequest) -> SimulateResponse:
     INVALID_XDR. Transport failures surface as 502 with RPC_UNREACHABLE /
     RPC_HTTP_ERROR.
     """
+    selected = (body.network or settings.stellar_network).strip().lower()
+    try:
+        network_cfg = settings.stellar_config(selected)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if not network_cfg.enabled:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Stellar {network_cfg.label} is not enabled on this deployment.",
+        )
+
     try:
         result = simulate_transaction(
             body.xdr,
-            rpc_url=settings.stellar_rpc_endpoint,
-            network_label=settings.stellar_network_label,
+            rpc_url=network_cfg.rpc_url,
+            network_label=network_cfg.label,
         )
     except StellarRpcError as exc:
         status = 502 if exc.code in ("RPC_UNREACHABLE", "RPC_HTTP_ERROR") else 422
@@ -127,7 +140,11 @@ def simulate(body: SimulateRequest) -> SimulateResponse:
 
 
 @router.get("/attestation/{report_hash}", response_model=AttestationLookup)
-def lookup_attestation(report_hash: str, db: Session = Depends(get_db)) -> AttestationLookup:
+def lookup_attestation(
+    report_hash: str,
+    network: str | None = Query(None, description="testnet or mainnet"),
+    db: Session = Depends(get_db),
+) -> AttestationLookup:
     """Resolve an attestation by its 64-hex SHA-256.
 
     Public by design: auditors verify proofs without authentication and
@@ -138,8 +155,15 @@ def lookup_attestation(report_hash: str, db: Session = Depends(get_db)) -> Attes
     if not _HEX64.match(report_hash):
         raise HTTPException(status_code=422, detail="reportHash must be 64 hex characters.")
 
+    selected = (network or settings.stellar_network).strip().lower()
+    if selected not in ("testnet", "mainnet"):
+        raise HTTPException(status_code=422, detail="network must be 'testnet' or 'mainnet'.")
+
     record = db.scalar(
-        select(ReportAttestation).where(ReportAttestation.stellar_hash == report_hash)
+        select(ReportAttestation).where(
+            ReportAttestation.stellar_hash == report_hash,
+            ReportAttestation.network == selected,
+        )
     )
     if record is None:
         raise HTTPException(status_code=404, detail="No attestation exists for this hash.")

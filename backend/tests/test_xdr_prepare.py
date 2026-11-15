@@ -15,6 +15,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.config import settings
 from app.db.base import Base
 from app.db.session import get_db
 from app.api.deps import get_current_user
@@ -98,6 +99,63 @@ def test_xdr_prepare_revision_links_prev(client):
     assert data["hash"] != h1
     assert data["prevHash"] == h1
     assert data["args"][3]["value"] == h1
+
+
+def test_xdr_prepare_mainnet_disabled_by_default(client):
+    tc, _, report = client
+    res = tc.get(f"/api/reports/{report.id}/xdr-prepare?network=mainnet")
+    assert res.status_code == 422
+    assert "Mainnet is not enabled" in res.json()["detail"]
+
+
+def test_xdr_prepare_mainnet_when_configured(client, monkeypatch):
+    tc, _, report = client
+    mainnet_contract = "C" + "B" * 55
+    monkeypatch.setattr(settings, "stellar_mainnet_contract_id", mainnet_contract)
+    monkeypatch.setattr(settings, "stellar_mainnet_ack", True)
+
+    res = tc.get(f"/api/reports/{report.id}/xdr-prepare?network=mainnet")
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["network"] == "mainnet"
+    assert data["contractId"] == mainnet_contract
+    assert data["rpcUrl"] == "https://soroban-mainnet.stellar.org"
+
+
+def test_xdr_prepare_scopes_prev_hash_per_network(client, monkeypatch):
+    """A Testnet proof must not become the Mainnet revision parent."""
+    tc, db, report = client
+    h1 = attestation_hash(report)
+    db.add(
+        ReportAttestation(
+            report_id=report.id,
+            stellar_hash=h1,
+            prev_hash=None,
+            tx_hash="b" * 64,
+            contract_id="C" + "A" * 55,
+            network="testnet",
+            wallet="G" + "B" * 55,
+            status="confirmed",
+        )
+    )
+    db.commit()
+    report.recommendations = "v2 network-scoped"
+    db.commit()
+
+    monkeypatch.setattr(settings, "stellar_mainnet_contract_id", "C" + "B" * 55)
+    monkeypatch.setattr(settings, "stellar_mainnet_ack", True)
+
+    testnet = tc.get(f"/api/reports/{report.id}/xdr-prepare?network=testnet").json()
+    mainnet = tc.get(f"/api/reports/{report.id}/xdr-prepare?network=mainnet").json()
+    assert testnet["prevHash"] == h1
+    assert mainnet["prevHash"] is None
+    assert mainnet["contractId"] != testnet["contractId"]
+
+
+def test_xdr_prepare_rejects_unknown_network(client):
+    tc, _, report = client
+    res = tc.get(f"/api/reports/{report.id}/xdr-prepare?network=futurenet")
+    assert res.status_code == 422
 
 
 def test_xdr_prepare_404_for_unknown_report(client):

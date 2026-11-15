@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { PreferencesProvider } from './preferences/PreferencesContext';
+import { StellarNetworkProvider } from './services/stellar/NetworkContext';
 import { StellarWalletProvider } from './services/stellar/WalletContext';
 import { CityProvider } from './contexts/CityContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
@@ -14,13 +15,15 @@ createRoot(document.getElementById('root')!).render(
         <BrowserRouter>
             <AuthProvider>
                 <PreferencesProvider>
-                    <StellarWalletProvider>
-                        <CityProvider>
-                            <ErrorBoundary>
-                                <App />
-                            </ErrorBoundary>
-                        </CityProvider>
-                    </StellarWalletProvider>
+                    <StellarNetworkProvider>
+                        <StellarWalletProvider>
+                            <CityProvider>
+                                <ErrorBoundary>
+                                    <App />
+                                </ErrorBoundary>
+                            </CityProvider>
+                        </StellarWalletProvider>
+                    </StellarNetworkProvider>
                 </PreferencesProvider>
             </AuthProvider>
         </BrowserRouter>

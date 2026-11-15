@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { NETWORK_LABEL } from '../../services/stellar/client';
+import { useStellarNetwork } from '../../services/stellar/NetworkContext';
 import type { Report } from '../../types';
 import { reportPeriod, reportScope } from '../../utils/reportScope';
 
@@ -19,15 +19,15 @@ const UNVERIFIED_PILL = `${VERIFY_PILL_CLASSES} bg-white/[.05] text-[#aaa]`;
 /** Attestation pill for one row: verified / outdated / unverified.
  *  Mirrors the editor's Stellar panel logic — a proof only counts as
  *  verified while it matches the report's CURRENT content hash. */
-function VerificationPill({ report }: { report: Report }) {
+function VerificationPill({ report, networkLabel }: { report: Report; networkLabel: string }) {
     const count = report.attestationCount ?? 0;
     if (report.attestedCurrent) {
         const when = report.attestedAt ? new Date(report.attestedAt).toLocaleString() : '';
         return (
             <span
                 className={VERIFIED_PILL}
-                title={`Recorded on Stellar ${NETWORK_LABEL} ${when}`.trim()}
-                aria-label={`Verified on Stellar ${NETWORK_LABEL}${when ? `, ${when}` : ''}`}
+                title={`Recorded on Stellar ${networkLabel} ${when}`.trim()}
+                aria-label={`Verified on Stellar ${networkLabel}${when ? `, ${when}` : ''}`}
             >
                 <i className="fa-solid fa-circle-check text-[12px]" aria-hidden="true"></i>
                 Verified{count > 1 ? ` · ${count}` : ''}
@@ -66,6 +66,8 @@ export default function ReportsTable({
     onClearFilter?: () => void;
 }) {
     const navigate = useNavigate();
+    const { config } = useStellarNetwork();
+    const networkLabel = config.label;
 
     return (
         <>
@@ -167,7 +169,7 @@ export default function ReportsTable({
                                     </span>
                                 </td>
                                 <td className={TD_CLASSES}>
-                                    <VerificationPill report={r} />
+                                    <VerificationPill report={r} networkLabel={networkLabel} />
                                 </td>
                                 <td className={`${TD_CLASSES} text-right`}>
                                     <div className="flex items-center justify-end gap-[6px]">
@@ -204,13 +206,13 @@ export default function ReportsTable({
                                                 disabled={!!r.attestedCurrent}
                                                 title={
                                                     r.attestedCurrent
-                                                        ? `Already verified on Stellar ${NETWORK_LABEL} — edit the report to create a new version to verify`
+                                                        ? `Already verified on Stellar ${networkLabel} — edit the report to create a new version to verify`
                                                         : 'Verify on Stellar'
                                                 }
                                                 aria-label={
                                                     r.attestedCurrent
-                                                        ? `${r.title} is already verified on Stellar ${NETWORK_LABEL}`
-                                                        : `Verify ${r.title} on Stellar ${NETWORK_LABEL}`
+                                                        ? `${r.title} is already verified on Stellar ${networkLabel}`
+                                                        : `Verify ${r.title} on Stellar ${networkLabel}`
                                                 }
                                                 onClick={() => {
                                                     if (r.attestedCurrent) return;

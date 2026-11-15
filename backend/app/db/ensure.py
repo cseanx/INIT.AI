@@ -58,6 +58,49 @@ def ensure_attestation_columns(engine: Engine) -> None:
             connection.execute(text(statement))
 
 
+def ensure_attestation_indexes(engine: Engine) -> None:
+    """Upgrade attestation uniqueness from global hash to (hash, network).
+
+    Older databases have a UNIQUE index on stellar_hash alone, which would
+    block the same report version from being proven on both Testnet and
+    Mainnet. Postgres-only; SQLite test databases are created from the current
+    model. No-op once upgraded.
+    """
+    if engine.dialect.name != "postgresql":
+        return
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1
+                        FROM pg_index i
+                        JOIN pg_class c ON c.oid = i.indexrelid
+                        WHERE c.relname = 'ix_report_attestations_stellar_hash'
+                          AND i.indisunique
+                    ) THEN
+                        DROP INDEX ix_report_attestations_stellar_hash;
+                    END IF;
+                END $$;
+                """
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_report_attestations_stellar_hash "
+                "ON report_attestations (stellar_hash)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_report_attestations_hash_network "
+                "ON report_attestations (stellar_hash, network)"
+            )
+        )
+
+
 def ensure_user_columns(engine: Engine) -> None:
     """Add missing columns on `users` for account expansion (no-op when present)."""
     with engine.begin() as connection:

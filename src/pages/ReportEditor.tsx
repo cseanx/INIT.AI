@@ -7,6 +7,7 @@ import Toast, { type ToastMessage } from '../components/common/Toast';
 import StellarVerifyPanel from '../components/reports/StellarVerifyPanel';
 import { useApiData } from '../hooks/useApiData';
 import { api } from '../services/api';
+import { useStellarNetwork } from '../services/stellar/NetworkContext';
 import { discardLocalReport, loadCurrentReport, loadStoredReports } from '../reports/reportService';
 import { reportPeriod, reportScope } from '../utils/reportScope';
 import type { Report, ReportPayload } from '../types';
@@ -53,6 +54,7 @@ function toPayload(report: Report): ReportPayload {
 
 export default function ReportEditor() {
     const navigate = useNavigate();
+    const { network } = useStellarNetwork();
     const [searchParams] = useSearchParams();
     const idParam = searchParams.get('id');
     // Read-only mode: /report/edit?id=X&mode=view hides save/delete controls.
@@ -85,7 +87,7 @@ export default function ReportEditor() {
                 }
                 try {
                     setReport(undefined);
-                    const fetched = await api.getReport(idParam);
+                    const fetched = await api.getReport(idParam, network);
                     if (active) {
                         setReport(fetched);
                         setRecommendations(fetched.recommendations);
@@ -105,7 +107,7 @@ export default function ReportEditor() {
         return () => {
             active = false;
         };
-    }, [idParam]);
+    }, [idParam, network]);
 
     useEffect(() => {
         if (!toast) return;
@@ -175,7 +177,11 @@ export default function ReportEditor() {
         setSaving(true);
         try {
             if (isRemote) {
-                const updated = await api.reports.update(report.id as number, { recommendations });
+                const updated = await api.reports.update(
+                    report.id as number,
+                    { recommendations },
+                    network,
+                );
                 setReport(updated);
                 setToast({ id: Date.now(), text: 'Report saved to the database.', tone: 'success' });
             } else {

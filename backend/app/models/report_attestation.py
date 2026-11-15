@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, JSON, String, func
+from sqlalchemy import DateTime, ForeignKey, JSON, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -15,14 +15,19 @@ class ReportAttestation(Base):
     """
 
     __tablename__ = "report_attestations"
+    # The same content hash may be proven on Testnet AND Mainnet; uniqueness
+    # is per network, never global.
+    __table_args__ = (
+        UniqueConstraint("stellar_hash", "network", name="uq_report_attestations_hash_network"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     report_id: Mapped[int] = mapped_column(
         ForeignKey("reports.id", ondelete="CASCADE"), index=True
     )
 
-    # 64-hex SHA-256 of the canonical payload — unique per proof.
-    stellar_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    # 64-hex SHA-256 of the canonical payload — unique per (hash, network).
+    stellar_hash: Mapped[str] = mapped_column(String(64), index=True)
     # 64-hex SHA-256 of the previous version's hash — on-chain revision link.
     # Null for the first version of a report, set for every later edit.
     prev_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, default=None)

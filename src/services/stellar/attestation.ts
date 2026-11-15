@@ -10,14 +10,7 @@
 ========================== */
 
 import type { ChainAttestation } from '../../types/stellar';
-import {
-    CONTRACT_ID,
-    NETWORK_IS_MAINNET,
-    NETWORK_LABEL,
-    NETWORK_PASSPHRASE,
-    getServer,
-    requireStellarEnabled,
-} from './client';
+import { getActiveConfig, getServer, requireStellarEnabled } from './client';
 import { assertNetworkSelected, normalizeWalletError, signTransaction } from './wallet';
 
 const CONFIRM_TIMEOUT_MS = 90_000;
@@ -81,7 +74,8 @@ export async function prepareSignedAttestation({
     requireStellarEnabled();
     const { Address, Contract, TransactionBuilder, nativeToScVal, xdr } =
         await import('@stellar/stellar-sdk');
-    const server = await getServer();
+    const config = getActiveConfig();
+    const server = await getServer(config.network);
 
     await assertNetworkSelected();
 
@@ -91,17 +85,17 @@ export async function prepareSignedAttestation({
         const status = (err as { status?: number } | null)?.status;
         if (status === 404) {
             throw new Error(
-                NETWORK_IS_MAINNET
+                config.isMainnet
                     ? 'Your Stellar account is not funded on Mainnet. Send real XLM to it before attesting.'
                     : 'Your Stellar account is not reachable on Testnet. Fund it via the friendbot faucet and try again.',
             );
         }
         throw new Error(
-            `Could not reach the Stellar ${NETWORK_LABEL} network (RPC error). Check your connection and try again.`,
+            `Could not reach the Stellar ${config.label} network (RPC error). Check your connection and try again.`,
         );
     });
 
-    const contract = new Contract(CONTRACT_ID);
+    const contract = new Contract(config.contractId);
     // prev_hash is Option<BytesN<32>> on-chain: Some(bytes) for revisions, Void for first version.
     // Soroban encodes Option<T> as the inner value or Void — see soroban-env-common/src/option.rs.
     let prevScVal: import('@stellar/stellar-sdk').xdr.ScVal;
@@ -136,7 +130,10 @@ export async function prepareSignedAttestation({
         prevScVal,
     );
 
-    let tx = new TransactionBuilder(source, { fee: '10000', networkPassphrase: NETWORK_PASSPHRASE })
+    let tx = new TransactionBuilder(source, {
+        fee: '10000',
+        networkPassphrase: config.networkPassphrase,
+    })
         .addOperation(operation)
         .setTimeout(120)
         .build();
@@ -160,11 +157,11 @@ export async function prepareSignedAttestation({
         const haystack = `${raw} ${flattened}`.toLowerCase();
         if (haystack.includes('already exists') || haystack.includes('already attested')) {
             throw new Error(
-                `This report has already been verified on Stellar ${NETWORK_LABEL}. Each report version can only be attested once — edit the report to create a new version to verify.`,
+                `This report has already been verified on Stellar ${config.label}. Each report version can only be attested once — edit the report to create a new version to verify.`,
             );
         }
         throw new Error(
-            `The attestation transaction could not be simulated on Stellar ${NETWORK_LABEL}. The contract may be unavailable, or the network is unreachable — try again shortly.`,
+            `The attestation transaction could not be simulated on Stellar ${config.label}. The contract may be unavailable, or the network is unreachable — try again shortly.`,
         );
     }
 
@@ -187,16 +184,17 @@ export async function submitSignedAttestation(
 ): Promise<string> {
     requireStellarEnabled();
     const { TransactionBuilder } = await import('@stellar/stellar-sdk');
-    const server = await getServer();
+    const config = getActiveConfig();
+    const server = await getServer(config.network);
 
-    const signed = TransactionBuilder.fromXdr(signedXdr, NETWORK_PASSPHRASE);
+    const signed = TransactionBuilder.fromXdr(signedXdr, config.networkPassphrase);
     onPhase?.('submitting');
     let sent;
     try {
         sent = await server.sendTransaction(signed);
     } catch {
         throw new Error(
-            `Could not submit the transaction to Stellar ${NETWORK_LABEL} (RPC error). Check your connection and try again.`,
+            `Could not submit the transaction to Stellar ${config.label} (RPC error). Check your connection and try again.`,
         );
     }
     if (sent.status === 'ERROR') {
@@ -231,7 +229,7 @@ async function waitForConfirmation(
         }
     }
     throw new Error(
-        `Timed out waiting for ${NETWORK_LABEL} confirmation — the network may be slow or unavailable. The transaction might still confirm; check the explorer shortly.`,
+        `Timed out waiting for ${getActiveConfig().label} confirmation — the network may be slow or unavailable. The transaction might still confirm; check the explorer shortly.`,
     );
 }
 
@@ -243,7 +241,8 @@ export async function fetchChainAttestation(
     requireStellarEnabled();
     const { Account, Contract, TransactionBuilder, scValToNative, xdr } =
         await import('@stellar/stellar-sdk');
-    const server = await getServer();
+    const config = getActiveConfig();
+    const server = await getServer(config.network);
 
     // Simulated reads don't submit, but the builder needs a plausible
     // account. Contract ids are NOT valid Account ids — use a fixed
@@ -256,10 +255,10 @@ export async function fetchChainAttestation(
         source = new Account(READ_ONLY_SOURCE_ID, '0');
     }
 
-    const contract = new Contract(CONTRACT_ID);
+    const contract = new Contract(config.contractId);
     const tx = new TransactionBuilder(source, {
         fee: '100',
-        networkPassphrase: NETWORK_PASSPHRASE,
+        networkPassphrase: config.networkPassphrase,
     })
         .addOperation(contract.call('verify', xdr.ScVal.scvBytes(hexToBytes32(reportHashHex))))
         .setTimeout(60)

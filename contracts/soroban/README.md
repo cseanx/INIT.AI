@@ -386,21 +386,29 @@ Verification metadata persisted per attestation:
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `VITE_STELLAR_ENABLED` | Master switch for the integration | `false` |
-| `VITE_STELLAR_NETWORK` | `testnet` (default) or `mainnet`; anything else disables Stellar | `testnet` |
-| `VITE_SOROBAN_CONTRACT_ID` | Deployed contract id (SOW name) | Testnet id |
-| `VITE_STELLAR_CONTRACT_ID` | Legacy alias for the same value | — |
-| `VITE_STELLAR_RPC_URL` | Soroban RPC endpoint | network default (testnet/mainnet) |
-| `VITE_STELLAR_HORIZON_URL` | Horizon REST endpoint | network default (testnet/mainnet) |
+| `VITE_STELLAR_NETWORK` | Initial toggle position: `testnet` (default) or `mainnet` | `testnet` |
+| `VITE_SOROBAN_CONTRACT_ID` | Testnet contract id (SOW name) | Testnet id |
+| `VITE_STELLAR_CONTRACT_ID` | Legacy alias for the Testnet value | — |
+| `VITE_MAINNET_SOROBAN_CONTRACT_ID` | Mainnet contract id; unset = toggle's Mainnet side disabled | unset |
+| `VITE_MAINNET_STELLAR_CONTRACT_ID` | Legacy alias for the Mainnet value | unset |
+| `VITE_STELLAR_RPC_URL` / `VITE_STELLAR_HORIZON_URL` | Primary-network endpoint overrides | network default |
+| `VITE_MAINNET_RPC_URL` / `VITE_MAINNET_HORIZON_URL` | Mainnet endpoint overrides | network default |
 
 **Backend (FastAPI settings — verification is pinned server-side):**
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
-| `STELLAR_CONTRACT_ID` | The contract THIS deployment trusts; client-submitted ids are only cross-checked against it | deployed Testnet contract id |
-| `STELLAR_HORIZON_BASE` | Horizon base URL for read-only transaction verification | network default |
-| `STELLAR_RPC_URL` | Soroban RPC endpoint for simulation | network default |
-| `STELLAR_NETWORK` | `testnet` (default) or `mainnet` | `testnet` |
-| `STELLAR_MAINNET_ACK` | Second key for Mainnet: must be `true` or startup fails | `false` |
+| `STELLAR_TESTNET_CONTRACT_ID` | Testnet contract this deployment trusts | deployed Testnet contract id |
+| `STELLAR_MAINNET_CONTRACT_ID` | Mainnet contract; enables the toggle's Mainnet side | unset |
+| `STELLAR_CONTRACT_ID` | Legacy override for the primary network's contract | unset |
+| `STELLAR_NETWORK` | Default network when a request omits `network` | `testnet` |
+| `STELLAR_MAINNET_ACK` | Second key for Mainnet: required with a Mainnet contract id | `false` |
+| `STELLAR_HORIZON_BASE` / `STELLAR_RPC_URL` | Primary-network endpoint overrides | network default |
+| `STELLAR_MAINNET_HORIZON_BASE` / `STELLAR_MAINNET_RPC_URL` | Mainnet endpoint overrides | network default |
+
+The frontend selects a network per request (`?network=testnet|mainnet` on
+`xdr-prepare`, `network` in the simulate/attestation bodies) and remembers the
+header-toggle choice in `localStorage`.
 
 No private keys, seed phrases, or signing material exist in any environment
 variable — signing happens exclusively in the user's Freighter extension.

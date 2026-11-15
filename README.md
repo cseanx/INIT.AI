@@ -214,25 +214,29 @@ alone. Walking the chain: `verify(latest_hash)` â†’ `prev_hash` â†’ `v
 
   * Development and demonstration network (the deployed instance)
 
-### Network selection (Testnet default, Mainnet opt-in)
+### Network selection (runtime toggle, Testnet default)
 
-One deployment talks to exactly one Stellar network. The default is Testnet
-everywhere, so demos, grading, and the Instawards evidence keep working
-unchanged. Mainnet requires **both** backend switches plus a real Mainnet
-contract id, and it spends real XLM:
+Both networks can be enabled at once. The header badge is a toggle:
+**Testnet Demo ↔ Mainnet** — the choice is remembered per browser and every
+Stellar call (contract id, RPC, Horizon, passphrase, explorer links, wallet
+network check) follows it. Testnet stays the default, so demos, grading, and
+the Instawards evidence keep working unchanged.
 
-| Layer | Testnet (default) | Mainnet opt-in |
+| Layer | Testnet | Mainnet |
 | --- | --- | --- |
-| Frontend | `VITE_STELLAR_NETWORK=testnet` | `VITE_STELLAR_NETWORK=mainnet` + Mainnet contract id |
-| Backend | `STELLAR_NETWORK=testnet` | `STELLAR_NETWORK=mainnet` **and** `STELLAR_MAINNET_ACK=true` + Mainnet contract id |
+| Frontend contract | `VITE_SOROBAN_CONTRACT_ID` | `VITE_MAINNET_SOROBAN_CONTRACT_ID` (unset → Mainnet option disabled) |
+| Frontend initial network | `VITE_STELLAR_NETWORK=testnet` | `VITE_STELLAR_NETWORK=mainnet` |
+| Backend contract | `STELLAR_TESTNET_CONTRACT_ID` | `STELLAR_MAINNET_CONTRACT_ID` + `STELLAR_MAINNET_ACK=true` |
+| Backend default | `STELLAR_NETWORK=testnet` | `STELLAR_NETWORK=mainnet` |
 | Horizon / RPC | Testnet endpoints | `horizon.stellar.org` / `soroban-mainnet.stellar.org` (automatic) |
 | Fees | free Testnet XLM (friendbot) | real XLM |
 
-The backend refuses to start with `STELLAR_NETWORK=mainnet` unless
-`STELLAR_MAINNET_ACK=true` **and** `STELLAR_CONTRACT_ID` differs from the
-Testnet deployment. The API also rejects attestations whose client-declared
-network does not match the deployment. Full checklist, costs, verification and
-rollback: [`contracts/soroban/MAINNET-RUNBOOK.md`](contracts/soroban/MAINNET-RUNBOOK.md).
+The backend refuses to start with a Mainnet contract id unless
+`STELLAR_MAINNET_ACK=true`, and refuses `STELLAR_NETWORK=mainnet` with the
+Testnet contract id. Every write is verified against the contract and Horizon
+of the network the client declared; a disabled network returns 422. Full
+checklist, costs, verification and rollback:
+[`contracts/soroban/MAINNET-RUNBOOK.md`](contracts/soroban/MAINNET-RUNBOOK.md).
 
 ---
 

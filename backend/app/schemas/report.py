@@ -144,9 +144,10 @@ class ReportAttestationCreate(BaseModel):
     def _known_network(cls, value: str) -> str:
         # Shape check only — the API rejects a network that differs from this
         # deployment's configured STELLAR_NETWORK (testnet by default).
-        if value not in ("testnet", "mainnet"):
+        normalized = value.strip().lower()
+        if normalized not in ("testnet", "mainnet"):
             raise ValueError("network must be 'testnet' or 'mainnet'.")
-        return value
+        return normalized
 
 
 class ReportAttestationOut(BaseModel):

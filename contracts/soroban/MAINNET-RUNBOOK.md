@@ -50,7 +50,12 @@ stellar keys generate initai-mainnet --network mainnet
 stellar keys address initai-mainnet
 ```
 
-Send **real XLM** to that public key from an exchange or custody account. Verify:
+Send **real XLM** to that public key from an exchange or custody account.
+**5 XLM is enough** — the Testnet deploy of this wasm charged 19,512 stroops
+(~0.002 XLM); Mainnet has the same fee structure. Keep a small buffer for the
+smoke test and future writes.
+
+Verify:
 
 ```bash
 curl -s "https://horizon.stellar.org/accounts/$(stellar keys address initai-mainnet)" | head
@@ -104,70 +109,80 @@ stellar contract invoke --id $CID --network mainnet \
 Record the deploy tx and smoke-test tx hashes in
 `contracts/soroban/README.md` and the README Evidence Index.
 
-## 5. Configure the apps
+## 5. Configure the apps (both networks stay enabled)
 
-Mainnet is a **two-key switch** on the backend so a typo cannot silently move
-real money.
+The app keeps Testnet **and** Mainnet available at the same time; the header
+badge toggles between them at runtime. Testnet remains the default. Mainnet is
+a **two-key switch** so a typo cannot silently move real money.
 
 ### Backend (Vercel `backend-init-ai` → Settings → Environment Variables)
 
 | Variable | Value |
 |---|---|
-| `STELLAR_NETWORK` | `mainnet` |
-| `STELLAR_MAINNET_ACK` | `true` |
-| `STELLAR_CONTRACT_ID` | the Mainnet contract id from step 3 |
-| `STELLAR_HORIZON_BASE` | optional; defaults to `https://horizon.stellar.org` |
-| `STELLAR_RPC_URL` | optional; defaults to `https://soroban-mainnet.stellar.org` |
+| `STELLAR_NETWORK` | `testnet` (default when a request omits `network`) |
+| `STELLAR_TESTNET_CONTRACT_ID` | `CDYHVMV...GQ4` (or leave default) |
+| `STELLAR_MAINNET_CONTRACT_ID` | the Mainnet contract id from step 3 |
+| `STELLAR_MAINNET_ACK` | `true` (required whenever the Mainnet id is set) |
+| `STELLAR_MAINNET_HORIZON_BASE` | optional; defaults to `https://horizon.stellar.org` |
+| `STELLAR_MAINNET_RPC_URL` | optional; defaults to `https://soroban-mainnet.stellar.org` |
 
-The backend refuses to start if `STELLAR_NETWORK=mainnet` without
-`STELLAR_MAINNET_ACK=true`, or if `STELLAR_CONTRACT_ID` still equals the Testnet
-default.
+The backend refuses to start if a Mainnet contract id is present without
+`STELLAR_MAINNET_ACK=true`, or if the id equals the Testnet deployment.
 
 ### Frontend (Vercel `init-ai` project)
 
 | Variable | Value |
 |---|---|
 | `VITE_STELLAR_ENABLED` | `true` |
-| `VITE_STELLAR_NETWORK` | `mainnet` |
-| `VITE_SOROBAN_CONTRACT_ID` | Mainnet contract id |
-| `VITE_STELLAR_CONTRACT_ID` | same value (legacy alias) |
+| `VITE_STELLAR_NETWORK` | `testnet` (initial toggle position) |
+| `VITE_SOROBAN_CONTRACT_ID` | Testnet contract id (unchanged) |
+| `VITE_MAINNET_SOROBAN_CONTRACT_ID` | Mainnet contract id — this enables the toggle's Mainnet side |
 
-`VITE_STELLAR_RPC_URL` / `VITE_STELLAR_HORIZON_URL` can be left unset — the
-defaults follow the selected network. If set, they must point at Mainnet.
+`VITE_MAINNET_RPC_URL` / `VITE_MAINNET_HORIZON_URL` can be left unset — the
+defaults follow the selected network.
+
+Once both env sets are saved, **redeploy** so the Vite build picks up the new
+Mainnet contract id. Until then the toggle shows Mainnet disabled with
+"No Mainnet contract configured yet."
 
 ## 6. Post-deploy verification
 
 ```bash
 curl -s https://backend-phi-gray-27.vercel.app/api/health
-curl -s https://backend-phi-gray-27.vercel.app/api/reports/7/xdr-prepare
+curl -s "https://backend-phi-gray-27.vercel.app/api/reports/7/xdr-prepare?network=testnet"
+curl -s "https://backend-phi-gray-27.vercel.app/api/reports/7/xdr-prepare?network=mainnet"
 # -> network: "mainnet", contractId: <mainnet id>, rpcUrl: soroban-mainnet
 ```
 
 In the dApp:
 
-1. Header badge reads **Mainnet** (green), not "Testnet Demo".
+1. Click the header badge → **Mainnet** becomes selectable and the badge turns
+   green. The choice persists across reloads.
 2. Freighter must be on **Mainnet**; the wallet check rejects Testnet.
 3. Verify a fresh report → explorer link opens
    `stellar.expert/explorer/public/...`.
 4. Confirm the persisted row shows `network: "mainnet"`.
+5. Switch back to Testnet and confirm reports/attestations still work.
 
 Run the backend suite first (`python -m pytest tests -q`) — the network guard
 tests must pass before any env change.
 
 ## 7. Rollback
 
-Fastest and safest: revert the env vars to Testnet and redeploy.
+Fastest and safest: remove Mainnet from the toggle and redeploy. Testnet is
+untouched.
 
 | Variable | Rollback value |
 |---|---|
-| `STELLAR_NETWORK` | `testnet` |
-| `STELLAR_MAINNET_ACK` | unset |
-| `STELLAR_CONTRACT_ID` | `CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4` |
-| `VITE_STELLAR_NETWORK` | `testnet` |
-| `VITE_SOROBAN_CONTRACT_ID` / `VITE_STELLAR_CONTRACT_ID` | the Testnet contract id |
+| `STELLAR_MAINNET_CONTRACT_ID` | unset |
+| `STELLAR_MAINNET_ACK` | `false` or unset |
+| `STELLAR_NETWORK` | `testnet` (already the default) |
+| `VITE_MAINNET_SOROBAN_CONTRACT_ID` | unset |
+| `VITE_STELLAR_NETWORK` | `testnet` (already the default) |
 
-Existing Mainnet proofs stay verifiable on-chain regardless of what the app
-points at; they simply stop being listed in the app until you point back.
+The toggle then shows Mainnet disabled; anyone with Mainnet selected in
+localStorage falls back to Testnet on next load. Existing Mainnet proofs stay
+verifiable on-chain and reappear if you restore the env vars.
 
 **Do not** delete or redeploy the contract as a rollback — that loses the
 address reviewers were given.

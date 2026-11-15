@@ -6,10 +6,10 @@
 ========================== */
 
 import {
-    NETWORK_IS_MAINNET,
-    NETWORK_LABEL,
-    NETWORK_PASSPHRASE,
+    getActiveConfig,
+    getNetworkConfig,
     requireStellarEnabled,
+    type StellarNetwork,
 } from './client';
 
 const STORE_KEY = 'initai_stellar_address';
@@ -43,13 +43,28 @@ async function getKit(): Promise<Kit> {
             ],
             // Freighter is the primary/demo wallet — highlighted in the modal.
             selectedWalletId: freighter.FREIGHTER_ID,
-            // Kit-side network awareness: follows VITE_STELLAR_NETWORK so a
-            // Mainnet build asks wallets for Mainnet signatures.
-            network: NETWORK_IS_MAINNET ? kit.Networks.PUBLIC : kit.Networks.TESTNET,
+            // Kit-side network awareness follows the active runtime network so
+            // Freighter asks for signatures on the chain the app is showing.
+            network: getActiveConfig().isMainnet
+                ? kit.Networks.PUBLIC
+                : kit.Networks.TESTNET,
         });
         kitLoaded = true;
     }
     return kit;
+}
+
+/** Point the already-initialized kit at a new network (no reload needed). */
+export async function syncWalletNetwork(network: StellarNetwork): Promise<void> {
+    if (!kitLoaded) return;
+    try {
+        const kit = await getKit();
+        kit.StellarWalletsKit.setNetwork(
+            getNetworkConfig(network).isMainnet ? kit.Networks.PUBLIC : kit.Networks.TESTNET,
+        );
+    } catch {
+        // Kit not usable yet (e.g. disabled build) — nothing to sync.
+    }
 }
 
 /** Address remembered from a previous connection (session continuity). */
@@ -107,14 +122,14 @@ export async function fetchAddress(): Promise<string> {
 }
 
 /** Network awareness: throws a friendly error when the wallet isn't on the
- *  network this deployment is configured for (Testnet or Mainnet). */
+ *  runtime-selected network (Testnet or Mainnet). */
 export async function assertNetworkSelected(): Promise<void> {
-    const { Networks, StellarWalletsKit } = await getKit();
-    const expected = NETWORK_IS_MAINNET ? Networks.PUBLIC : Networks.TESTNET;
+    const { StellarWalletsKit } = await getKit();
+    const config = getActiveConfig();
     const net = await StellarWalletsKit.getNetwork().catch(() => null);
-    if (net && net.networkPassphrase !== expected) {
+    if (net && net.networkPassphrase !== config.networkPassphrase) {
         throw new Error(
-            `Your wallet is set to the wrong network. Switch it to ${NETWORK_LABEL} and try again.`,
+            `Your wallet is set to the wrong network. Switch it to ${config.label} and try again.`,
         );
     }
 }
@@ -122,8 +137,9 @@ export async function assertNetworkSelected(): Promise<void> {
 /** Sign a prepared transaction XDR with the connected account. */
 export async function signTransaction(xdr: string, address: string): Promise<string> {
     const { StellarWalletsKit } = await getKit();
+    const config = getActiveConfig();
     const { signedTxXdr } = await StellarWalletsKit.signTransaction(xdr, {
-        networkPassphrase: NETWORK_PASSPHRASE,
+        networkPassphrase: config.networkPassphrase,
         address,
     });
     return signedTxXdr;
@@ -155,10 +171,11 @@ export function normalizeWalletError(err: unknown): Error {
     }
 
     const msg = raw.toLowerCase();
+    const config = getActiveConfig();
     // Week 3: explicit timeout + insufficient-balance mapping (plan: timeout + confirmation states)
     if (msg.includes('timed out') || msg.includes('timeout') || msg.includes('deadline')) {
         return new Error(
-            `Timed out waiting for ${NETWORK_LABEL} confirmation \u2014 the network may be slow. The transaction might still confirm; check the explorer before retrying.`,
+            `Timed out waiting for ${config.label} confirmation \u2014 the network may be slow. The transaction might still confirm; check the explorer before retrying.`,
         );
     }
     if (
@@ -168,7 +185,7 @@ export function normalizeWalletError(err: unknown): Error {
         msg.includes('fee') && msg.includes('high')
     ) {
         return new Error(
-            NETWORK_IS_MAINNET
+            config.isMainnet
                 ? 'Insufficient XLM for the network fee and storage reserve. Top up your Mainnet wallet with real XLM and try again.'
                 : 'Insufficient Testnet XLM for the network fee. Fund your wallet via the friendbot faucet and try again \u2014 Testnet XLM is free.',
         );
@@ -199,7 +216,7 @@ export function normalizeWalletError(err: unknown): Error {
         );
     }
     if (msg.includes('passphrase') || msg.includes('wrong network') || msg.includes('network')) {
-        return new Error(`Wallet network mismatch — switch Freighter to ${NETWORK_LABEL}.`);
+        return new Error(`Wallet network mismatch — switch Freighter to ${config.label}.`);
     }
     return new Error(raw);
 }

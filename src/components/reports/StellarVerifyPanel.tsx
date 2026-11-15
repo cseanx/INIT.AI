@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { api } from '../../services/api';
 import {
-    CONTRACT_ID,
-    NETWORK_LABEL,
     STELLAR_ENABLED,
-    STELLAR_NETWORK,
     explorerAccountUrl,
     explorerContractUrl,
     explorerTxUrl,
 } from '../../services/stellar/client';
+import { useStellarNetwork } from '../../services/stellar/NetworkContext';
 import type { AttestationMessage, ReportAttestationRecord } from '../../types/stellar';
 import { useStellarAttestation } from '../../hooks/useStellarAttestation';
 import { useStellarWallet } from '../../hooks/useStellarWallet';
@@ -128,6 +126,7 @@ function ProofField({
  */
 export default function StellarVerifyPanel({ report }: { report: Report }) {
     const enabled = STELLAR_ENABLED && typeof report.id === 'number';
+    const { network, config } = useStellarNetwork();
     const wallet = useStellarWallet();
     const att = useStellarAttestation();
 
@@ -144,7 +143,7 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
         try {
             const [msg, recs] = await Promise.all([
                 api.reports.attestationMessage(report.id),
-                api.reports.listAttestations(report.id),
+                api.reports.listAttestations(report.id, network),
             ]);
             setMessage(msg);
             setRecords(recs);
@@ -154,7 +153,7 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
         } finally {
             setLoaded(true);
         }
-    }, [report.id]);
+    }, [report.id, network]);
 
     useEffect(() => {
         if (enabled) void refresh();
@@ -186,8 +185,8 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
             await api.reports.recordAttestation(report.id, {
                 reportHash: result.reportHash,
                 txHash: result.txHash,
-                contractId: CONTRACT_ID,
-                network: STELLAR_NETWORK,
+                contractId: config.contractId,
+                network,
                 wallet: wallet.address ?? '',
                 meta: { source: 'web' },
             });
@@ -210,7 +209,7 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
                             Verified on Stellar
                         </h4>
                         <span className={`${CHIP_CLASSES} border border-mint/30 bg-mint/10 text-mint`}>
-                            <i className="fa-solid fa-link text-[11.5px]" aria-hidden="true"></i> {NETWORK_LABEL}
+                            <i className="fa-solid fa-link text-[11.5px]" aria-hidden="true"></i> {config.label}
                         </span>
                         {revision > 0 ? (
                             <span className={`${CHIP_CLASSES} border border-white/10 bg-white/[.04] text-[#ccc]`}>
@@ -248,7 +247,7 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
                     />
                     <ProofField label="Network">
                         <span className="mt-1 block text-[13px] font-medium text-white">
-                            Stellar {NETWORK_LABEL}
+                            Stellar {config.label}
                         </span>
                     </ProofField>
                     <ProofField label="Recorded at">
@@ -287,7 +286,7 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
         connecting: 'Connecting wallet…',
         signing: 'Awaiting wallet signature…',
         submitting: 'Submitting to Stellar…',
-        confirming: `Confirming on ${NETWORK_LABEL}…`,
+        confirming: `Confirming on ${config.label}…`,
     };
     const inFlight = busy ? (phaseLabel[att.phase] ?? 'Working…') : null;
 
@@ -334,14 +333,14 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
                         </div>
                         <ProofField label="Network">
                             <span className="mt-1 block text-[13px] font-medium text-white">
-                                Stellar {NETWORK_LABEL}
+                                Stellar {config.label}
                             </span>
                         </ProofField>
                         <ProofField
                             label="Contract"
-                            value={CONTRACT_ID}
+                            value={config.contractId}
                             copyLabel="Copy contract ID"
-                            href={explorerContractUrl(CONTRACT_ID)}
+                            href={explorerContractUrl(config.contractId)}
                         />
                     </div>
                     {wallet.address ? (
@@ -364,7 +363,7 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
                         <>
                             <p className="mb-[14px] mt-[10px] max-w-[640px] text-[12.5px] leading-relaxed text-[#bbb]">
                                 Record a timestamped SHA-256 fingerprint of this exact report on
-                                Stellar {NETWORK_LABEL}. Anyone can later check that the report has
+                                Stellar {config.label}. Anyone can later check that the report has
                                 not been altered; the chain proves existence, not the science.
                             </p>
 
@@ -411,9 +410,9 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <i className="fa-solid fa-check mt-[3px] text-[10px] text-mint" aria-hidden="true"></i>
-                                    Network Stellar {NETWORK_LABEL} · contract{' '}
+                                    Network Stellar {config.label} · contract{' '}
                                     <span className="font-mono">
-                                        {CONTRACT_ID.slice(0, 6)}…{CONTRACT_ID.slice(-6)}
+                                        {config.contractId.slice(0, 6)}…{config.contractId.slice(-6)}
                                     </span>
                                 </li>
                                 <li className="flex items-start gap-2">
