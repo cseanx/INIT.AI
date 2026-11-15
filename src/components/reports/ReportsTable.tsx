@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { NETWORK_LABEL } from '../../services/stellar/client';
 import type { Report } from '../../types';
 import { reportPeriod, reportScope } from '../../utils/reportScope';
 
@@ -25,8 +26,8 @@ function VerificationPill({ report }: { report: Report }) {
         return (
             <span
                 className={VERIFIED_PILL}
-                title={`Recorded on Stellar Testnet ${when}`.trim()}
-                aria-label={`Verified on Stellar Testnet${when ? `, ${when}` : ''}`}
+                title={`Recorded on Stellar ${NETWORK_LABEL} ${when}`.trim()}
+                aria-label={`Verified on Stellar ${NETWORK_LABEL}${when ? `, ${when}` : ''}`}
             >
                 <i className="fa-solid fa-circle-check text-[12px]" aria-hidden="true"></i>
                 Verified{count > 1 ? ` · ${count}` : ''}
@@ -203,13 +204,13 @@ export default function ReportsTable({
                                                 disabled={!!r.attestedCurrent}
                                                 title={
                                                     r.attestedCurrent
-                                                        ? 'Already verified on Stellar Testnet — edit the report to create a new version to verify'
+                                                        ? `Already verified on Stellar ${NETWORK_LABEL} — edit the report to create a new version to verify`
                                                         : 'Verify on Stellar'
                                                 }
                                                 aria-label={
                                                     r.attestedCurrent
-                                                        ? `${r.title} is already verified on Stellar Testnet`
-                                                        : `Verify ${r.title} on Stellar Testnet`
+                                                        ? `${r.title} is already verified on Stellar ${NETWORK_LABEL}`
+                                                        : `Verify ${r.title} on Stellar ${NETWORK_LABEL}`
                                                 }
                                                 onClick={() => {
                                                     if (r.attestedCurrent) return;

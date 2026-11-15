@@ -141,10 +141,11 @@ class ReportAttestationCreate(BaseModel):
 
     @field_validator("network")
     @classmethod
-    def _testnet_only(cls, value: str) -> str:
-        # INIT.AI attestations are Testnet-only by policy.
-        if value != "testnet":
-            raise ValueError("Only the 'testnet' network is supported.")
+    def _known_network(cls, value: str) -> str:
+        # Shape check only — the API rejects a network that differs from this
+        # deployment's configured STELLAR_NETWORK (testnet by default).
+        if value not in ("testnet", "mainnet"):
+            raise ValueError("network must be 'testnet' or 'mainnet'.")
         return value
 
 

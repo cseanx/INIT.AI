@@ -135,8 +135,8 @@ export function useStellarAttestation(): UseStellarAttestation {
 /** Network check happens right before asking for a signature so the user
  *  gets an actionable message instead of a failed transaction. */
 async function assertNetworkSafe(): Promise<void> {
-    const { assertTestnetSelected } = await import('../services/stellar/wallet');
-    await assertTestnetSelected().catch((err: Error) => {
+    const { assertNetworkSelected } = await import('../services/stellar/wallet');
+    await assertNetworkSelected().catch((err: Error) => {
         throw err;
     });
 }

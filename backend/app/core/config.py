@@ -1,6 +1,25 @@
 """Application settings loaded from environment variables / .env."""
 
+from typing import Literal
+
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# The Testnet deployment this repo ships with. Never valid as a Mainnet
+# contract id — the settings validator refuses to start in that combination,
+# which prevents verifying Mainnet transactions against a Testnet contract.
+TESTNET_DEFAULT_CONTRACT_ID = "CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4"
+
+_STELLAR_DEFAULTS = {
+    "testnet": {
+        "horizon": "https://horizon-testnet.stellar.org",
+        "rpc": "https://soroban-testnet.stellar.org",
+    },
+    "mainnet": {
+        "horizon": "https://horizon.stellar.org",
+        "rpc": "https://soroban-mainnet.stellar.org",
+    },
+}
 
 
 class Settings(BaseSettings):
@@ -29,14 +48,50 @@ class Settings(BaseSettings):
     login_window_seconds: int = 900
     login_lockout_seconds: int = 30
 
-    # Stellar attestation verification (Testnet only by policy).
+    # Stellar attestation verification.
     # The backend pins the expected contract id: client-submitted contract
     # ids are ignored, so proofs can only be recorded against the contract
     # THIS deployment trusts. Horizon is queried read-only; no keys here.
-    stellar_contract_id: str = "CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4"
-    stellar_horizon_base: str = "https://horizon-testnet.stellar.org"
-    stellar_rpc_url: str = "https://soroban-testnet.stellar.org"
-    stellar_network: str = "testnet"
+    #
+    # Network is opt-in: default stays Testnet so existing deployments and the
+    # Instawards submission are unaffected. Mainnet additionally requires
+    # STELLAR_MAINNET_ACK=true (deliberate two-key switch — real XLM moves).
+    # Runbook: docs/mainnet-runbook.md.
+    stellar_network: Literal["testnet", "mainnet"] = "testnet"
+    stellar_mainnet_ack: bool = False
+    stellar_contract_id: str = TESTNET_DEFAULT_CONTRACT_ID
+    # Unset = resolved from the selected network (see stellar_horizon_url /
+    # stellar_rpc_endpoint); explicit overrides still win.
+    stellar_horizon_base: str | None = None
+    stellar_rpc_url: str | None = None
+
+    @model_validator(mode="after")
+    def _validate_stellar_network(self) -> "Settings":
+        if self.stellar_network == "mainnet":
+            if not self.stellar_mainnet_ack:
+                raise ValueError(
+                    "STELLAR_NETWORK=mainnet requires STELLAR_MAINNET_ACK=true "
+                    "(deliberate opt-in: attestations cost real XLM)."
+                )
+            if self.stellar_contract_id == TESTNET_DEFAULT_CONTRACT_ID:
+                raise ValueError(
+                    "STELLAR_CONTRACT_ID still points at the Testnet deployment; "
+                    "deploy to Mainnet first and set the new contract id."
+                )
+        return self
+
+    @property
+    def stellar_network_label(self) -> str:
+        """'Testnet' or 'Mainnet' — for user-facing API messages."""
+        return "Mainnet" if self.stellar_network == "mainnet" else "Testnet"
+
+    @property
+    def stellar_horizon_url(self) -> str:
+        return self.stellar_horizon_base or _STELLAR_DEFAULTS[self.stellar_network]["horizon"]
+
+    @property
+    def stellar_rpc_endpoint(self) -> str:
+        return self.stellar_rpc_url or _STELLAR_DEFAULTS[self.stellar_network]["rpc"]
 
     # Account / email configuration
     frontend_url: str = "http://localhost:5173"

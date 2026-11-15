@@ -26,11 +26,11 @@ class ReportAttestation(Base):
     # 64-hex SHA-256 of the previous version's hash — on-chain revision link.
     # Null for the first version of a report, set for every later edit.
     prev_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, default=None)
-    # 64-char Stellar transaction hash on Testnet.
+    # 64-char Stellar transaction hash (network recorded below).
     tx_hash: Mapped[str] = mapped_column(String(64), index=True)
     # Soroban contract that holds the proof ("C…", 56 chars).
     contract_id: Mapped[str] = mapped_column(String(56))
-    # 'testnet' only for now.
+    # 'testnet' (default) or 'mainnet' — mirrors STELLAR_NETWORK at write time.
     network: Mapped[str] = mapped_column(String(20), server_default="testnet")
     # Submitting wallet public key ("G…", 56 chars).
     wallet: Mapped[str] = mapped_column(String(56))

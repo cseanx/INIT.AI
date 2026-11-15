@@ -8,7 +8,7 @@
 
 [Live dApp](https://www.initai.site) · [Contract on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF) · [Run Locally](#getting-started) · [Canonical Spec](#canonicalization-specification-initai-canonical-v1)
 
-> **Important:** INIT.AI is a prototype on **Stellar Testnet** only. Attestations are wallet-submitted, not LGU-certified. Mainnet, production audit, and official endorsement are not claimed.
+> **Important:** The deployed INIT.AI instance runs on **Stellar Testnet**. The code is Mainnet-capable behind an explicit two-key opt-in, but **no Mainnet contract is deployed** and no production audit or official endorsement is claimed. Attestations are wallet-submitted, not LGU-certified. See [`contracts/soroban/MAINNET-RUNBOOK.md`](contracts/soroban/MAINNET-RUNBOOK.md).
 
 INIT.AI is a climate intelligence platform designed to help cities understand, monitor, and respond to **urban heat** using satellite-derived environmental data, geospatial analysis, and AI-assisted insights.
 
@@ -212,7 +212,27 @@ alone. Walking the chain: `verify(latest_hash)` â†’ `prev_hash` â†’ `v
     private keys)
 * **Stellar Testnet**
 
-  * Development and demonstration network
+  * Development and demonstration network (the deployed instance)
+
+### Network selection (Testnet default, Mainnet opt-in)
+
+One deployment talks to exactly one Stellar network. The default is Testnet
+everywhere, so demos, grading, and the Instawards evidence keep working
+unchanged. Mainnet requires **both** backend switches plus a real Mainnet
+contract id, and it spends real XLM:
+
+| Layer | Testnet (default) | Mainnet opt-in |
+| --- | --- | --- |
+| Frontend | `VITE_STELLAR_NETWORK=testnet` | `VITE_STELLAR_NETWORK=mainnet` + Mainnet contract id |
+| Backend | `STELLAR_NETWORK=testnet` | `STELLAR_NETWORK=mainnet` **and** `STELLAR_MAINNET_ACK=true` + Mainnet contract id |
+| Horizon / RPC | Testnet endpoints | `horizon.stellar.org` / `soroban-mainnet.stellar.org` (automatic) |
+| Fees | free Testnet XLM (friendbot) | real XLM |
+
+The backend refuses to start with `STELLAR_NETWORK=mainnet` unless
+`STELLAR_MAINNET_ACK=true` **and** `STELLAR_CONTRACT_ID` differs from the
+Testnet deployment. The API also rejects attestations whose client-declared
+network does not match the deployment. Full checklist, costs, verification and
+rollback: [`contracts/soroban/MAINNET-RUNBOOK.md`](contracts/soroban/MAINNET-RUNBOOK.md).
 
 ---
 
@@ -265,7 +285,7 @@ One table for reviewers - everything needed to verify this project:
 
 | Item | Value / Link |
 | --- | --- |
-| Network | Stellar **Testnet** only |
+| Network | Stellar **Testnet** (deployed, default) · **Mainnet-capable** behind a two-key opt-in — no Mainnet contract deployed; see [`contracts/soroban/MAINNET-RUNBOOK.md`](contracts/soroban/MAINNET-RUNBOOK.md) |
 | Contract ID | [`CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4`](https://stellar.expert/explorer/testnet/contract/CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4) |
 | Contract source | [`contracts/soroban/`](contracts/soroban/) (Rust + soroban-sdk 27, unit-tested, `prev_hash` on-chain) |
 | WASM artifact | `target/wasm32v1-none/release/initai_spatial_attestation.wasm` â€” **28,844 bytes**, **SHA-256** `19f8b4bddb717f60aa70116e0c6c0e86e45e3488f0d307dafa277c8534ba210e` â€” built `2026-08-31` with **on-chain `prev_hash`** via `stellar contract build` / `cargo build --target wasm32v1-none --release` (Rust `1.98.0`, `soroban-sdk 27.0.1`, `opt-level="z"` + `lto=true`) â€” `target/` is gitignored; verify with `Get-FileHash -Algorithm SHA256` or `sha256sum` â€” wasm hash `19f8b4...` matches deploy (Soroban deploys are immutable) |
@@ -288,6 +308,8 @@ One table for reviewers - everything needed to verify this project:
 | `SpatialAttestationRegistry` | `CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDYHVMVLSKZ4IMVO7DICAJYNVUZMMV6DD252IL2WPWKSX4NC2YII5GQ4) | [`contracts/soroban/`](contracts/soroban/) |
 
 > Deployed `2026-08-31` with stellar-cli `28.0.0` (wasm `19f8b4...`, 28,844 bytes) â€” wasm hash on-chain matches build. Previous deployment `CBQSI2TXAXWNRBPFT457JVH5IUVWKR72XMNQFTSPHDUWRRV76SBDUBXF` (2026-08-24) is superseded. After any redeploy, update this table, `.env.example`, `backend/.env.example`, and `backend/app/core/config.py` together.
+>
+> **Mainnet:** not deployed (checked `2026-09-22`; the deployer has no funded Mainnet account). The contract and app are Mainnet-capable — use the guarded script and checklist in [`contracts/soroban/MAINNET-RUNBOOK.md`](contracts/soroban/MAINNET-RUNBOOK.md). Never point production at Mainnet with the Testnet contract id; the backend refuses that combination at startup.
 
 ## Transaction Receipts
 

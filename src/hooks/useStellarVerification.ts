@@ -3,7 +3,7 @@
    Asks the Soroban contract itself whether a given report hash has been
    attested, and reduces the answer to three non-technical outcomes:
 
-     valid  — the hash IS attested on Stellar Testnet
+     valid  — the hash IS attested on the configured Stellar network
      none   — the contract has never seen this hash
      error  — we couldn't get an answer (network/RPC problem)
 

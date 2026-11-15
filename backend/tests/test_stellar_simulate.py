@@ -40,7 +40,11 @@ def client(monkeypatch):
 
 
 def _mock_rpc(monkeypatch, payload):
-    monkeypatch.setattr(sim, "_rpc_post", lambda rpc_url, method, params: payload)
+    monkeypatch.setattr(
+        sim,
+        "_rpc_post",
+        lambda rpc_url, method, params, network_label="Testnet": payload,
+    )
 
 
 def test_simulate_ok(monkeypatch, client):
@@ -76,8 +80,10 @@ def test_simulate_report_mismatch_maps_code(monkeypatch, client):
 
 
 def test_simulate_rpc_unreachable_502(monkeypatch, client):
-    def boom(rpc_url, method, params):
-        raise sim.StellarRpcError("RPC_UNREACHABLE", "Could not reach the Stellar Testnet (RPC error).")
+    def boom(rpc_url, method, params, network_label="Testnet"):
+        raise sim.StellarRpcError(
+            "RPC_UNREACHABLE", f"Could not reach Stellar {network_label} (RPC error)."
+        )
 
     monkeypatch.setattr(sim, "_rpc_post", boom)
     res = client.post("/api/stellar/simulate", json={"xdr": "QUJDREVGR0hJSktMTU5PUA=="})

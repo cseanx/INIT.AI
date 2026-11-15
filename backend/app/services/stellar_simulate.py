@@ -37,7 +37,7 @@ class StellarRpcError(Exception):
         self.detail = detail
 
 
-def _rpc_post(rpc_url: str, method: str, params: dict) -> dict:
+def _rpc_post(rpc_url: str, method: str, params: dict, network_label: str = "Testnet") -> dict:
     """JSON-RPC POST with structured error mapping (stdlib only)."""
     body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode("utf-8")
     request = urllib.request.Request(
@@ -56,17 +56,19 @@ def _rpc_post(rpc_url: str, method: str, params: dict) -> dict:
         raise StellarRpcError("RPC_HTTP_ERROR", f"Stellar RPC returned HTTP {exc.code}.", detail=str(exc)) from exc
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         raise StellarRpcError(
-            "RPC_UNREACHABLE", "Could not reach the Stellar Testnet (RPC error). Check your connection and try again.", detail=str(exc)
+            "RPC_UNREACHABLE",
+            f"Could not reach Stellar {network_label} (RPC error). Check your connection and try again.",
+            detail=str(exc),
         ) from exc
 
 
-def _classify_simulation_error(raw: str) -> tuple[str, str]:
+def _classify_simulation_error(raw: str, network_label: str = "Testnet") -> tuple[str, str]:
     """Map a Soroban simulation failure string to (code, user message)."""
     hay = raw.lower()
     if "already exists" in hay or "already attested" in hay:
         return (
             "DUPLICATE_HASH",
-            "This report has already been verified on Stellar Testnet. Each report version can only be attested once — edit the report to create a new version to verify.",
+            f"This report has already been verified on Stellar {network_label}. Each report version can only be attested once — edit the report to create a new version to verify.",
         )
     if "prev_hash references unknown" in hay or "prev_hash" in hay and "unknown" in hay:
         return (
@@ -81,11 +83,11 @@ def _classify_simulation_error(raw: str) -> tuple[str, str]:
     if "attestation already exists" in hay:
         return (
             "DUPLICATE_HASH",
-            "This report has already been verified on Stellar Testnet. Each report version can only be attested once — edit the report to create a new version to verify.",
+            f"This report has already been verified on Stellar {network_label}. Each report version can only be attested once — edit the report to create a new version to verify.",
         )
     return (
         "CONTRACT_ERROR",
-        "The attestation transaction could not be simulated on Stellar Testnet. The contract may be unavailable, or the network is unreachable — try again shortly.",
+        f"The attestation transaction could not be simulated on Stellar {network_label}. The contract may be unavailable, or the network is unreachable — try again shortly.",
     )
 
 
@@ -98,7 +100,12 @@ class SimulateResult:
     data: dict | None = None
 
 
-def simulate_transaction(xdr: str, *, rpc_url: str = RPC_DEFAULT) -> SimulateResult:
+def simulate_transaction(
+    xdr: str,
+    *,
+    rpc_url: str = RPC_DEFAULT,
+    network_label: str = "Testnet",
+) -> SimulateResult:
     """Simulate an (unsigned) transaction XDR via Soroban RPC.
 
     `xdr` must be base64 transaction envelope. Returns SimulateResult with
@@ -108,13 +115,15 @@ def simulate_transaction(xdr: str, *, rpc_url: str = RPC_DEFAULT) -> SimulateRes
     if not xdr or not isinstance(xdr, str) or len(xdr.strip()) < 16:
         raise StellarRpcError("INVALID_XDR", "Transaction XDR is missing or malformed.")
 
-    payload = _rpc_post(rpc_url, "simulateTransaction", {"transaction": xdr.strip()})
+    payload = _rpc_post(
+        rpc_url, "simulateTransaction", {"transaction": xdr.strip()}, network_label
+    )
 
     # JSON-RPC error envelope
     if "error" in payload and payload["error"]:
         err = payload["error"]
         raw = json.dumps(err) if isinstance(err, dict) else str(err)
-        code, message = _classify_simulation_error(raw)
+        code, message = _classify_simulation_error(raw, network_label)
         return SimulateResult(ok=False, code=code, message=message, data={"rpcError": err})
 
     result = payload.get("result", {})
@@ -123,7 +132,7 @@ def simulate_transaction(xdr: str, *, rpc_url: str = RPC_DEFAULT) -> SimulateRes
         raw = str(result["error"])
         # Include diagnostic events if present for better classification
         events = result.get("events") or result.get("diagnosticEvents") or ""
-        code, message = _classify_simulation_error(raw + " " + json.dumps(events))
+        code, message = _classify_simulation_error(raw + " " + json.dumps(events), network_label)
         return SimulateResult(ok=False, code=code, message=message, data={"rpcResult": result})
 
     return SimulateResult(

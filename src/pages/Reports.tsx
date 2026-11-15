@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { STELLAR_ENABLED } from '../services/stellar/client';
+import { NETWORK_LABEL, STELLAR_ENABLED } from '../services/stellar/client';
 import { useStellarWallet } from '../hooks/useStellarWallet';
 import Page from '../components/layout/Page';
 import PanelHead from '../components/common/PanelHead';
@@ -166,7 +166,7 @@ export default function Reports() {
                             {health.proofs}
                         </strong>
                         <span className="mt-1 block text-[12px] text-[#888]">
-                            Testnet attestations
+                            {NETWORK_LABEL} attestations
                         </span>
                     </div>
                 </div>
@@ -175,7 +175,7 @@ export default function Reports() {
                     <p className="flex items-center gap-2">
                         <i className="fa-solid fa-shield-halved text-[12px] text-accent"></i>
                         “Attested” means the report&apos;s current content hash matches a confirmed
-                        Stellar Testnet proof. Editing the report makes the proof stale.
+                        Stellar {NETWORK_LABEL} proof. Editing the report makes the proof stale.
                     </p>
                     {filter !== 'all' ? (
                         <button

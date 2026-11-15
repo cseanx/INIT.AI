@@ -106,15 +106,20 @@ def hash_geojson(body: GeoJsonHashRequest) -> GeoJsonHashResponse:
 def simulate(body: SimulateRequest) -> SimulateResponse:
     """Week 2: Soroban RPC simulation proxy with structured errors.
 
-    Forwards the supplied (unsigned) XDR to Testnet `simulateTransaction`
-    via `backend/app/services/stellar_simulate.py` (stdlib only, no keys).
+    Forwards the supplied (unsigned) XDR to the configured network's
+    `simulateTransaction` via `backend/app/services/stellar_simulate.py`
+    (stdlib only, no keys).
     Returns stable `code` values documented in `docs/rpc-errors.md`:
     OK, DUPLICATE_HASH, UNKNOWN_PREV, REPORT_MISMATCH, CONTRACT_ERROR,
     INVALID_XDR. Transport failures surface as 502 with RPC_UNREACHABLE /
     RPC_HTTP_ERROR.
     """
     try:
-        result = simulate_transaction(body.xdr, rpc_url=settings.stellar_rpc_url)
+        result = simulate_transaction(
+            body.xdr,
+            rpc_url=settings.stellar_rpc_endpoint,
+            network_label=settings.stellar_network_label,
+        )
     except StellarRpcError as exc:
         status = 502 if exc.code in ("RPC_UNREACHABLE", "RPC_HTTP_ERROR") else 422
         raise HTTPException(status_code=status, detail={"code": exc.code, "message": str(exc), "detail": exc.detail})

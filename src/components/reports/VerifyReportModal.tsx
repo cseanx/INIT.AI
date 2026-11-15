@@ -16,10 +16,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../../services/api';
 import { fetchChainAttestation, prepareSignedAttestation, submitSignedAttestation } from '../../services/stellar/attestation';
-import { CONTRACT_ID } from '../../services/stellar/client';
+import {
+    CONTRACT_ID,
+    NETWORK_IS_MAINNET,
+    NETWORK_LABEL,
+    STELLAR_NETWORK,
+    explorerTxUrl,
+} from '../../services/stellar/client';
 import { normalizeWalletError } from '../../services/stellar/wallet';
 import type { Report } from '../../types';
-import { explorerTxUrl, type ChainAttestation, type ReportAttestationRecord } from '../../types/stellar';
+import type { ChainAttestation, ReportAttestationRecord } from '../../types/stellar';
 
 export type VerifyPhase =
     | 'confirmation'
@@ -74,7 +80,7 @@ const PROGRESS_STEPS: { key: Exclude<VerifyPhase, 'confirmation' | 'success' | '
     { key: 'preparing', label: 'Preparing attestation' },
     { key: 'awaiting-signature', label: 'Awaiting wallet signature' },
     { key: 'submitting', label: 'Submitting to Stellar' },
-    { key: 'confirming', label: 'Confirming on Testnet' },
+    { key: 'confirming', label: `Confirming on ${NETWORK_LABEL}` },
     { key: 'verifying', label: 'Verifying on-chain' },
 ];
 
@@ -113,11 +119,13 @@ function errorGuidance(kind: FlowErrorKind): string {
         case 'declined':
             return 'You declined the signature in your wallet. Nothing was submitted — reopen and Continue when ready to sign.';
         case 'no-wallet':
-            return 'Connect Freighter (Testnet) via the wallet indicator in the header, fund it via friendbot if needed, then retry.';
+            return NETWORK_IS_MAINNET
+                ? `Connect Freighter (${NETWORK_LABEL}) via the wallet indicator in the header, fund it with XLM, then retry.`
+                : `Connect Freighter (${NETWORK_LABEL}) via the wallet indicator in the header, fund it via friendbot if needed, then retry.`;
         case 'timeout':
-            return 'Testnet was slow to confirm. Your transaction might still land — check the explorer before retrying to avoid a duplicate.';
+            return `${NETWORK_LABEL} was slow to confirm. Your transaction might still land — check the explorer before retrying to avoid a duplicate.`;
         case 'network':
-            return 'The Stellar Testnet RPC was unreachable. Check your connection and retry shortly.';
+            return `The Stellar ${NETWORK_LABEL} RPC was unreachable. Check your connection and retry shortly.`;
         case 'duplicate':
             return 'This version is already attested on-chain. Edit the report to create a new version to verify.';
         default:
@@ -377,7 +385,7 @@ export default function VerifyReportModal({
                 setPhase('success');
             } else {
                 setFlowError(
-                    'This report version is already verified on Stellar Testnet. Each version can only be attested once — edit the report to create a new version to verify.',
+                    `This report version is already verified on Stellar ${NETWORK_LABEL}. Each version can only be attested once — edit the report to create a new version to verify.`,
                 );
                 setErrorKind('duplicate');
                 setPhase('failed');
@@ -446,7 +454,7 @@ export default function VerifyReportModal({
                     prevHash: prevHash ?? undefined,
                     txHash,
                     contractId: CONTRACT_ID,
-                    network: 'testnet',
+                    network: STELLAR_NETWORK,
                     wallet: walletAddress,
                     meta: { source: 'web', flow: 'reports-page-verify', prevHash: prevHash ?? null },
                 });
@@ -527,7 +535,7 @@ export default function VerifyReportModal({
                             <p className="text-[12px] text-[#999]">
                                 {isSignedOnly
                                     ? 'Freighter has signed the attestation. It has not been submitted to the network yet.'
-                                    : 'This exact report form is now recorded on Stellar Testnet.'}
+                                    : `This exact report form is now recorded on Stellar ${NETWORK_LABEL}.`}
                             </p>
                         </div>
                     </div>
@@ -543,7 +551,7 @@ export default function VerifyReportModal({
                                 {shorten(signedXdr, 32, 32)}
                             </p>
                             <p className="mt-[8px] text-[12px] leading-relaxed text-[#888]">
-                                Submission to Testnet comes next — nothing has been written on-chain yet.
+                                Submission to {NETWORK_LABEL} comes next — nothing has been written on-chain yet.
                             </p>
                         </div>
                     ) : txHash ? (
@@ -575,7 +583,7 @@ export default function VerifyReportModal({
                                 </div>
                             ) : (
                                 <p className="mb-[6px] text-[12px] leading-relaxed text-[#888]">
-                                    Confirmed on Testnet. On-chain readback was unavailable just now — the
+                                    Confirmed on {NETWORK_LABEL}. On-chain readback was unavailable just now — the
                                     transaction above is the proof; re-open to re-verify.
                                 </p>
                             )}
@@ -654,7 +662,7 @@ export default function VerifyReportModal({
                         Verify on Stellar
                     </h4>
                     <span className="inline-flex items-center gap-[6px] rounded-full border border-mint/30 bg-mint/10 px-[10px] py-[4px] text-[12px] font-semibold text-mint">
-                        <i className="fa-solid fa-link text-[11.5px]"></i> Stellar Testnet
+                        <i className="fa-solid fa-link text-[11.5px]"></i> Stellar {NETWORK_LABEL}
                     </span>
                 </div>
 
@@ -688,7 +696,7 @@ export default function VerifyReportModal({
                             <span className="text-mint">First version — no previous hash</span>
                         )}
                     </InfoRow>
-                    <InfoRow label="Network">Stellar Testnet</InfoRow>
+                    <InfoRow label="Network">Stellar {NETWORK_LABEL}</InfoRow>
                     <InfoRow label="Connected Wallet">
                         {walletAddress ? (
                             <span className="font-mono" title={walletAddress}>
@@ -701,14 +709,17 @@ export default function VerifyReportModal({
                 </div>
 
                 <p className="mb-[12px] text-[12.5px] leading-relaxed text-[#bbb]">
-                    Create an on-chain attestation for this INIT.AI report on Stellar Testnet.
+                    Create an on-chain attestation for this INIT.AI report on Stellar {NETWORK_LABEL}.
                 </p>
 
                 <div className={`${FEE_NOTE_CLASSES} mb-[16px]`}>
                     <i className="fa-solid fa-coins mt-[2px] text-[12px]"></i>
                     <span>
                         A small network fee is charged by Stellar for the attestation transaction, paid from your
-                        wallet's Testnet XLM balance. Testnet XLM is free and has no monetary value.
+                        wallet's {NETWORK_IS_MAINNET ? 'XLM' : 'Testnet XLM'} balance.{' '}
+                        {NETWORK_IS_MAINNET
+                            ? 'Mainnet fees are paid in real XLM and have monetary value.'
+                            : 'Testnet XLM is free and has no monetary value.'}
                     </span>
                 </div>
 
@@ -716,7 +727,7 @@ export default function VerifyReportModal({
                     <p className="mb-[10px] flex items-start gap-[7px] rounded-[12px] border border-mint/30 bg-mint/10 p-[10px_12px] text-[12px] leading-relaxed text-mint">
                         <i className="fa-solid fa-circle-check mt-[2px] text-[12px]"></i>
                         <span>
-                            This version is already verified on Stellar Testnet. The proof is greenlit on-chain — no
+                            This version is already verified on Stellar {NETWORK_LABEL}. The proof is greenlit on-chain — no
                             new transaction is needed. Edit the report to attest a new version.
                             {existingAttestation ? (
                                 <>

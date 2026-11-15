@@ -4,7 +4,8 @@ A minimal Soroban smart contract that gives INIT.AI reports **tamper-evident,
 on-chain proof of existence**: anyone can later prove that a specific report,
 in its exact form, existed at a specific point in time.
 
-- **Network:** Stellar Testnet only
+- **Network:** Stellar Testnet (deployed) · Mainnet-capable behind an explicit
+  two-key opt-in (not deployed yet — see [`MAINNET-RUNBOOK.md`](MAINNET-RUNBOOK.md))
 - **SDK:** `soroban-sdk` 27.x · Rust stable ≥ 1.85 · WASM target `wasm32v1-none`
 - **Contract artifact:** `target/wasm32v1-none/release/initai_spatial_attestation.wasm`
 
@@ -164,6 +165,30 @@ To redeploy an updated WASM, rerun `stellar contract deploy …` — you get a
 NEW contract id (Soroban deploys are immutable); update
 `VITE_STELLAR_CONTRACT_ID` accordingly.
 
+### Mainnet (not deployed — runbook gated)
+
+The code path is Mainnet-ready, but **no Mainnet contract exists yet**: the
+deployer identity has no Mainnet account (checked 2026-09-22). Mainnet also
+requires an explicit two-key opt-in on the backend and spends real XLM.
+
+Do not run these by hand outside the runbook:
+
+```powershell
+# Guarded: refuses without -Confirm, a funded mainnet identity, the wasm,
+# and ≥20 XLM. See MAINNET-RUNBOOK.md for the full checklist.
+.\contracts\soroban\scripts\deploy-mainnet.ps1 -Source initai-mainnet -Confirm
+```
+
+```bash
+stellar contract deploy \
+  --wasm contracts/soroban/target/wasm32v1-none/release/initai_spatial_attestation.wasm \
+  --source initai-mainnet --network mainnet
+```
+
+After a Mainnet deploy, set `STELLAR_NETWORK=mainnet`,
+`STELLAR_MAINNET_ACK=true`, and `STELLAR_CONTRACT_ID=<new id>` in the backend,
+and `VITE_STELLAR_NETWORK=mainnet` plus the new contract id in the frontend.
+
 ## Invoke / test on-chain
 
 Reads are free and simulate without submitting:
@@ -225,7 +250,7 @@ table — migration 0008 + 0009; never duplicated report content):
 | `prev_hash` | 64-hex SHA-256 of previous version, **null** for first version — mirrors on-chain `prev_hash` |
 | `tx_hash` | 64-char Stellar tx hash |
 | `contract_id` | Soroban contract id (C…) |
-| `network` | `testnet` (policy-enforced) |
+| `network` | `testnet` (default) or `mainnet` — must match the deployment's `STELLAR_NETWORK` |
 | `wallet` | submitting account (G…) |
 | `status` | pending / confirmed / failed / verified |
 | `meta`, `last_verified_at`, `created_at` | verification metadata |
@@ -345,7 +370,7 @@ Implementation notes:
 | Rule | Enforcement |
 |---|---|
 | No private keys in source / env | Keys live only in Freighter (browser) or the local stellar-cli identity dir. Repo greps clean; frontend env carries only public values (`VITE_API_URL`, flag, contract ID). |
-| Testnet only | RPC URL + passphrase hardcoded to Testnet; schema validator rejects any `network ≠ "testnet"` (422). |
+| Network pinning | One network per deployment (`STELLAR_NETWORK`, default `testnet`). The API rejects a client `network` that differs from it (422); Mainnet additionally needs `STELLAR_MAINNET_ACK=true` and refuses the Testnet contract id. Passphrase/RPC/Horizon derive from the selected network. |
 | Authoritative hash from DB | `attestation_hash()` computes from the stored row — client content never influences it. Client-supplied hashes are *compared*, not trusted (409 on mismatch). |
 | No fabricated transactions | `POST …/attestation` verifies via Horizon that the tx exists, succeeded, invokes **this contract's** `attest` with exactly the claimed wallet + hash + report ref (pure-stdlib XDR param matching — see `services/stellar_verify.py`). Failures → 422. |
 | No stealing another report's proof | Hash uniqueness + per-report hash binding + wallet/ref/hash parameter match make cross-report reuse impossible. |
@@ -361,19 +386,21 @@ Verification metadata persisted per attestation:
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `VITE_STELLAR_ENABLED` | Master switch for the integration | `false` |
-| `VITE_STELLAR_NETWORK` | Network policy — only `testnet` is supported | `testnet` |
-| `VITE_SOROBAN_CONTRACT_ID` | Deployed contract id (SOW name) | — |
+| `VITE_STELLAR_NETWORK` | `testnet` (default) or `mainnet`; anything else disables Stellar | `testnet` |
+| `VITE_SOROBAN_CONTRACT_ID` | Deployed contract id (SOW name) | Testnet id |
 | `VITE_STELLAR_CONTRACT_ID` | Legacy alias for the same value | — |
-| `VITE_STELLAR_RPC_URL` | Soroban RPC endpoint | `https://soroban-testnet.stellar.org` |
-| `VITE_STELLAR_HORIZON_URL` | Horizon REST endpoint | `https://horizon-testnet.stellar.org` |
+| `VITE_STELLAR_RPC_URL` | Soroban RPC endpoint | network default (testnet/mainnet) |
+| `VITE_STELLAR_HORIZON_URL` | Horizon REST endpoint | network default (testnet/mainnet) |
 
 **Backend (FastAPI settings — verification is pinned server-side):**
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `STELLAR_CONTRACT_ID` | The contract THIS deployment trusts; client-submitted ids are only cross-checked against it | deployed Testnet contract id |
-| `STELLAR_HORIZON_BASE` | Horizon base URL for read-only transaction verification | `https://horizon-testnet.stellar.org` |
-| `STELLAR_NETWORK` | Policy network | `testnet` |
+| `STELLAR_HORIZON_BASE` | Horizon base URL for read-only transaction verification | network default |
+| `STELLAR_RPC_URL` | Soroban RPC endpoint for simulation | network default |
+| `STELLAR_NETWORK` | `testnet` (default) or `mainnet` | `testnet` |
+| `STELLAR_MAINNET_ACK` | Second key for Mainnet: must be `true` or startup fails | `false` |
 
 No private keys, seed phrases, or signing material exist in any environment
 variable — signing happens exclusively in the user's Freighter extension.

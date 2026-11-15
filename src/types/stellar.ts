@@ -114,9 +114,6 @@ export interface GeoJsonHashResult {
     hash: string;
 }
 
-/** Explorer base for Testnet transactions. */
-export const TESTNET_EXPLORER_TX_BASE = 'https://stellar.expert/explorer/testnet/tx/';
-
-export function explorerTxUrl(txHash: string): string {
-    return `${TESTNET_EXPLORER_TX_BASE}${txHash}`;
-}
+/* Explorer links are network-aware: import them from
+   `src/services/stellar/client.ts` (`explorerTxUrl`, `explorerAccountUrl`,
+   `explorerContractUrl`) — they follow VITE_STELLAR_NETWORK. */

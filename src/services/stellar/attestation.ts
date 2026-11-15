@@ -12,11 +12,13 @@
 import type { ChainAttestation } from '../../types/stellar';
 import {
     CONTRACT_ID,
+    NETWORK_IS_MAINNET,
+    NETWORK_LABEL,
     NETWORK_PASSPHRASE,
     getServer,
     requireStellarEnabled,
 } from './client';
-import { assertTestnetSelected, normalizeWalletError, signTransaction } from './wallet';
+import { assertNetworkSelected, normalizeWalletError, signTransaction } from './wallet';
 
 const CONFIRM_TIMEOUT_MS = 90_000;
 const CONFIRM_POLL_MS = 3_000;
@@ -81,18 +83,21 @@ export async function prepareSignedAttestation({
         await import('@stellar/stellar-sdk');
     const server = await getServer();
 
-    await assertTestnetSelected();
+    await assertNetworkSelected();
 
     const source = await server.getAccount(address).catch((err: unknown) => {
-        // 404 = the account doesn't exist on Testnet; anything else is RPC/network trouble.
+        // 404 = the account doesn't exist on the selected network; anything
+        // else is RPC/network trouble.
         const status = (err as { status?: number } | null)?.status;
         if (status === 404) {
             throw new Error(
-                'Your Stellar account is not reachable on Testnet. Fund it via the friendbot faucet and try again.',
+                NETWORK_IS_MAINNET
+                    ? 'Your Stellar account is not funded on Mainnet. Send real XLM to it before attesting.'
+                    : 'Your Stellar account is not reachable on Testnet. Fund it via the friendbot faucet and try again.',
             );
         }
         throw new Error(
-            'Could not reach the Stellar Testnet network (RPC error). Check your connection and try again.',
+            `Could not reach the Stellar ${NETWORK_LABEL} network (RPC error). Check your connection and try again.`,
         );
     });
 
@@ -155,11 +160,11 @@ export async function prepareSignedAttestation({
         const haystack = `${raw} ${flattened}`.toLowerCase();
         if (haystack.includes('already exists') || haystack.includes('already attested')) {
             throw new Error(
-                'This report has already been verified on Stellar Testnet. Each report version can only be attested once — edit the report to create a new version to verify.',
+                `This report has already been verified on Stellar ${NETWORK_LABEL}. Each report version can only be attested once — edit the report to create a new version to verify.`,
             );
         }
         throw new Error(
-            'The attestation transaction could not be simulated on Stellar Testnet. The contract may be unavailable, or the network is unreachable — try again shortly.',
+            `The attestation transaction could not be simulated on Stellar ${NETWORK_LABEL}. The contract may be unavailable, or the network is unreachable — try again shortly.`,
         );
     }
 
@@ -170,9 +175,10 @@ export async function prepareSignedAttestation({
     }
 }
 
-/** Submit an already-signed `attest` transaction to Stellar Testnet and
- *  wait for ledger confirmation. Does NOT sign — `prepareSignedAttestation`
- *  must run first (Freighter only signs once). `onPhase` lets the caller
+/** Submit an already-signed `attest` transaction to the configured network
+ *  (Testnet or Mainnet) and wait for ledger confirmation. Does NOT sign —
+ *  `prepareSignedAttestation` must run first (Freighter only signs once).
+ *  `onPhase` lets the caller
  *  surface the submitting → confirming UI transition during polling.
  *  Returns the transaction hash. */
 export async function submitSignedAttestation(
@@ -190,7 +196,7 @@ export async function submitSignedAttestation(
         sent = await server.sendTransaction(signed);
     } catch {
         throw new Error(
-            'Could not submit the transaction to Stellar Testnet (RPC error). Check your connection and try again.',
+            `Could not submit the transaction to Stellar ${NETWORK_LABEL} (RPC error). Check your connection and try again.`,
         );
     }
     if (sent.status === 'ERROR') {
@@ -202,8 +208,8 @@ export async function submitSignedAttestation(
     return sent.hash;
 }
 
-/** Sign + submit `attest`, then wait for Testnet confirmation.
- *  Returns the transaction hash. */
+/** Sign + submit `attest`, then wait for confirmation on the configured
+ *  network. Returns the transaction hash. */
 export async function attestOnChain(options: AttestOptions): Promise<string> {
     const signedXdr = await prepareSignedAttestation(options);
     return submitSignedAttestation(signedXdr);
@@ -225,7 +231,7 @@ async function waitForConfirmation(
         }
     }
     throw new Error(
-        'Timed out waiting for Testnet confirmation — the network may be slow or unavailable. The transaction might still confirm; check the explorer shortly.',
+        `Timed out waiting for ${NETWORK_LABEL} confirmation — the network may be slow or unavailable. The transaction might still confirm; check the explorer shortly.`,
     );
 }
 

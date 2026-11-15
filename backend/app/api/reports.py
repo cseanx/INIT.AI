@@ -168,7 +168,7 @@ def get_xdr_prepare(report_id: int, db: Session = Depends(get_db)) -> XdrPrepare
         hash=current_hash,
         prev_hash=prev_hash,
         contract_id=settings.stellar_contract_id,
-        network="testnet",
+        network=settings.stellar_network,
         function="attest",
         args=[
             {"name": "submitter", "type": "Address", "value": "<connected-wallet-G…>"},
@@ -178,7 +178,7 @@ def get_xdr_prepare(report_id: int, db: Session = Depends(get_db)) -> XdrPrepare
         ],
         fee="10000",
         timeout_seconds=120,
-        rpc_url=settings.stellar_rpc_url,
+        rpc_url=settings.stellar_rpc_endpoint,
         canonical_payload=canonical,
     )
 
@@ -214,10 +214,19 @@ def record_attestation(
             ),
         )
 
-    # Trust nothing: confirm on Testnet that this exact transaction exists,
-    # succeeded, and invoked attest() with this wallet, hash and report ref.
-    # The contract id is pinned to THIS deployment's configured value â€” the
-    # client-supplied id is only cross-checked for a clear error message.
+    # Trust nothing: confirm on the configured network that this exact
+    # transaction exists, succeeded, and invoked attest() with this wallet,
+    # hash and report ref. The contract id is pinned to THIS deployment's
+    # configured value — the client-supplied id is only cross-checked for a
+    # clear error message.
+    if body.network != settings.stellar_network:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                f"This deployment records Stellar {settings.stellar_network_label} "
+                f"attestations, not '{body.network}'."
+            ),
+        )
     if body.contract_id != settings.stellar_contract_id:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -255,7 +264,8 @@ def record_attestation(
             expected_report_ref=str(report.id),
             expected_wallet=body.wallet,
             expected_prev_hash_hex=body.prev_hash,
-            horizon_base=settings.stellar_horizon_base,
+            horizon_base=settings.stellar_horizon_url,
+            network_label=settings.stellar_network_label,
         )
     except TransactionVerificationError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
@@ -290,7 +300,7 @@ def record_attestation(
         prev_hash=body.prev_hash,
         tx_hash=body.tx_hash,
         contract_id=settings.stellar_contract_id,
-        network=body.network,
+        network=settings.stellar_network,
         wallet=body.wallet,
         status="confirmed",
         meta=verification_meta,

@@ -1,8 +1,8 @@
 ﻿"""Server-side verification of a claimed Soroban invocation.
 
-Before INIT.AI stores an attestation, the backend checks the Stellar Testnet
-(Horizon REST â€” stdlib only, no extra dependencies) and confirms that the
-submitted transaction:
+Before INIT.AI stores an attestation, the backend checks the configured
+Stellar network (Horizon REST — stdlib only, no extra dependencies) and
+confirms that the submitted transaction:
 
     1. exists and succeeded,
     2. invokes OUR SpatialAttestationRegistry contract's `attest` function,
@@ -30,10 +30,14 @@ _SCV_ADDRESS = 18
 
 
 class TransactionVerificationError(Exception):
-    """Raised when a claimed transaction cannot be verified on Testnet."""
+    """Raised when a claimed transaction cannot be verified on the network."""
 
 
-def _horizon_get(path_or_url: str, horizon_base: str = HORIZON_BASE) -> dict:
+def _horizon_get(
+    path_or_url: str,
+    horizon_base: str = HORIZON_BASE,
+    network_label: str = "Testnet",
+) -> dict:
     url = path_or_url if path_or_url.startswith("http") else f"{horizon_base}{path_or_url}"
     request = urllib.request.Request(url, headers={"Accept": "application/json"})
     try:
@@ -42,14 +46,14 @@ def _horizon_get(path_or_url: str, horizon_base: str = HORIZON_BASE) -> dict:
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
             raise TransactionVerificationError(
-                "Transaction not found on Stellar Testnet."
+                f"Transaction not found on Stellar {network_label}."
             ) from exc
         raise TransactionVerificationError(
-            f"Stellar Testnet returned HTTP {exc.code}."
+            f"Stellar {network_label} returned HTTP {exc.code}."
         ) from exc
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
         raise TransactionVerificationError(
-            "Could not reach the Stellar Testnet to verify the transaction."
+            f"Could not reach Stellar {network_label} to verify the transaction."
         ) from exc
 
 
@@ -108,8 +112,9 @@ def verify_attest_transaction(
     expected_wallet: str,
     expected_prev_hash_hex: str | None = None,
     horizon_base: str = HORIZON_BASE,
+    network_label: str = "Testnet",
 ) -> dict:
-    """Validate the claimed transaction against Horizon Testnet.
+    """Validate the claimed transaction against Horizon on the configured network.
 
     Returns metadata ({ledger, verified_via}) on success; raises
     TransactionVerificationError with a user-facing reason otherwise.
@@ -123,7 +128,7 @@ def verify_attest_transaction(
     last_err: TransactionVerificationError | None = None
     for attempt in range(3):
         try:
-            tx = _horizon_get(f"/transactions/{tx_hash}", horizon_base)
+            tx = _horizon_get(f"/transactions/{tx_hash}", horizon_base, network_label)
             break
         except TransactionVerificationError as exc:
             # Only retry on "not found" — other errors (e.g. HTTP 500) fail fast.
@@ -135,12 +140,16 @@ def verify_attest_transaction(
             time.sleep(1.2 * (attempt + 1))
     else:
         # Should be unreachable, but keep mypy happy.
-        raise last_err or TransactionVerificationError("Transaction not found on Stellar Testnet.")
+        raise last_err or TransactionVerificationError(
+            f"Transaction not found on Stellar {network_label}."
+        )
     if not tx.get("successful"):
         raise TransactionVerificationError("That transaction failed on-chain.")
 
     operations = _horizon_get(
-        tx["_links"]["operations"]["href"].split("{")[0] + "?limit=10"
+        tx["_links"]["operations"]["href"].split("{")[0] + "?limit=10",
+        horizon_base,
+        network_label,
     )
     required = {
         scv_symbol_b64("attest"),

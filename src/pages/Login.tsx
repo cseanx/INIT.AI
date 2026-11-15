@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import Particles from '../components/common/Particles';
 import { useAuth } from '../auth/AuthContext';
 import { ApiError, api } from '../services/api';
+import { NETWORK_IS_MAINNET, NETWORK_LABEL } from '../services/stellar/client';
 import { barangays } from '../data/mockData';
 
 const INPUT_CLASSES =
@@ -197,7 +198,7 @@ export default function Login() {
                                 <li className="flex items-start gap-2.5">
                                     <i className="fa-solid fa-shield-halved mt-0.5 text-[12px] text-accent"></i>
                                     Wallet-submitted, revision-linked attestations on Stellar
-                                    Testnet.
+                                    {' '}{NETWORK_LABEL}.
                                 </li>
                                 <li className="flex items-start gap-2.5">
                                     <i className="fa-solid fa-lock mt-0.5 text-[12px] text-accent"></i>
@@ -205,7 +206,9 @@ export default function Login() {
                                 </li>
                                 <li className="flex items-start gap-2.5">
                                     <i className="fa-solid fa-flask mt-0.5 text-[12px] text-accent"></i>
-                                    Prototype data and Testnet proofs — not an LGU certification.
+                                    {NETWORK_IS_MAINNET
+                                        ? 'Prototype data and wallet-submitted proofs — not an LGU certification.'
+                                        : 'Prototype data and Testnet proofs — not an LGU certification.'}
                                 </li>
                             </ul>
                         </div>
@@ -382,7 +385,7 @@ export default function Login() {
                         </div>
 
                         <footer className="mt-6 border-t border-white/6 pt-4 text-center text-[12px] text-[#999]">
-                            Prototype · Testnet only · mock environmental data
+                            Prototype · Stellar {NETWORK_LABEL} · mock environmental data
                         </footer>
                     </div>
                 </section>

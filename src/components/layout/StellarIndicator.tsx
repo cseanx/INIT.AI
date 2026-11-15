@@ -1,20 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStellarWallet } from '../../services/stellar/WalletContext';
-import { STELLAR_ENABLED } from '../../services/stellar/client';
+import {
+    NETWORK_IS_MAINNET,
+    NETWORK_LABEL,
+    STELLAR_ENABLED,
+    explorerAccountUrl,
+} from '../../services/stellar/client';
 
 /** GAB3...X9K2-style shortening for header display. */
 function shortAddress(address: string): string {
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
 }
 
-function explorerAccountUrl(address: string): string {
-    return `https://stellar.expert/explorer/testnet/account/${address}`;
-}
-
 const LINE2_CLASSES =
     'inline-flex cursor-pointer items-center gap-[6px] rounded-full px-[10px] py-[4px] text-[12px] font-semibold transition duration-200';
 
-/** Compact TESTNET DEMO + wallet indicator for the global topbar.
+/** Compact network badge + wallet indicator for the global topbar.
+ *  Shows "Mainnet" on a mainnet build and "Testnet Demo" otherwise.
  *  Renders nothing when the Stellar integration is disabled. */
 export default function StellarIndicator() {
     const wallet = useStellarWallet();
@@ -55,9 +57,20 @@ export default function StellarIndicator() {
     return (
         <div ref={rootRef} className="relative flex flex-col items-end gap-[5px]">
             {/* Network badge */}
-            <span className="inline-flex items-center gap-[5px] rounded-full border border-[#ffb03a]/30 bg-[#ffb03a]/10 px-[9px] py-[3px] text-[12px] font-bold uppercase tracking-[.08em] text-[#ffb03a] sm:px-[10px] sm:text-[12px]">
+            <span
+                className={
+                    NETWORK_IS_MAINNET
+                        ? 'inline-flex items-center gap-[5px] rounded-full border border-mint/30 bg-mint/10 px-[9px] py-[3px] text-[12px] font-bold uppercase tracking-[.08em] text-mint sm:px-[10px] sm:text-[12px]'
+                        : 'inline-flex items-center gap-[5px] rounded-full border border-[#ffb03a]/30 bg-[#ffb03a]/10 px-[9px] py-[3px] text-[12px] font-bold uppercase tracking-[.08em] text-[#ffb03a] sm:px-[10px] sm:text-[12px]'
+                }
+                title={
+                    NETWORK_IS_MAINNET
+                        ? 'Stellar Mainnet — attestations cost real XLM'
+                        : 'Stellar Testnet — free test XLM, no monetary value'
+                }
+            >
                 <i className="fa-solid fa-satellite text-[11px]"></i>
-                Testnet Demo
+                {NETWORK_IS_MAINNET ? 'Mainnet' : 'Testnet Demo'}
             </span>
 
             {/* Line 2 — state */}
@@ -137,7 +150,7 @@ export default function StellarIndicator() {
                     <div className="mb-[10px] flex flex-col gap-[6px] text-[12px]">
                         <div className="flex items-center justify-between">
                             <span className="text-[#888]">Network</span>
-                            <span className="font-semibold text-[#ddd]">Stellar Testnet</span>
+                            <span className="font-semibold text-[#ddd]">Stellar {NETWORK_LABEL}</span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-[#888]">Status</span>

@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { api } from '../../services/api';
-import { CONTRACT_ID, STELLAR_ENABLED } from '../../services/stellar/client';
-import { explorerTxUrl } from '../../types/stellar';
+import {
+    CONTRACT_ID,
+    NETWORK_LABEL,
+    STELLAR_ENABLED,
+    STELLAR_NETWORK,
+    explorerAccountUrl,
+    explorerContractUrl,
+    explorerTxUrl,
+} from '../../services/stellar/client';
 import type { AttestationMessage, ReportAttestationRecord } from '../../types/stellar';
 import { useStellarAttestation } from '../../hooks/useStellarAttestation';
 import { useStellarWallet } from '../../hooks/useStellarWallet';
@@ -18,14 +25,6 @@ const LABEL_CLASSES =
 const MONO_VALUE_CLASSES =
     'mt-1 block break-all font-mono text-[12.5px] leading-relaxed text-white';
 const LINK_CLASSES = 'text-accent hover:text-white hover:underline';
-
-function explorerAccountUrl(address: string): string {
-    return `https://stellar.expert/explorer/testnet/account/${address}`;
-}
-
-function explorerContractUrl(contractId: string): string {
-    return `https://stellar.expert/explorer/testnet/contract/${contractId}`;
-}
 
 /** Plain-language chain status, straight from the Soroban contract. */
 function VerificationStatusLine({
@@ -188,7 +187,7 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
                 reportHash: result.reportHash,
                 txHash: result.txHash,
                 contractId: CONTRACT_ID,
-                network: 'testnet',
+                network: STELLAR_NETWORK,
                 wallet: wallet.address ?? '',
                 meta: { source: 'web' },
             });
@@ -211,7 +210,7 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
                             Verified on Stellar
                         </h4>
                         <span className={`${CHIP_CLASSES} border border-mint/30 bg-mint/10 text-mint`}>
-                            <i className="fa-solid fa-link text-[11.5px]" aria-hidden="true"></i> Testnet
+                            <i className="fa-solid fa-link text-[11.5px]" aria-hidden="true"></i> {NETWORK_LABEL}
                         </span>
                         {revision > 0 ? (
                             <span className={`${CHIP_CLASSES} border border-white/10 bg-white/[.04] text-[#ccc]`}>
@@ -249,7 +248,7 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
                     />
                     <ProofField label="Network">
                         <span className="mt-1 block text-[13px] font-medium text-white">
-                            Stellar Testnet
+                            Stellar {NETWORK_LABEL}
                         </span>
                     </ProofField>
                     <ProofField label="Recorded at">
@@ -288,7 +287,7 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
         connecting: 'Connecting wallet…',
         signing: 'Awaiting wallet signature…',
         submitting: 'Submitting to Stellar…',
-        confirming: 'Confirming on Testnet…',
+        confirming: `Confirming on ${NETWORK_LABEL}…`,
     };
     const inFlight = busy ? (phaseLabel[att.phase] ?? 'Working…') : null;
 
@@ -335,7 +334,7 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
                         </div>
                         <ProofField label="Network">
                             <span className="mt-1 block text-[13px] font-medium text-white">
-                                Stellar Testnet
+                                Stellar {NETWORK_LABEL}
                             </span>
                         </ProofField>
                         <ProofField
@@ -365,8 +364,8 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
                         <>
                             <p className="mb-[14px] mt-[10px] max-w-[640px] text-[12.5px] leading-relaxed text-[#bbb]">
                                 Record a timestamped SHA-256 fingerprint of this exact report on
-                                Stellar Testnet. Anyone can later check that the report has not been
-                                altered; the chain proves existence, not the science.
+                                Stellar {NETWORK_LABEL}. Anyone can later check that the report has
+                                not been altered; the chain proves existence, not the science.
                             </p>
 
                             {att.error ? (
@@ -412,7 +411,7 @@ export default function StellarVerifyPanel({ report }: { report: Report }) {
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <i className="fa-solid fa-check mt-[3px] text-[10px] text-mint" aria-hidden="true"></i>
-                                    Network Stellar Testnet · contract{' '}
+                                    Network Stellar {NETWORK_LABEL} · contract{' '}
                                     <span className="font-mono">
                                         {CONTRACT_ID.slice(0, 6)}…{CONTRACT_ID.slice(-6)}
                                     </span>

@@ -87,7 +87,7 @@ function SearchBar() {
 }
 
 /**
- * Topbar: page identity on the left, city + clock + Testnet/wallet state on
+ * Topbar: page identity on the left, city + clock + network/wallet state on
  * the right. Under 900px a drawer trigger replaces the desktop sidebar, and
  * the controls wrap onto a second row instead of clipping the title.
  */
