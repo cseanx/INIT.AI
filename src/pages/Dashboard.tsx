@@ -8,6 +8,7 @@ import { BentoCard } from '../components/common/BentoCard';
 import StatCard from '../components/dashboard/StatCard';
 import DashboardChart from '../components/dashboard/DashboardChart';
 import MiniHotspotList from '../components/dashboard/MiniHotspotList';
+import HeatScale from '../components/common/HeatScale';
 import { api } from '../services/api';
 import { dashboardStats, priorityHotspots } from '../data/mockData';
 import { useApiData } from '../hooks/useApiData';
@@ -78,7 +79,19 @@ export default function Dashboard() {
                             </span>
                         </p>
 
-                        <p className="mt-3 text-[12.5px] font-medium text-red-400">
+                        <HeatScale
+                            className="mt-6 max-w-[320px]"
+                            caption="City scale"
+                            markers={[
+                                {
+                                    temp: 41.2,
+                                    severity: 'critical',
+                                    title: '41.2°C — Payatas, the hottest reading on the demo city scale',
+                                },
+                            ]}
+                        />
+
+                        <p className="mt-4 text-[12.5px] font-medium text-red-400">
                             +4.8°C <span className="font-normal text-white/60">above baseline</span>
                             <span className="mx-1.5 text-white/30">·</span>
                             <span className="font-normal text-white/60">12% canopy</span>

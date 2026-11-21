@@ -30,6 +30,21 @@ export const SEVERITY_DOTS: Record<Severity, string> = {
     moderate: 'bg-gold shadow-[0_0_10px_#ffd23f]',
 };
 
+/** Raw severity hues for instruments that draw with inline styles
+ *  (gradient markers, plotted dots) — the same three colors as above. */
+export const SEVERITY_HEX: Record<Severity, string> = {
+    critical: '#ff2d55',
+    high: '#ff8c42',
+    moderate: '#ffd23f',
+};
+
+/** Text-only severity accents (no fill) for values on plots and rails. */
+export const SEVERITY_TEXT: Record<Severity, string> = {
+    critical: 'text-[#ff5577]',
+    high: 'text-[#ff8c42]',
+    moderate: 'text-[#ffd23f]',
+};
+
 export const REPORT_STATUS_PILLS: Record<'ready' | 'processing', string> = {
     ready: 'bg-[rgba(0,255,132,.14)] text-[#00ff84]',
     processing: 'bg-[rgba(255,210,63,.14)] text-[#ffd23f]',

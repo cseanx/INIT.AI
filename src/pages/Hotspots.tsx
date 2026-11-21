@@ -1,13 +1,55 @@
-﻿import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+﻿import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
 import { useApiData } from '../hooks/useApiData';
 import Page from '../components/layout/Page';
 import PanelHead from '../components/common/PanelHead';
 import Card from '../components/common/Card';
-import HotspotTable from '../components/hotspots/HotspotTable';
+import ThermalLadder from '../components/hotspots/ThermalLadder';
+import HotspotRail from '../components/hotspots/HotspotRail';
 import HotspotFilter, { type HotspotFilterValue } from '../components/hotspots/HotspotFilter';
-import { SEVERITY_BADGES } from '../utils/toneClasses';
+import type { Barangay } from '../types';
+
+/* ==========================
+   HOTSPOTS — the city on one thermometer.
+   Instead of a ranked table, every barangay sits at its true peak
+   temperature on a shared thermal ladder; selecting a reading opens the
+   detail rail. The severity filter re-weights the instrument, and the
+   sort order flips it. Deep links (?q=) pre-select their barangay.
+========================== */
+
+function matchesQuery(b: Barangay, term: string): boolean {
+    const t = term.toLowerCase();
+    return (
+        b.name.toLowerCase().includes(t) || (b.driver ?? '').toLowerCase().includes(t)
+    );
+}
+
+function LadderSkeleton() {
+    return (
+        <div
+            className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_372px] lg:gap-7"
+            aria-hidden="true"
+        >
+            <div className="relative h-[520px]">
+                <div className="absolute bottom-0 top-0 w-[12px] rounded-full bg-white/5" style={{ left: 46 }} />
+                {[92, 168, 240, 318, 402].map((top) => (
+                    <div key={top} className="absolute left-[64px] h-3 w-3 animate-pulse rounded-full bg-white/10" style={{ top }} />
+                ))}
+                {[80, 150, 226, 308, 396].map((top) => (
+                    <div key={top} className="absolute left-[252px] h-[16px] w-[190px] animate-pulse rounded-full bg-white/5" style={{ top }} />
+                ))}
+            </div>
+            <div className="flex flex-col gap-3 border-t border-white/8 pt-5 lg:border-l lg:border-t-0 lg:pl-7">
+                <div className="h-[22px] w-[160px] animate-pulse rounded-full bg-white/5" />
+                <div className="h-[44px] w-[120px] animate-pulse rounded-[10px] bg-white/5" />
+                <div className="h-[16px] w-[220px] animate-pulse rounded-full bg-white/5" />
+                <div className="mt-4 h-[110px] w-full animate-pulse rounded-[12px] bg-white/5" />
+                <div className="mt-2 h-[60px] w-full animate-pulse rounded-[12px] bg-white/5" />
+            </div>
+        </div>
+    );
+}
 
 export default function Hotspots() {
     const hotspots = useApiData(api.getHotspots);
@@ -15,6 +57,7 @@ export default function Hotspots() {
     const query = (searchParams.get('q') ?? '').trim();
     const [filter, setFilter] = useState<HotspotFilterValue>('all');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
+    const [selected, setSelected] = useState<string | null>(null);
 
     const counts = useMemo(() => {
         const c = { critical: 0, high: 0, moderate: 0 };
@@ -26,28 +69,55 @@ export default function Hotspots() {
         return { all: hotspots?.length ?? 0, ...c };
     }, [hotspots]);
 
-    const rows = useMemo(() => {
-        const term = query.toLowerCase();
-        const base = (hotspots ?? [])
-            .filter((b) => filter === 'all' || b.severity === filter)
-            .filter(
-                (b) =>
-                    !term ||
-                    b.name.toLowerCase().includes(term) ||
-                    (b.driver ?? '').toLowerCase().includes(term),
-            );
-        return [...base].sort((a, b) =>
-            order === 'desc' ? b.temp - a.temp : a.temp - b.temp,
-        );
-    }, [hotspots, filter, order, query]);
+    const visible = useMemo(
+        () => (hotspots ?? []).filter((b) => filter === 'all' || b.severity === filter),
+        [hotspots, filter],
+    );
+    const ladderRows = useMemo(
+        () => [...visible].sort((a, b) => (order === 'desc' ? b.temp - a.temp : a.temp - b.temp)),
+        [visible, order],
+    );
 
-    const total = counts.all || 1;
-    const avgPeak = hotspots?.length
-        ? hotspots.reduce((sum, b) => sum + b.temp, 0) / hotspots.length
-        : null;
-    const hottest = hotspots?.length
-        ? [...hotspots].sort((a, b) => b.temp - a.temp)[0]
-        : null;
+    // Deep links pre-select their barangay; anything else opens on the
+    // hottest reading so the rail is never empty.
+    useEffect(() => {
+        if (!hotspots) return;
+        const hottest = [...hotspots].sort((a, b) => b.temp - a.temp)[0]?.name ?? null;
+        if (query) {
+            const match = [...hotspots]
+                .sort((a, b) => b.temp - a.temp)
+                .find((b) => matchesQuery(b, query));
+            setSelected((current) => match?.name ?? current ?? hottest);
+        } else {
+            setSelected((current) => current ?? hottest);
+        }
+    }, [hotspots, query]);
+
+    // A severity change can strand the selection on a hidden reading.
+    useEffect(() => {
+        if (!hotspots || !selected) return;
+        if (visible.some((b) => b.name === selected)) return;
+        setSelected(
+            [...visible].sort((a, b) => b.temp - a.temp)[0]?.name ?? null,
+        );
+    }, [hotspots, selected, visible]);
+
+    const qMiss = !!hotspots && !!query && !hotspots.some((b) => matchesQuery(b, query));
+    const selectedBarangay = hotspots?.find((b) => b.name === selected) ?? null;
+
+    // Thermal neighbours come from the full city ranking, not the filter.
+    const cityRanking = useMemo(
+        () => (hotspots ? [...hotspots].sort((a, b) => b.temp - a.temp) : []),
+        [hotspots],
+    );
+    const rankIndex = selectedBarangay
+        ? cityRanking.findIndex((b) => b.name === selectedBarangay.name)
+        : -1;
+    const hotter = rankIndex > 0 ? cityRanking[rankIndex - 1] : null;
+    const cooler =
+        rankIndex >= 0 && rankIndex < cityRanking.length - 1
+            ? cityRanking[rankIndex + 1]
+            : null;
 
     return (
         <Page>
@@ -55,136 +125,60 @@ export default function Hotspots() {
                 <PanelHead
                     title="Detected Hotspots"
                     actions={
-                        <div className="flex flex-wrap items-center gap-2">
-                            <Link
-                                to="/heatmap"
-                                className="inline-flex min-h-[40px] items-center gap-2 rounded-full border border-white/10 bg-white/[.04] px-4 text-[12.5px] font-semibold text-[#ddd] transition hover:bg-white/9 hover:text-white"
-                            >
-                                <i className="fa-solid fa-map-location-dot text-[12px] text-accent"></i>
-                                Open Heat Map
-                            </Link>
-                            <HotspotFilter
-                                filter={filter}
-                                onFilterChange={setFilter}
-                                order={order}
-                                onOrderChange={setOrder}
-                                counts={counts}
-                            />
-                        </div>
+                        <HotspotFilter
+                            filter={filter}
+                            onFilterChange={setFilter}
+                            order={order}
+                            onOrderChange={setOrder}
+                            counts={counts}
+                        />
                     }
                 />
 
-                {query ? (
+                {qMiss ? (
                     <div className="mb-4 flex flex-wrap items-center gap-2 text-[12.5px] text-[#bbb]">
                         <i className="fa-solid fa-magnifying-glass text-[11px] text-accent"></i>
-                        Showing matches for
+                        No hotspot matches
                         <strong className="text-white">&ldquo;{query}&rdquo;</strong>
                         <button
                             type="button"
                             onClick={() => setSearchParams({})}
                             className="cursor-pointer rounded-full border border-white/12 bg-white/[.05] px-2.5 py-1 text-[11.5px] font-semibold text-white transition hover:bg-white/10"
                         >
-                            Clear search
+                            Clear
                         </button>
                     </div>
                 ) : null}
 
-                <div className="mb-5 grid grid-cols-2 gap-x-6 gap-y-4 border-b border-white/6 pb-5 sm:grid-cols-4">
-                    <div>
-                        <span className="block text-[12px] font-semibold uppercase tracking-[.08em] text-[#999]">
-                            Hotspots tracked
-                        </span>
-                        <strong className="mt-1 block text-[26px] font-bold leading-none tabular-nums">
-                            {counts.all}
-                        </strong>
-                        <span className="mt-1 block text-[12px] text-[#888]">barangays ranked</span>
+                {hotspots ? (
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_372px] lg:gap-7">
+                        <ThermalLadder
+                            barangays={ladderRows}
+                            order={order}
+                            selected={selected}
+                            onSelect={setSelected}
+                        />
+                        <div className="min-w-0 border-t border-white/8 pt-5 lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0">
+                            {selectedBarangay ? (
+                                <HotspotRail
+                                    hotspot={selectedBarangay}
+                                    rank={rankIndex + 1}
+                                    total={cityRanking.length}
+                                    hotter={hotter}
+                                    cooler={cooler}
+                                    onSelect={setSelected}
+                                />
+                            ) : null}
+                        </div>
                     </div>
-                    <div>
-                        <span className="block text-[12px] font-semibold uppercase tracking-[.08em] text-[#999]">
-                            Critical
-                        </span>
-                        <strong className="mt-1 block text-[26px] font-bold leading-none tabular-nums text-[#ff5577]">
-                            {counts.critical}
-                        </strong>
-                        <span className="mt-1 block text-[12px] text-[#888]">act first</span>
-                    </div>
-                    <div>
-                        <span className="block text-[12px] font-semibold uppercase tracking-[.08em] text-[#999]">
-                            Average peak
-                        </span>
-                        <strong className="mt-1 block text-[26px] font-bold leading-none tabular-nums">
-                            {avgPeak != null ? `${avgPeak.toFixed(1)}°C` : '—'}
-                        </strong>
-                        <span className="mt-1 block text-[12px] text-[#888]">across monitored areas</span>
-                    </div>
-                    <div>
-                        <span className="block text-[12px] font-semibold uppercase tracking-[.08em] text-[#999]">
-                            Hottest area
-                        </span>
-                        <strong className="mt-1 block truncate text-[16px] font-semibold leading-tight">
-                            {hottest?.name ?? '—'}
-                        </strong>
-                        <span className="mt-1 block text-[12px] text-[#888]">
-                            {hottest ? `${hottest.temp.toFixed(1)}°C peak` : 'no reading'}
-                        </span>
-                    </div>
-                </div>
+                ) : (
+                    <LadderSkeleton />
+                )}
 
-                <div className="mb-5">
-                    <div className="flex h-[10px] overflow-hidden rounded-full border border-white/10 bg-white/5">
-                        {(['critical', 'high', 'moderate'] as const).map((severity) => (
-                            <span
-                                key={severity}
-                                className={
-                                    severity === 'critical'
-                                        ? 'bg-[#ff2d55]'
-                                        : severity === 'high'
-                                          ? 'bg-[#ff8c42]'
-                                          : 'bg-[#ffd23f]'
-                                }
-                                style={{ width: `${(counts[severity] / total) * 100}%` }}
-                            />
-                        ))}
-                    </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px]">
-                        {(['critical', 'high', 'moderate'] as const).map((severity) => (
-                            <span key={severity} className="flex items-center gap-1.5 text-[#b4b4b4]">
-                                <span
-                                    className={`rounded-full px-1.5 py-0.5 text-[12px] font-semibold ${SEVERITY_BADGES[severity]}`}
-                                >
-                                    {counts[severity]}
-                                </span>
-                                {severity[0].toUpperCase() + severity.slice(1)}
-                            </span>
-                        ))}
-                        <span className="ml-auto flex items-center gap-1.5 text-[12px] text-[#888]">
-                            <i className="fa-solid fa-flask text-[11.5px] text-accent"></i>
-                            Prototype dataset — mock observations
-                        </span>
-                    </div>
-                </div>
-
-                {hotspots ? <HotspotTable hotspots={rows} /> : null}
-                {hotspots && rows.length === 0 ? (
-                    <div className="flex flex-col items-center gap-2 py-10 text-center">
-                        <i className="fa-solid fa-filter-circle-xmark text-[20px] text-[#999]"></i>
-                        <p className="text-[13px] text-[#bbb]">
-                            {query
-                                ? `No hotspots match “${query}”.`
-                                : 'No hotspots match this severity.'}
-                        </p>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (query) setSearchParams({});
-                                setFilter('all');
-                            }}
-                            className="min-h-[40px] cursor-pointer rounded-full border border-white/12 bg-white/[.05] px-4 text-[12.5px] font-semibold text-white hover:bg-white/10"
-                        >
-                            Show all hotspots
-                        </button>
-                    </div>
-                ) : null}
+                <p className="mt-5 flex items-center gap-2 border-t border-white/6 pt-4 text-[12px] text-[#888]">
+                    <i className="fa-solid fa-flask text-[11.5px] text-accent"></i>
+                    Prototype dataset — mock observations
+                </p>
             </Card>
         </Page>
     );

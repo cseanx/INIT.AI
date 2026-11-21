@@ -1,90 +1,10 @@
-﻿import { useEffect, useRef, useState, type Ref } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+﻿import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { metaFor } from '../../routes';
 import { useClock } from '../../hooks/useClock';
 import CitySelector from '../common/CitySelector';
 import StellarIndicator from './StellarIndicator';
 import { useBentoFx } from '../common/BentoCard';
-
-/**
- * Collapsing search: a compact icon button that smoothly expands into the
- * full field. Submitting routes to Hotspots with a text filter applied, so
- * the control is functional rather than decorative.
- */
-function SearchBar() {
-    const navigate = useNavigate();
-    const [open, setOpen] = useState(false);
-    const [value, setValue] = useState('');
-    const inputRef = useRef<HTMLInputElement>(null);
-    const rootRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (open) inputRef.current?.focus();
-    }, [open]);
-
-    useEffect(() => {
-        function onDocumentClick(e: MouseEvent) {
-            if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-                setOpen(false);
-            }
-        }
-        function onKeyDown(e: KeyboardEvent) {
-            if (e.key === 'Escape') setOpen(false);
-        }
-        document.addEventListener('click', onDocumentClick);
-        document.addEventListener('keydown', onKeyDown);
-        return () => {
-            document.removeEventListener('click', onDocumentClick);
-            document.removeEventListener('keydown', onKeyDown);
-        };
-    }, []);
-
-    function submit(e: React.FormEvent) {
-        e.preventDefault();
-        const term = value.trim();
-        if (!term) return;
-        setOpen(false);
-        navigate(`/hotspots?q=${encodeURIComponent(term)}`);
-    }
-
-    return (
-        <form
-            ref={rootRef as unknown as Ref<HTMLFormElement>}
-            role="search"
-            onSubmit={submit}
-            className={`search flex h-[44px] items-center gap-3 overflow-hidden rounded-[14px] border border-white/5 bg-white/5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-                open
-                    ? 'w-[240px] cursor-text px-[16px] sm:w-[280px] sm:px-[18px]'
-                    : 'w-[44px] cursor-pointer justify-center hover:bg-white/8'
-            }`}
-            onClick={() => {
-                setOpen(true);
-                inputRef.current?.focus();
-            }}
-        >
-            <button
-                type="submit"
-                aria-label="Search hotspots"
-                className="shrink-0 cursor-pointer border-none bg-transparent p-0 text-inherit"
-                tabIndex={open ? 0 : -1}
-            >
-                <i className="fa-solid fa-magnifying-glass"></i>
-            </button>
-            <input
-                ref={inputRef}
-                type="text"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                placeholder="Search barangay..."
-                aria-label="Search barangay"
-                tabIndex={open ? 0 : -1}
-                className={`min-w-0 border-none bg-transparent text-white outline-none transition-opacity duration-200 ${
-                    open ? 'w-full opacity-100' : 'w-0 opacity-0'
-                }`}
-            />
-        </form>
-    );
-}
 
 /**
  * Topbar: page identity on the left, city + clock + network/wallet state on
@@ -133,8 +53,6 @@ export default function Topbar({ onOpenNav }: { onOpenNav: () => void }) {
             </div>
 
             <div className="topbar-right flex w-full items-center justify-between gap-2 sm:gap-3 min-[900px]:w-auto min-[900px]:justify-end lg:gap-5">
-                <SearchBar />
-
                 <CitySelector />
 
                 <div className="datetime hidden flex-col items-end gap-0.5 min-[620px]:flex">
