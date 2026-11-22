@@ -25,6 +25,45 @@ export function chartTheme(theme: 'dark' | 'light' = 'dark') {
     };
 }
 
+/* ---------- WCAG contrast helper for SVG chart furniture ---------- */
+
+function srgbChannel(v: number): number {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+}
+
+function relLuminance(r: number, g: number, b: number): number {
+    return 0.2126 * srgbChannel(r) + 0.7152 * srgbChannel(g) + 0.0722 * srgbChannel(b);
+}
+
+/**
+ * Blend a text color toward black (light background) or white (dark
+ * background) until it clears `target` contrast against `bg`. Data hues stay
+ * recognizable while text built from them stays legible in both themes.
+ */
+export function ensureTextContrast(hex: string, bg: string, target = 4.6): string {
+    const parse = (h: string): [number, number, number] => {
+        const n = h.replace('#', '');
+        const s = n.length === 3 ? n.split('').map((c) => c + c).join('') : n;
+        return [parseInt(s.slice(0, 2), 16), parseInt(s.slice(2, 4), 16), parseInt(s.slice(4, 6), 16)];
+    };
+    const [r, g, b] = parse(hex);
+    const [br, bgc, bb] = parse(bg);
+    const towardBlack = relLuminance(br, bgc, bb) > relLuminance(r, g, b);
+    for (let t = 0; t <= 0.72; t += 0.02) {
+        const f = 1 - t;
+        const rr = Math.round(towardBlack ? r * f : r + (255 - r) * t);
+        const gr = Math.round(towardBlack ? g * f : g + (255 - g) * t);
+        const br2 = Math.round(towardBlack ? b * f : b + (255 - b) * t);
+        const lum = relLuminance(rr, gr, br2);
+        const ratio =
+            (Math.max(lum, relLuminance(br, bgc, bb)) + 0.05) /
+            (Math.min(lum, relLuminance(br, bgc, bb)) + 0.05);
+        if (ratio >= target) return `rgb(${rr}, ${gr}, ${br2})`;
+    }
+    return towardBlack ? 'rgb(0, 0, 0)' : 'rgb(255, 255, 255)';
+}
+
 /**
  * Shared chart options for the dashboard: staggered entrance animation
  * where each data point/bar/slice pops in with a slight overshoot

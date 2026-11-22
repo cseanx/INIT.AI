@@ -1,0 +1,11 @@
+﻿  <!-- Generated ambient finish for INIT.AI. Fixed 200px neutral-grey grain
+       tile (desaturated fractal noise). Ships as a static repeating tile,
+       never as a live full-screen filter, so scrolling stays cheap. -->
+<!-- grain tile -->
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+  <filter id="g" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="200" height="200" filter="url(#g)" opacity="0.10"/>
+</svg>

@@ -24,7 +24,7 @@ export default function Dashboard() {
 
     return (
         <Page>
-            <BentoCard className="hero-panel glass-hot relative mb-4 flex w-full flex-col items-start justify-between gap-8 overflow-hidden rounded-[24px] border border-white/8 bg-white/5 p-[24px] backdrop-blur-[25px] shadow-[0_20px_60px_rgba(0,0,0,.35)] sm:mb-5 sm:rounded-[28px] sm:p-[32px] lg:flex-row lg:items-center lg:gap-10 lg:p-[40px_44px]">
+            <BentoCard className="hero-panel relative mb-4 flex w-full flex-col items-start justify-between gap-8 overflow-hidden rounded-[24px] border border-white/8 bg-white/5 p-[24px] backdrop-blur-[25px] shadow-[0_20px_60px_rgba(0,0,0,.35)] sm:mb-5 sm:rounded-[28px] sm:p-[32px] lg:flex-row lg:items-center lg:gap-10 lg:p-[40px_44px]">
                 <div className="relative z-10 w-full min-w-0 lg:w-[55%]">
                     <h1 className="mb-4 bg-none text-[32px] font-bold leading-[1.1] text-white sm:text-[38px] lg:mb-[18px] lg:text-[44px]">
                         Monitor.
@@ -33,7 +33,7 @@ export default function Dashboard() {
                         <br />
                         Mitigate.
                     </h1>
-                    <p className="mb-6 max-w-[52ch] text-[14px] leading-[1.7] text-[#b4b4b4] sm:text-[15px] lg:mb-7">
+                    <p className="mb-6 max-w-[52ch] text-[14px] leading-[1.7] text-[#cdcdcd] sm:text-[15px] lg:mb-7">
                         Analyze urban heat islands using satellite imagery, AI-assisted hotspot
                         detection, and canopy assessment to support climate-smart decision making.
                     </p>

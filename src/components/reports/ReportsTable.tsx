@@ -57,13 +57,14 @@ function VerificationPill({ report, networkLabel }: { report: Report; networkLab
 export default function ReportsTable({
     reports,
     onVerify,
-    onClearFilter,
+    onReset,
 }: {
     reports: Report[];
     /** Present only when Stellar is enabled — renders the per-row
      *  "Verify on Stellar" action that opens the confirmation modal. */
     onVerify?: (report: Report) => void;
-    onClearFilter?: () => void;
+    /** Present only while a search or filter is active — resets both. */
+    onReset?: () => void;
 }) {
     const navigate = useNavigate();
     const { config } = useStellarNetwork();
@@ -72,7 +73,7 @@ export default function ReportsTable({
     return (
         <>
         <div
-            className="table-wrap overflow-x-auto"
+            className="table-wrap overflow-x-auto lg:min-h-[606px]"
             role="region"
             aria-label="Generated reports"
             tabIndex={0}
@@ -236,19 +237,19 @@ export default function ReportsTable({
                                 <div className="flex flex-col items-center gap-2">
                                     <i className="fa-solid fa-filter-circle-xmark text-[22px] text-[#999]"></i>
                                     <p className="text-[13.5px] font-medium text-[#ddd]">
-                                        No reports in this view
+                                        No reports match
                                     </p>
                                     <p className="max-w-[360px] text-[12px] leading-relaxed text-[#999]">
-                                        Clear the filter to see every generated report, or create a
-                                        new report to start an evidence trail.
+                                        Try a different title, author, or scope — or reset the
+                                        filters to see every generated report.
                                     </p>
-                                    {onClearFilter ? (
+                                    {onReset ? (
                                         <button
                                             type="button"
-                                            onClick={onClearFilter}
+                                            onClick={onReset}
                                             className="mt-1 min-h-[40px] cursor-pointer rounded-full border border-white/12 bg-white/[.05] px-4 text-[12.5px] font-semibold text-white hover:bg-white/10"
                                         >
-                                            Show all reports
+                                            Reset filters
                                         </button>
                                     ) : null}
                                 </div>

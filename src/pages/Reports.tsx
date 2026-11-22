@@ -8,19 +8,51 @@ import Page from '../components/layout/Page';
 import PanelHead from '../components/common/PanelHead';
 import Card from '../components/common/Card';
 import ReportsTable from '../components/reports/ReportsTable';
+import ReportsFilterRail, {
+    type ReportCounts,
+    type ReportStatusFilter,
+    type ReportVerificationFilter,
+} from '../components/reports/ReportsFilterRail';
+import ReportsPagination from '../components/reports/ReportsPagination';
 import VerifyReportModal from '../components/reports/VerifyReportModal';
+import { reportScope } from '../utils/reportScope';
 import type { Report } from '../types';
 
 const NEW_REPORT_BTN_CLASSES =
     'flex min-h-[42px] w-auto cursor-pointer items-center gap-2 rounded-[14px] border-none bg-gradient-to-r from-primary to-accent p-[11px_20px] text-[13px] font-semibold text-white shadow-[0_10px_30px_rgba(var(--accent-glow),.3)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(var(--accent-glow),.42)]';
 
-type ReportFilter = 'all' | 'attested' | 'stale';
+/** Reports shown per page in the Generated Reports table. */
+const PAGE_SIZE = 5;
+
+/** Free-text match across the fields a report shows in the table. */
+function matchesSearch(report: Report, term: string): boolean {
+    if (!term) return true;
+    return [
+        report.title,
+        report.type,
+        report.preparedBy,
+        report.city,
+        report.coverage,
+        report.area,
+        reportScope(report),
+        report.date,
+        report.status,
+        ...(report.datasets ?? []),
+    ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(term);
+}
 
 export default function Reports() {
     const navigate = useNavigate();
     const { network, config } = useStellarNetwork();
     const [reports, setReports] = useState<Report[] | null>(null);
-    const [filter, setFilter] = useState<ReportFilter>('all');
+    const [search, setSearch] = useState('');
+    const [verification, setVerification] = useState<ReportVerificationFilter>('all');
+    const [status, setStatus] = useState<ReportStatusFilter>('all');
+    const [page, setPage] = useState(1);
     const wallet = useStellarWallet();
     /** Report targeted by the "Verify on Stellar" action (modal is open while set). */
     const [verifyTarget, setVerifyTarget] = useState<Report | null>(null);
@@ -76,49 +108,55 @@ export default function Reports() {
         return () => window.removeEventListener('page-visible', load);
     }, [load]);
 
-    const health = useMemo(() => {
+    const counts: ReportCounts = useMemo(() => {
         const list = reports ?? [];
-        const attested = list.filter((r) => r.attestedCurrent).length;
-        const stale = list.filter(
+        const verified = list.filter((r) => r.attestedCurrent).length;
+        const outdated = list.filter(
             (r) => !r.attestedCurrent && (r.attestationCount ?? 0) > 0,
         ).length;
-        const proofs = list.reduce((sum, r) => sum + (r.attestationCount ?? 0), 0);
-        const ready = list.filter((r) => r.status === 'ready').length;
-        return { total: list.length, attested, stale, proofs, ready };
+        return {
+            all: list.length,
+            verified,
+            outdated,
+            unverified: list.length - verified - outdated,
+            ready: list.filter((r) => r.status === 'ready').length,
+            processing: list.filter((r) => r.status === 'processing').length,
+        };
     }, [reports]);
 
-    const visible = useMemo(() => {
-        const list = reports ?? [];
-        if (filter === 'attested') return list.filter((r) => r.attestedCurrent);
-        if (filter === 'stale') {
-            return list.filter((r) => !r.attestedCurrent && (r.attestationCount ?? 0) > 0);
-        }
+    const filtered = useMemo(() => {
+        let list = reports ?? [];
+        const term = search.trim().toLowerCase();
+        if (term) list = list.filter((r) => matchesSearch(r, term));
+        if (verification === 'verified') list = list.filter((r) => r.attestedCurrent);
+        else if (verification === 'outdated')
+            list = list.filter((r) => !r.attestedCurrent && (r.attestationCount ?? 0) > 0);
+        else if (verification === 'unverified')
+            list = list.filter((r) => (r.attestationCount ?? 0) === 0);
+        if (status !== 'all') list = list.filter((r) => r.status === status);
         return list;
-    }, [reports, filter]);
+    }, [reports, search, verification, status]);
 
-    const cells: Array<{
-        key: ReportFilter;
-        label: string;
-        value: number;
-        note: string;
-        tone?: string;
-    }> = [
-        { key: 'all', label: 'Reports', value: health.total, note: `${health.ready} ready to share` },
-        {
-            key: 'attested',
-            label: 'Attested on-chain',
-            value: health.attested,
-            note: 'current form matches proof',
-            tone: 'text-mint',
-        },
-        {
-            key: 'stale',
-            label: 'Needs re-verify',
-            value: health.stale,
-            note: 'edited after proof',
-            tone: 'text-gold',
-        },
-    ];
+    const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    // A narrower filter result can strand the page past the last one.
+    const currentPage = Math.min(page, pageCount);
+    const paged = useMemo(
+        () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+        [filtered, currentPage],
+    );
+
+    // New searches and filters always read from the first page.
+    useEffect(() => {
+        setPage(1);
+    }, [search, verification, status]);
+
+    const hasActiveFilters =
+        search.trim() !== '' || verification !== 'all' || status !== 'all';
+    const resetFilters = useCallback(() => {
+        setSearch('');
+        setVerification('all');
+        setStatus('all');
+    }, []);
 
     return (
         <Page>
@@ -132,71 +170,43 @@ export default function Reports() {
                     }
                 />
 
-                <div className="mb-5 grid grid-cols-2 gap-x-6 gap-y-4 border-b border-white/6 pb-5 sm:grid-cols-4">
-                    {cells.map((cell) => (
-                        <button
-                            key={cell.key}
-                            type="button"
-                            aria-pressed={filter === cell.key}
-                            onClick={() => setFilter(filter === cell.key ? 'all' : cell.key)}
-                            className={`group min-h-[44px] cursor-pointer rounded-[10px] text-left transition ${
-                                filter === cell.key
-                                    ? 'bg-white/[.05] ring-1 ring-white/10'
-                                    : 'hover:bg-white/[.03]'
-                            } -m-2 p-2`}
-                        >
-                            <span className="block text-[12px] font-semibold uppercase tracking-[.06em] text-[#999]">
-                                {cell.label}
-                            </span>
-                            <strong
-                                className={`mt-1 block text-[26px] font-bold leading-none tabular-nums ${
-                                    cell.key === 'stale' && health.stale === 0
-                                        ? 'text-[#999]'
-                                        : (cell.tone ?? 'text-white')
-                                }`}
-                            >
-                                {cell.value}
-                            </strong>
-                            <span className="mt-1 block text-[12px] text-[#888]">{cell.note}</span>
-                        </button>
-                    ))}
-                    <div className="-m-2 p-2">
-                        <span className="block text-[12px] font-semibold uppercase tracking-[.06em] text-[#999]">
-                            Proofs recorded
-                        </span>
-                        <strong className="mt-1 block text-[26px] font-bold leading-none tabular-nums">
-                            {health.proofs}
-                        </strong>
-                        <span className="mt-1 block text-[12px] text-[#888]">
-                            {config.label} attestations
-                        </span>
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-7">
+                    <aside
+                        aria-label="Report filters"
+                        className="order-1 border-b border-white/8 pb-5 lg:order-none lg:col-start-2 lg:row-start-1 lg:border-b-0 lg:border-l lg:pb-0 lg:pl-7"
+                    >
+                        <ReportsFilterRail
+                            search={search}
+                            onSearchChange={setSearch}
+                            verification={verification}
+                            onVerificationChange={setVerification}
+                            status={status}
+                            onStatusChange={setStatus}
+                            counts={counts}
+                            networkLabel={config.label}
+                            onReset={hasActiveFilters ? resetFilters : undefined}
+                        />
+                    </aside>
+
+                    <div className="order-2 min-w-0 lg:order-none lg:col-start-1 lg:row-start-1">
+                        {reports ? (
+                            <>
+                                <ReportsTable
+                                    reports={paged}
+                                    onVerify={STELLAR_ENABLED ? setVerifyTarget : undefined}
+                                    onReset={hasActiveFilters ? resetFilters : undefined}
+                                />
+                                <ReportsPagination
+                                    page={currentPage}
+                                    pageCount={pageCount}
+                                    total={filtered.length}
+                                    pageSize={PAGE_SIZE}
+                                    onPageChange={setPage}
+                                />
+                            </>
+                        ) : null}
                     </div>
                 </div>
-
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-[12px] text-[#999]">
-                    <p className="flex items-center gap-2">
-                        <i className="fa-solid fa-shield-halved text-[12px] text-accent"></i>
-                        “Attested” means the report&apos;s current content hash matches a confirmed
-                        Stellar {config.label} proof. Editing the report makes the proof stale.
-                    </p>
-                    {filter !== 'all' ? (
-                        <button
-                            type="button"
-                            onClick={() => setFilter('all')}
-                            className="inline-flex min-h-[34px] cursor-pointer items-center gap-1.5 rounded-full border border-white/10 bg-white/[.04] px-3 text-[12px] font-semibold text-[#ddd] hover:bg-white/9"
-                        >
-                            <i className="fa-solid fa-xmark text-[11.5px]"></i> Clear filter
-                        </button>
-                    ) : null}
-                </div>
-
-                {reports ? (
-                    <ReportsTable
-                        reports={visible}
-                        onVerify={STELLAR_ENABLED ? setVerifyTarget : undefined}
-                        onClearFilter={() => setFilter('all')}
-                    />
-                ) : null}
             </Card>
             <VerifyReportModal
                 report={verifyTarget}

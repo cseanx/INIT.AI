@@ -8,21 +8,21 @@ import StatCard from '../components/dashboard/StatCard';
 import {
     CanopyBarChart,
     CanopyTrendChart,
-    LandCoverChart,
+    CanopyTrajectoryChart,
 } from '../components/canopy/CanopyCharts';
-import CanopyTable from '../components/canopy/CanopyTable';
+import LandCoverDonut from '../components/canopy/LandCoverDonut';
 import PriorityZones from '../components/canopy/PriorityZones';
 import { canopyStats } from '../data/mockData';
-import {
-    InsightStrip,
-    LedgerList,
-    LedgerRow,
-    SplitPanel,
-} from '../components/common/LayoutPrimitives';
+import { InsightStrip, SplitPanel } from '../components/common/LayoutPrimitives';
 
 export default function Canopy() {
     const canopy = useApiData(api.getCanopy);
     const barangays = useApiData(api.getHotspots);
+
+    const total = barangays?.length ?? 0;
+    const losing = barangays?.filter((b) => b.canopyChange < 0).length ?? 0;
+    const thinShrinking =
+        barangays?.filter((b) => b.canopy < 18 && b.canopyChange < 0).length ?? 0;
 
     return (
         <Page>
@@ -50,40 +50,11 @@ export default function Canopy() {
                             </span>
                         }
                     />
-                    <SplitPanel
-                        left={
-                            <div className="relative h-[260px]">
-                                <LandCoverChart data={canopy} showLegend={false} />
-                            </div>
-                        }
-                        right={
-                            <>
-                                <LedgerList>
-                                    {canopy.landCover.map((entry) => (
-                                        <LedgerRow
-                                            key={entry.label}
-                                            media={
-                                                <span
-                                                    className="inline-block h-2.5 w-2.5 rounded-full"
-                                                    style={{ background: entry.color }}
-                                                ></span>
-                                            }
-                                            title={entry.label}
-                                            bar={{
-                                                value: entry.value,
-                                                tone: 'neutral',
-                                                label: `${entry.value}%`,
-                                            }}
-                                        />
-                                    ))}
-                                </LedgerList>
-                                <InsightStrip icon="fa-tree">
-                                    Built-up cover leads every other class — replanting is
-                                    concentrated in the lowest-canopy barangays below.
-                                </InsightStrip>
-                            </>
-                        }
-                    />
+                    <LandCoverDonut data={canopy.landCover} />
+                    <InsightStrip icon="fa-tree">
+                        Built-up cover leads every other class — replanting is
+                        concentrated in the lowest-canopy barangays below.
+                    </InsightStrip>
                 </Card>
             ) : null}
 
@@ -128,8 +99,34 @@ export default function Canopy() {
             ) : null}
 
             <Card>
-                <PanelHead title="Canopy Detail by Barangay" />
-                {barangays ? <CanopyTable barangays={barangays} /> : null}
+                <PanelHead
+                    title="Canopy Detail by Barangay"
+                    actions={
+                        barangays ? (
+                            <span className="rounded-full border border-white/8 bg-white/5 p-[6px_14px] text-[12px] text-[#999]">
+                                {total} barangays · canopy vs 5-yr change
+                            </span>
+                        ) : null
+                    }
+                />
+                {barangays ? (
+                    <>
+                        <div
+                            className="relative h-[290px] sm:h-[340px]"
+                            role="img"
+                            aria-label={`Canopy cover versus five-year change for ${total} barangays`}
+                        >
+                            <CanopyTrajectoryChart data={barangays} />
+                        </div>
+                        {total > 0 ? (
+                            <InsightStrip icon="fa-arrow-trend-down">
+                                {losing} of {total} barangays lost canopy over five years —{' '}
+                                {thinShrinking} of them sit below the 18% line and are still
+                                shrinking.
+                            </InsightStrip>
+                        ) : null}
+                    </>
+                ) : null}
             </Card>
         </Page>
     );
