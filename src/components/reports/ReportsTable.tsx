@@ -1,11 +1,13 @@
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStellarNetwork } from '../../services/stellar/NetworkContext';
 import type { Report } from '../../types';
 import { reportPeriod, reportScope } from '../../utils/reportScope';
 
 const TH_CLASSES =
-    'border-b border-white/8 p-[12px_14px] text-left text-[12px] font-medium uppercase tracking-[.04em] text-[#999]';
-const TD_CLASSES = 'border-b border-white/5 p-[14px] align-top';
+    'border-b border-white/8 p-[12px] text-left text-[12px] font-medium uppercase tracking-[.04em] text-[#999]';
+const TD_CLASSES =
+    'border-b border-white/5 p-[14px_12px] align-top [overflow-wrap:anywhere]';
 const ACTION_BTN_CLASSES =
     'flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] border border-white/10 bg-white/[.04] text-[#ccc] transition duration-200 hover:bg-white/9 hover:text-white disabled:cursor-not-allowed disabled:opacity-40';
 const PILL_CLASSES =
@@ -69,27 +71,52 @@ export default function ReportsTable({
     const navigate = useNavigate();
     const { config } = useStellarNetwork();
     const networkLabel = config.label;
+    const wrapRef = useRef<HTMLDivElement | null>(null);
+    const [scrolled, setScrolled] = useState(false);
+    /** True while the columns cannot all fit — drives the swipe hint. */
+    const [overflows, setOverflows] = useState(false);
+
+    // Native listeners: scroll state drives the pinned column's backing so
+    // the table keeps the card's surface at rest; the resize observer keeps
+    // the swipe hint honest as the window changes width.
+    useEffect(() => {
+        const el = wrapRef.current;
+        if (!el) return;
+        const onScroll = () => setScrolled(el.scrollLeft > 2);
+        const measure = () => setOverflows(el.scrollWidth > el.clientWidth + 1);
+        el.addEventListener('scroll', onScroll, { passive: true });
+        const observer = new ResizeObserver(measure);
+        observer.observe(el);
+        onScroll();
+        measure();
+        return () => {
+            el.removeEventListener('scroll', onScroll);
+            observer.disconnect();
+        };
+    }, []);
 
     return (
         <>
         <div
+            ref={wrapRef}
             className="table-wrap overflow-x-auto lg:min-h-[606px]"
             role="region"
             aria-label="Generated reports"
             tabIndex={0}
+            data-scrolled={scrolled ? 'true' : undefined}
         >
             <table
-                className="data-table w-full min-w-[1040px] table-fixed border-collapse text-[13.5px] max-[700px]:min-w-[1040px]"
+                className="data-table w-full min-w-[1000px] table-fixed border-collapse text-[13.5px]"
                 id="reportsTable"
             >
                 <colgroup>
-                    <col className="w-[24%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[13%]" />
-                    <col className="w-[18%]" />
-                    <col className="w-[8%]" />
+                    <col className="w-[19%]" />
+                    <col className="w-[10%]" />
                     <col className="w-[11%]" />
                     <col className="w-[14%]" />
+                    <col className="w-[14%]" />
+                    <col className="w-[16%]" />
+                    <col className="w-[16%]" />
                 </colgroup>
                 <thead>
                     <tr>
@@ -259,9 +286,11 @@ export default function ReportsTable({
                 </tbody>
             </table>
         </div>
-        <p className="mt-2 text-[11.5px] text-[#999] min-[700px]:hidden">
-            Swipe the table sideways for scope, status, and actions.
-        </p>
+        {overflows ? (
+            <p className="mt-2 text-[11.5px] text-[#999]">
+                Swipe the table sideways for scope, status, and actions.
+            </p>
+        ) : null}
         </>
     );
 }

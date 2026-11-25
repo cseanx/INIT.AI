@@ -963,8 +963,13 @@ p {
 
 /* ==========================
    DATA TABLES
-   The first column stays put while the rest scrolls sideways on narrow
-   screens, so a report or barangay name never leaves the viewport.
+   The first column stays put while the rest scrolls sideways at every
+   width, so a report or barangay name never leaves the viewport. The table
+   itself keeps the card's surface; the pinned cell only gets a backing
+   while the table is actually scrolled, so it never reads as a different
+   shade at rest. While scrolled, the backing warms to the card's composite
+   tone and gains a soft right edge, so the pinned sheet reads as a raised
+   layer over the table instead of a flat darker band cut out of the glass.
    ========================== */
 
 .table-wrap {
@@ -972,27 +977,22 @@ p {
     border-radius: 12px;
 }
 
-/* Desktop: no distinct first-column surface — rows stay uniform. The
-   sticky treatment (opaque background + edge shadow) only applies while
-   tables scroll horizontally on the compact shell. */
 .data-table .sticky-col {
-    position: static;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: transparent;
+    transition: background-color 160ms ease, box-shadow 160ms ease;
 }
 
-@media (max-width: 899px) {
-    .data-table .sticky-col {
-        position: sticky;
-        left: 0;
-        z-index: 2;
-        background: rgba(12, 12, 15, .97);
-        backdrop-filter: blur(16px);
-        box-shadow: 12px 0 20px -18px rgba(0, 0, 0, .9);
-    }
+.table-wrap[data-scrolled='true'] .data-table .sticky-col {
+    background: rgba(19, 15, 17, .99);
+    box-shadow: 10px 0 18px -10px rgba(0, 0, 0, .5);
+}
 
-    [data-theme='light'] .data-table .sticky-col {
-        background: rgba(250, 251, 253, .98);
-        box-shadow: 12px 0 20px -18px rgba(20, 25, 35, .5);
-    }
+[data-theme='light'] .table-wrap[data-scrolled='true'] .data-table .sticky-col {
+    background: rgba(250, 251, 253, .99);
+    box-shadow: 10px 0 18px -10px rgba(23, 20, 30, .14);
 }
 
 /* ==========================
