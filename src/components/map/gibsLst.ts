@@ -33,7 +33,7 @@ export const LST_MODE_OVERPASS: Record<LstMode, string> = {
 
 export const LST_CADENCE_LABEL: Record<LstCadence, string> = {
     daily: 'Daily',
-    weekly: '1 week',
+    weekly: '8-day',
 };const GIBS_LST_TILE_ROOTS: Record<LstCadence, Record<LstMode, string>> = {
     daily: {
         day: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Aqua_L3_Land_Surface_Temp_Daily_Day/default',

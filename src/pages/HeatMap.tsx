@@ -105,7 +105,7 @@ export default function HeatMap() {
                             </h3>
                             <span
                                 className="inline-flex items-center gap-1 rounded-full border border-mint/30 bg-mint/10 px-2 py-[2px] text-[10.5px] font-bold uppercase tracking-[.06em] text-mint"
-                                title="NASA GIBS MODIS Aqua land-surface temperature. Daily or 1-week composite, day and night passes at 1 km, about three to four days (daily) or two weeks (composite) behind real time. Colors use the INIT.AI 10–40°C scale."
+                                title="NASA GIBS MODIS Aqua land-surface temperature. Daily or 8-day composite, day and night passes at 1 km, about three to four days (daily) or two weeks (composite) behind real time. Colors use the INIT.AI 10–40°C scale."
                             >
                                 <i className="fa-solid fa-satellite text-[10px]"></i> Real LST
                             </span>
@@ -129,7 +129,7 @@ export default function HeatMap() {
                             <div className="relative inline-flex items-center">
                                 <select
                                     aria-label="LST cadence"
-                                    title="Switch between daily passes and the 8-day (1 week) composite"
+                                    title="Switch between daily passes and the 8-day composite"
                                     value={lstCadence}
                                     onChange={(event) =>
                                         changeCadence(event.target.value as LstCadence)

@@ -912,6 +912,105 @@ p {
 }
 
 /* ==========================
+   GIBS LST CLICK POPUP
+   Real MODIS LST sampled from the visible raster.
+========================== */
+
+.lst-popup-wrapper .maplibregl-popup-content {
+    background: rgba(16, 14, 15, .97);
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
+    padding: 12px 14px;
+    color: #e8e8e8;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.lst-popup-wrapper .maplibregl-popup-tip {
+    border-top-color: rgba(16, 14, 15, .97);
+    border-bottom-color: rgba(16, 14, 15, .97);
+    border-left-color: rgba(16, 14, 15, .97);
+    border-right-color: rgba(16, 14, 15, .97);
+}
+
+.lst-popup-title {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.lst-popup-sub {
+    margin-top: 2px;
+    color: #9a9a9a;
+    font-size: 11px;
+}
+
+.lst-popup-temp {
+    margin-top: 8px;
+    color: #ff8fa3;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -.03em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.lst-popup-temp.empty {
+    color: #b0b0b0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.lst-popup-meta {
+    margin-top: 4px;
+    color: #a8a8a8;
+    font-size: 11px;
+}
+
+.lst-popup-note {
+    margin-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, .08);
+    padding-top: 7px;
+    color: #8b8b8b;
+    font-size: 10.5px;
+    line-height: 1.45;
+}
+
+[data-theme='light'] .lst-popup-wrapper .maplibregl-popup-content {
+    background: rgba(252, 250, 248, .98);
+    border-color: rgba(20, 25, 35, .14);
+    color: #23262b;
+    box-shadow: 0 14px 36px rgba(20, 25, 35, .18);
+}
+
+[data-theme='light'] .lst-popup-wrapper .maplibregl-popup-tip {
+    border-top-color: rgba(252, 250, 248, .98);
+    border-bottom-color: rgba(252, 250, 248, .98);
+    border-left-color: rgba(252, 250, 248, .98);
+    border-right-color: rgba(252, 250, 248, .98);
+}
+
+[data-theme='light'] .lst-popup-title {
+    color: #181a20;
+}
+
+[data-theme='light'] .lst-popup-sub,
+[data-theme='light'] .lst-popup-meta {
+    color: #565b66;
+}
+
+[data-theme='light'] .lst-popup-temp {
+    color: #b3123a;
+}
+
+[data-theme='light'] .lst-popup-note {
+    border-color: rgba(20, 25, 35, .08);
+    color: #6b707a;
+}
+
+/* ==========================
    MOBILE SHELL (under 900px)
    The fixed rail becomes an off-canvas drawer. Collapsed preference is
    ignored here — labels must be readable in the field.
@@ -1204,11 +1303,12 @@ html[data-theme='light'] {
 }
 
 /* Muted grays tuned for dark glass are too faint on light surfaces. */
+[data-theme='light'] .text-\[\#ddd\],
+[data-theme='light'] .text-\[\#d4d4d4\],
 [data-theme='light'] .text-\[\#ccc\],
 [data-theme='light'] .text-\[\#aaa\],
-[data-theme='light'] .text-\[\#cdcdcd\],
-[data-theme='light'] .text-\[\#d4d4d4\] {
-    color: #4d525b;
+[data-theme='light'] .text-\[\#cdcdcd\] {
+    color: #3a3f47;
 }
 
 [data-theme='light'] .text-\[\#999\],

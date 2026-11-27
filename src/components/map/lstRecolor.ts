@@ -1,5 +1,6 @@
 import { addProtocol, type AddProtocolAction } from 'maplibre-gl';
 import { lstScaleRgbAt } from './lstScale';
+import { decodeGibsLstRgb, loadGibsLstPalette } from './gibsLstSample';
 
 /**
  * Recolor NASA GIBS LST tiles on the client.
@@ -8,15 +9,11 @@ import { lstScaleRgbAt } from './lstScale';
  * Philippine temperatures in a narrow green/yellow band, and the compact
  * legend needs a local 10–40°C scale. This protocol reads the exact palette
  * color of each pixel back to °C, then applies the same scale as the legend.
+ * The palette decoder is shared with the map's click-to-sample popup.
  */
 
 const PROTOCOL = 'lst-recolor';
-const PALETTE_URL =
-    'https://gibs.earthdata.nasa.gov/colormaps/v1.3/MODIS_Land_Surface_Temp.xml';
-
 let registered = false;
-let palettePromise: Promise<Map<number, number>> | null = null;
-const nearestCache = new Map<number, number | null>();
 
 function createCanvas(width: number, height: number) {
     if (typeof OffscreenCanvas !== 'undefined') {
@@ -34,70 +31,6 @@ function createCanvas(width: number, height: number) {
     return { canvas, ctx };
 }
 
-function loadPalette(): Promise<Map<number, number>> {
-    if (palettePromise) return palettePromise;
-
-    palettePromise = (async () => {
-        const response = await fetch(PALETTE_URL);
-        if (!response.ok) {
-            throw new Error(`LST colormap request failed: ${response.status}`);
-        }
-        const xml = await response.text();
-        const palette = new Map<number, number>();
-        const entryPattern =
-            /<ColorMapEntry\b[^>]*rgb="(\d+),(\d+),(\d+)"[^>]*sourceValue="\[([\d.]+),([\d.]+)\)"/g;
-        let match: RegExpExecArray | null;
-
-        while ((match = entryPattern.exec(xml)) !== null) {
-            const kelvin =
-                ((Number(match[4]) + Number(match[5])) / 2) * 0.02;
-            palette.set(
-                (Number(match[1]) << 16) |
-                    (Number(match[2]) << 8) |
-                    Number(match[3]),
-                kelvin - 273.15,
-            );
-        }
-
-        if (!palette.size) throw new Error('LST colormap contained no entries');
-        return palette;
-    })();
-
-    return palettePromise;
-}
-
-function temperatureForRgb(
-    red: number,
-    green: number,
-    blue: number,
-    palette: Map<number, number>,
-): number | null {
-    const key = (red << 16) | (green << 8) | blue;
-    const exact = palette.get(key);
-    if (exact !== undefined) return exact;
-    if (nearestCache.has(key)) return nearestCache.get(key) ?? null;
-
-    let bestTemp: number | null = null;
-    let bestDistance = Number.POSITIVE_INFINITY;
-    for (const [paletteKey, temp] of palette) {
-        const pr = (paletteKey >> 16) & 255;
-        const pg = (paletteKey >> 8) & 255;
-        const pb = paletteKey & 255;
-        const distance =
-            (red - pr) * (red - pr) +
-            (green - pg) * (green - pg) +
-            (blue - pb) * (blue - pb);
-        if (distance < bestDistance) {
-            bestDistance = distance;
-            bestTemp = temp;
-        }
-    }
-
-    const result = bestDistance <= 4500 ? bestTemp : null;
-    nearestCache.set(key, result);
-    return result;
-}
-
 async function recolor(buffer: ArrayBuffer): Promise<ImageBitmap> {
     const bitmap = await createImageBitmap(
         new Blob([buffer], { type: 'image/png' }),
@@ -105,13 +38,13 @@ async function recolor(buffer: ArrayBuffer): Promise<ImageBitmap> {
     const { canvas, ctx } = createCanvas(bitmap.width, bitmap.height);
     ctx.drawImage(bitmap, 0, 0);
     const image = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
-    const palette = await loadPalette();
+    const palette = await loadGibsLstPalette();
     const pixels = image.data;
 
     for (let index = 0; index < pixels.length; index += 4) {
         if (pixels[index + 3] === 0) continue;
 
-        const temp = temperatureForRgb(
+        const temp = decodeGibsLstRgb(
             pixels[index],
             pixels[index + 1],
             pixels[index + 2],

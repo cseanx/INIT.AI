@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Map as MapLibreMap, setWorkerUrl } from 'maplibre-gl';
-import type { RasterTileSource, StyleSpecification } from 'maplibre-gl';
+import { Map as MapLibreMap, Popup, setWorkerUrl } from 'maplibre-gl';
+import type { MapMouseEvent, RasterTileSource, StyleSpecification } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useCity } from '../../contexts/CityContext';
@@ -8,10 +8,13 @@ import {
     GIBS_LST_ATTRIBUTION,
     GIBS_LST_LAYER_ID,
     GIBS_LST_SOURCE_ID,
+    LST_CADENCE_LABEL,
+    LST_MODE_LABEL,
     gibsLstTileUrl,
     type LstCadence,
     type LstMode,
 } from './gibsLst';
+import { sampleGibsLstPoint, type GibsLstSample } from './gibsLstSample';
 import { lstRecolorUrl, registerLstRecolorProtocol } from './lstRecolor';
 
 // MapLibre needs its worker resolved by the bundler when using a vector style.
@@ -86,13 +89,75 @@ interface MapViewProps {
 const CTRL_BTN_CLASSES =
     'map-ctrl-btn flex h-[30px] w-[30px] cursor-pointer items-center justify-center border-none bg-transparent text-[12.5px] transition duration-200';
 
+function formatPassDate(isoDate: string): string {
+    return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        timeZone: 'UTC',
+    });
+}
+
+function popupShell(body: string): string {
+    return `<div class="lst-popup">${body}</div>`;
+}
+
+function loadingPopupHtml(lat: number, lng: number): string {
+    return popupShell(`
+        <div class="lst-popup-title">Reading NASA LST…</div>
+        <div class="lst-popup-sub">MODIS Aqua · 1 km pixel</div>
+        <div class="lst-popup-meta">${lat.toFixed(4)}, ${lng.toFixed(4)}</div>
+    `);
+}
+
+function resultPopupHtml(
+    sample: GibsLstSample,
+    pass: { lstDate: string; lstMode: LstMode; lstCadence: LstCadence },
+    lat: number,
+    lng: number,
+): string {
+    const passLine = `${formatPassDate(pass.lstDate)} · ${LST_MODE_LABEL[pass.lstMode]} · ${LST_CADENCE_LABEL[pass.lstCadence]}`;
+    const coords = `${lat.toFixed(3)}, ${lng.toFixed(3)} · NASA GIBS`;
+
+    if (sample.status === 'ok') {
+        return popupShell(`
+            <div class="lst-popup-title">Land-surface temperature</div>
+            <div class="lst-popup-sub">MODIS Aqua LST · 1 km pixel</div>
+            <div class="lst-popup-temp">≈ ${sample.tempC.toFixed(1)} °C</div>
+            <div class="lst-popup-meta">${passLine}</div>
+            <div class="lst-popup-meta">${coords}</div>
+            <div class="lst-popup-note">1 km color-bin estimate from the NASA raster shown — not a live sensor reading.</div>
+        `);
+    }
+
+    if (sample.status === 'nodata') {
+        return popupShell(`
+            <div class="lst-popup-title">Land-surface temperature</div>
+            <div class="lst-popup-sub">MODIS Aqua LST · 1 km pixel</div>
+            <div class="lst-popup-temp empty">No retrieval</div>
+            <div class="lst-popup-meta">${passLine}</div>
+            <div class="lst-popup-meta">${coords}</div>
+            <div class="lst-popup-note">Cloud or ocean for this pass — there is no LST pixel here.</div>
+        `);
+    }
+
+    return popupShell(`
+        <div class="lst-popup-title">Land-surface temperature</div>
+        <div class="lst-popup-sub">MODIS Aqua LST · 1 km pixel</div>
+        <div class="lst-popup-temp empty">Unavailable</div>
+        <div class="lst-popup-meta">${passLine}</div>
+        <div class="lst-popup-meta">${coords}</div>
+        <div class="lst-popup-note">The NASA GIBS tile for this pass could not be read. Try another date or pass.</div>
+    `);
+}
+
 /**
  * Heat Map workspace: Esri Dark Gray Canvas basemap + NASA GIBS MODIS LST.
  *
  * The LST overlay is real satellite data (1 km, one day and one night pass
  * per day, typically published about four days behind real time), colorized
- * by NASA. There is no synthetic fallback and no point-value lookup on click;
- * the inspector remains a prototype record.
+ * by NASA. Clicking the map while LST is visible reads the same GIBS raster
+ * at that point and shows the decoded 1 km color-bin value in a popup.
  */
 export default function MapView({
     className = '',
@@ -104,6 +169,7 @@ export default function MapView({
 }: MapViewProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
+    const popupRef = useRef<Popup | null>(null);
     const latestRef = useRef({ lstDate, lstCadence, lstMode, lstVisible });
     const appliedSelectionRef = useRef(`${lstDate}:${lstCadence}:${lstMode}`);
     const [mapReady, setMapReady] = useState(false);
@@ -231,6 +297,74 @@ export default function MapView({
             map.setLayoutProperty(GIBS_LST_LAYER_ID, 'visibility', lstVisible ? 'visible' : 'none');
         }
     }, [lstVisible, mapReady]);
+
+    // Click-to-sample: read the real GIBS pixel behind the active LST pass.
+    // Registered as soon as the map exists so an early click still samples.
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map) return;
+
+        let token = 0;
+
+        const close = () => {
+            if (!popupRef.current) return;
+            popupRef.current.remove();
+            popupRef.current = null;
+        };
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') close();
+        };
+
+        const handleClick = async (event: MapMouseEvent) => {
+            const pass = latestRef.current;
+            if (!pass.lstVisible) return;
+
+            const { lng, lat } = event.lngLat;
+            close();
+            const request = ++token;
+
+            const created = new Popup({
+                closeButton: false,
+                closeOnClick: true,
+                offset: 12,
+                className: 'lst-popup-wrapper',
+                maxWidth: '300px',
+            })
+                .setLngLat(event.lngLat)
+                .setHTML(loadingPopupHtml(lat, lng))
+                .addTo(map);
+            popupRef.current = created;
+
+            const sample = await sampleGibsLstPoint(
+                lng,
+                lat,
+                pass.lstDate,
+                pass.lstMode,
+                pass.lstCadence,
+            );
+
+            if (request !== token || popupRef.current !== created || !created.isOpen()) return;
+            created.setHTML(resultPopupHtml(sample, pass, lat, lng));
+        };
+
+        map.on('click', handleClick);
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            map.off('click', handleClick);
+            document.removeEventListener('keydown', handleKeyDown);
+            close();
+        };
+        // The map instance is stable; pass values are read through latestRef.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // The popup belongs to one pass; drop it when the pass or visibility changes.
+    useEffect(() => {
+        popupRef.current?.remove();
+        popupRef.current = null;
+    }, [lstDate, lstCadence, lstMode, lstVisible]);
 
     // Resize when the containing page becomes visible again (page switches).
     useEffect(() => {
