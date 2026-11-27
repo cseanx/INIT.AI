@@ -33,8 +33,7 @@ npm run preview    # serve the production build
 
 - All chart instances are destroyed on unmount (`components/common/ChartCanvas.tsx`).
 - Pages are lazy-loaded; Chart.js is split into its own chunk.
-- The prototype uses mock environmental data - nothing here is real
-  satellite/sensor data yet.
+- The Heat Map's LST overlay is real NASA GIBS MODIS daily or 8-day land-surface temperature (1 km, day/night, about a three-to-four-day daily delay), rendered on the INIT.AI 10–40°C color scale. Hotspot records, inspector values, canopy, mitigation, and other environmental metrics remain prototype mock data.
 
 
 ## 1. The Problem

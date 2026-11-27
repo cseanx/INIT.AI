@@ -461,7 +461,7 @@ export default function ReportEditor() {
                             return (
                                 <SectionBlock key="sources" icon={meta.icon} title="Data Sources">
                                     <ul className="list-disc pl-[18px] text-[13px] leading-relaxed text-[#ccc]">
-                                        <li>Landsat / satellite LST scenes for {report.city ?? 'the city'}</li>
+                                        <li>Satellite land-surface temperature (LST) layers for {report.city ?? 'the city'}</li>
                                         <li>INIT.AI hotspot registry ({(report.criticalCount ?? 0) + (report.highCount ?? 0)} critical/high)</li>
                                         <li>Canopy assessment survey ({report.avgCanopy ?? '—'}% avg coverage)</li>
                                         <li>LGU mitigation project records ({report.mitigationProjects ?? 0} projects)</li>

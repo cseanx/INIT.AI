@@ -3,10 +3,9 @@ import { SEVERITY_HEX } from '../../utils/toneClasses';
 
 /* ==========================
    CITY THERMAL SCALE
-   One gradient every temperature instrument shares (dashboard heat scale,
-   hotspot ladder spine), so a reading means the same thing wherever it is
-   drawn. Stops come from the LST raster palette clamped to the city
-   reading window, keeping this legend consistent with the map legend.
+   One fixed 28–42°C window used by every temperature instrument on the
+   dashboard and hotspot views, so a reading means the same thing wherever
+   it is drawn. The map uses NASA's own GIBS colormap instead.
 ========================== */
 
 export const SCALE_MIN_C = 28;

@@ -1,15 +1,25 @@
-import { useCallback, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Page from '../components/layout/Page';
 import MapView from '../components/map/MapView';
-import HeatLegend from '../components/map/HeatLegend';
 import LstLegend from '../components/map/LstLegend';
+import LstDatePicker from '../components/map/LstDatePicker';
 import InspectorPanel from '../components/inspector/InspectorPanel';
-import { INSPECTOR_SUMMARY } from '../components/inspector/inspectorData';
 import { useBentoFx } from '../components/common/BentoCard';
 import { useCity } from '../contexts/CityContext';
 import { useApiData } from '../hooks/useApiData';
 import { api } from '../services/api';
+import {
+    LST_DAILY_MAX_DATE,
+    LST_DAILY_MIN_DATE,
+    LST_CADENCE_LABEL,
+    LST_WEEKLY_MAX_DATE,
+    LST_WEEKLY_MIN_DATE,
+    findLatestLstDate,
+    weeklyStartFor,
+    type LstCadence,
+    type LstMode,
+} from '../components/map/gibsLst';
 
 /**
  * Map workspace. Desktop: map + fixed-height inspector side by side.
@@ -17,98 +27,208 @@ import { api } from '../services/api';
  * coordinator can read the map and the inspector on a phone.
  */
 export default function HeatMap() {
-    const [inspectorOpen, setInspectorOpen] = useState(true);
-    const [lstActive, setLstActive] = useState(true);
+    const [lstVisible, setLstVisible] = useState(true);
+    const [lstCadence, setLstCadence] = useState<LstCadence>('daily');
+    const [lstMode, setLstMode] = useState<LstMode>('day');
+    const [lstDate, setLstDate] = useState(LST_DAILY_MAX_DATE);
+    const [latestDailyDate, setLatestDailyDate] = useState(LST_DAILY_MAX_DATE);
+    const dateTouchedRef = useRef(false);
     const mapCardFx = useBentoFx({ particleCount: 0 });
-    const { selected } = useCity();
+    const { selected, config: cityConfig } = useCity();
     const hotspots = useApiData(api.getHotspots);
 
     const criticalCount = (hotspots ?? []).filter((b) => b.severity === 'critical').length;
 
-    // MapView reports toggle changes so the legend can follow the LST layer.
-    const handleLayerStateChange = useCallback((state: Record<string, boolean>) => {
-        setLstActive(state.lst ?? false);
-    }, []);
+    useEffect(() => {
+        if (lstCadence !== 'daily') return;
+
+        let cancelled = false;
+        const [[west, south], [east, north]] = cityConfig.bounds;
+        const center: [number, number] = [(west + east) / 2, (south + north) / 2];
+
+        void findLatestLstDate(center, lstMode, LST_DAILY_MAX_DATE).then((date) => {
+            if (cancelled) return;
+            setLatestDailyDate(date);
+            if (!dateTouchedRef.current) setLstDate(date);
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [cityConfig, lstCadence, lstMode]);
+
+    const dateMin = lstCadence === 'weekly' ? LST_WEEKLY_MIN_DATE : LST_DAILY_MIN_DATE;
+    const dateMax = lstCadence === 'weekly' ? LST_WEEKLY_MAX_DATE : latestDailyDate;
+
+    function handleDateChange(date: string) {
+        dateTouchedRef.current = true;
+        setLstDate(date);
+    }
+
+    function changeCadence(next: LstCadence) {
+        setLstCadence(next);
+
+        if (next === 'weekly') {
+            const periodStart = weeklyStartFor(lstDate);
+            setLstDate(
+                periodStart < LST_WEEKLY_MIN_DATE
+                    ? LST_WEEKLY_MIN_DATE
+                    : periodStart > LST_WEEKLY_MAX_DATE
+                      ? LST_WEEKLY_MAX_DATE
+                      : periodStart,
+            );
+            return;
+        }
+
+        setLstDate(
+            lstDate < LST_DAILY_MIN_DATE
+                ? LST_DAILY_MIN_DATE
+                : lstDate > latestDailyDate
+                  ? latestDailyDate
+                  : lstDate,
+        );
+    }
 
     return (
         <Page className="min-h-0">
-            <div className="flex min-h-0 flex-col gap-4 min-[1100px]:h-full min-[1100px]:flex-row min-[1100px]:gap-[18px]">
-                {/* Map card */}
-                <div
-                    ref={mapCardFx.ref}
-                    style={mapCardFx.style}
-                    className={`${mapCardFx.className} flex h-[58vh] min-h-[380px] min-w-0 flex-col overflow-hidden rounded-[24px] border border-white/8 bg-white/5 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,.35)] min-[1100px]:h-auto min-[1100px]:flex-1 sm:rounded-[28px]`}
-                >
-                    <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-white/8 px-[16px] py-[11px] sm:px-[20px] sm:py-[13px]">
+            <div
+                ref={mapCardFx.ref}
+                style={mapCardFx.style}
+                className={`${mapCardFx.className} flex min-h-0 w-full flex-col overflow-hidden rounded-[24px] border border-white/8 bg-white/5 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,.35)] min-[1100px]:h-full min-[1100px]:flex-row sm:rounded-[28px]`}
+            >
+                {/* Map column */}
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                    <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-white/8 px-[16px] py-[11px] min-[1100px]:min-h-[60px] sm:px-[20px] sm:py-[13px]">
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                             <h3 className="text-[14px] font-semibold sm:text-[15px]">
                                 {selected} · Heat Map
                             </h3>
                             <span
-                                className="inline-flex items-center gap-1 rounded-full border border-[#ffb03a]/30 bg-[#ffb03a]/10 px-2 py-[2px] text-[12px] font-bold uppercase tracking-[.06em] text-[#ffb03a]"
-                                title="Prototype scene: Landsat land-surface temperature with synthetic fallback where no scene is available."
+                                className="inline-flex items-center gap-1 rounded-full border border-mint/30 bg-mint/10 px-2 py-[2px] text-[10.5px] font-bold uppercase tracking-[.06em] text-mint"
+                                title="NASA GIBS MODIS Aqua land-surface temperature. Daily or 1-week composite, day and night passes at 1 km, about three to four days (daily) or two weeks (composite) behind real time. Colors use the INIT.AI 10–40°C scale."
                             >
-                                <i className="fa-solid fa-flask text-[11px]"></i> Demo scene
+                                <i className="fa-solid fa-satellite text-[10px]"></i> Real LST
+                            </span>
+                            <span
+                                className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[.04] px-2 py-[2px] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[#999]"
+                                title="Hotspot records and the inspector are still prototype demo data."
+                            >
+                                Demo hotspots
                             </span>
                         </div>
-                        <Link
-                            to="/hotspots"
-                            className="inline-flex min-h-[32px] items-center gap-1.5 rounded-full border border-white/10 bg-white/[.04] px-[10px] text-[12px] font-semibold text-[#ddd] transition hover:bg-white/10 hover:text-white"
-                        >
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#ff2d55] shadow-[0_0_6px_#ff2d55]"></span>
-                            {criticalCount} critical hotspots
-                            <i className="fa-solid fa-arrow-right text-[11px]"></i>
-                        </Link>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                            <LstDatePicker
+                                value={lstDate}
+                                minDate={dateMin}
+                                maxDate={dateMax}
+                                cadence={lstCadence}
+                                onChange={handleDateChange}
+                            />
+
+                            <div className="relative inline-flex items-center">
+                                <select
+                                    aria-label="LST cadence"
+                                    title="Switch between daily passes and the 8-day (1 week) composite"
+                                    value={lstCadence}
+                                    onChange={(event) =>
+                                        changeCadence(event.target.value as LstCadence)
+                                    }
+                                    className="h-[34px] cursor-pointer appearance-none rounded-full border border-white/10 bg-white/[.04] pl-3 pr-7 text-[11px] font-semibold text-[#ddd] outline-none transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/35"
+                                >
+                                    <option value="daily">{LST_CADENCE_LABEL.daily}</option>
+                                    <option value="weekly">{LST_CADENCE_LABEL.weekly}</option>
+                                </select>
+                                <i
+                                    className="fa-solid fa-chevron-down pointer-events-none absolute right-2.5 text-[8px] text-[#777]"
+                                    aria-hidden="true"
+                                ></i>
+                            </div>
+
+                            <div
+                                role="group"
+                                aria-label="LST pass"
+                                className="inline-flex items-center rounded-full border border-white/10 bg-white/[.04] p-[2px]"
+                            >
+                                <button
+                                    type="button"
+                                    aria-pressed={lstMode === 'day'}
+                                    title="Day pass · nominal Aqua overpass ~13:30 local. Exact per-pixel time is not included in this layer."
+                                    onClick={() => setLstMode('day')}
+                                    style={{ outline: 'none' }}
+                                    className={`inline-flex min-h-[30px] cursor-pointer items-center gap-1.5 rounded-full border-none px-[9px] text-[11px] font-semibold transition focus:outline-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/35 ${
+                                        lstMode === 'day'
+                                            ? 'bg-white/14 text-white shadow-[0_1px_0_rgba(255,255,255,.08)_inset]'
+                                            : 'bg-transparent text-[#999] hover:text-white'
+                                    }`}
+                                >
+                                    <i className="fa-solid fa-sun text-[10px]" aria-hidden="true"></i>
+                                    Day
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-pressed={lstMode === 'night'}
+                                    title="Night pass · nominal Aqua overpass ~01:30 local. Exact per-pixel time is not included in this layer."
+                                    onClick={() => setLstMode('night')}
+                                    style={{ outline: 'none' }}
+                                    className={`inline-flex min-h-[30px] cursor-pointer items-center gap-1.5 rounded-full border-none px-[9px] text-[11px] font-semibold transition focus:outline-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/35 ${
+                                        lstMode === 'night'
+                                            ? 'bg-white/14 text-white shadow-[0_1px_0_rgba(255,255,255,.08)_inset]'
+                                            : 'bg-transparent text-[#999] hover:text-white'
+                                    }`}
+                                >
+                                    <i className="fa-solid fa-moon text-[10px]" aria-hidden="true"></i>
+                                    Night
+                                </button>
+                            </div>
+
+                            <button
+                                type="button"
+                                aria-pressed={lstVisible}
+                                onClick={() => setLstVisible((visible) => !visible)}
+                                title={lstVisible ? 'Hide the LST layer' : 'Show the LST layer'}
+                                className="inline-flex min-h-[34px] items-center gap-1.5 rounded-full border border-white/10 bg-white/[.04] px-[10px] text-[12px] font-semibold text-[#ddd] transition hover:bg-white/10 hover:text-white"
+                            >
+                                <i
+                                    className={`fa-solid ${lstVisible ? 'fa-eye' : 'fa-eye-slash'} text-[11px]`}
+                                    aria-hidden="true"
+                                ></i>
+                                {lstVisible ? 'LST on' : 'LST off'}
+                            </button>
+
+                            <Link
+                                to="/hotspots"
+                                className="inline-flex min-h-[34px] items-center gap-1.5 rounded-full border border-white/10 bg-white/[.04] px-[10px] text-[12px] font-semibold text-[#ddd] transition hover:bg-white/10 hover:text-white"
+                                title="Prototype hotspot records (demo data)"
+                            >
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#ff2d55] shadow-[0_0_6px_#ff2d55]"></span>
+                                {criticalCount} critical hotspots
+                                <i className="fa-solid fa-arrow-right text-[11px]"></i>
+                            </Link>
+                        </div>
                     </div>
-                    <div className="relative min-h-0 flex-1 p-[10px] sm:p-[14px]">
-                        <MapView className="h-full w-full rounded-[16px] sm:rounded-[18px]" onLayerStateChange={handleLayerStateChange}>
-                            {lstActive ? <LstLegend /> : <HeatLegend />}
+                    <div className="relative h-[58vh] min-h-[380px] p-[10px] min-[1100px]:h-auto min-[1100px]:min-h-0 min-[1100px]:flex-1 sm:p-[14px]">
+                        <MapView
+                            className="h-full w-full rounded-[16px] sm:rounded-[18px]"
+                            lstDate={lstDate}
+                            lstCadence={lstCadence}
+                            lstMode={lstMode}
+                            lstVisible={lstVisible}
+                        >
+                            {lstVisible ? (
+                                <LstLegend
+                                    date={lstDate}
+                                    cadence={lstCadence}
+                                    mode={lstMode}
+                                />
+                            ) : null}
                         </MapView>
                     </div>
                 </div>
 
-                {/* Inspector card */}
-                <div className="flex w-full shrink-0 overflow-hidden rounded-[24px] min-[1100px]:w-auto min-[1100px]:rounded-[28px]">
-                    <div
-                        className={`h-auto min-w-0 overflow-hidden transition-[width,opacity] duration-[.35s] ease-[cubic-bezier(0.32,0.72,0,1)] max-[1099px]:!w-full max-[1099px]:!opacity-100 ${
-                            inspectorOpen
-                                ? 'w-[372px] opacity-100 min-[1360px]:w-[400px]'
-                                : 'w-0 opacity-0'
-                        }`}
-                    >
-                        <div className="h-auto w-full shrink-0 min-[1100px]:h-full min-[1100px]:w-[372px] min-[1360px]:w-[400px]">
-                            <InspectorPanel
-                                onToggle={() => setInspectorOpen(!inspectorOpen)}
-                            />
-                        </div>
-                    </div>
-                    {!inspectorOpen && (
-                        <button
-                            type="button"
-                            onClick={() => setInspectorOpen(true)}
-                            title={`Open inspector · ${INSPECTOR_SUMMARY.area}, ${INSPECTOR_SUMMARY.temp.toFixed(1)}°C`}
-                            aria-label={`Open inspector panel for ${INSPECTOR_SUMMARY.area}, ${INSPECTOR_SUMMARY.temp.toFixed(1)}°C`}
-                            aria-expanded="false"
-                            aria-controls="inspector-body"
-                            className="group flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-between rounded-[28px] border border-white/8 bg-white/5 py-[12px] text-[#888] backdrop-blur-2xl transition duration-200 hover:bg-white/8 hover:text-accent max-[1099px]:hidden"
-                        >
-                            <span className="flex h-[32px] w-[32px] items-center justify-center rounded-[10px] border border-white/8 bg-white/5 text-[11px] transition duration-200 group-hover:bg-white/9 group-hover:text-white">
-                                <i className="fa-solid fa-angles-left" aria-hidden="true"></i>
-                            </span>
-                            <span className="rotate-180 text-[11px] font-semibold uppercase tracking-[.18em] [writing-mode:vertical-rl]">
-                                Inspector
-                            </span>
-                            <span className="flex flex-col items-center gap-[5px]">
-                                <span
-                                    className={`h-[6px] w-[6px] rounded-full ${INSPECTOR_SUMMARY.risk.dot}`}
-                                    aria-hidden="true"
-                                ></span>
-                                <span className="text-[10px] font-semibold tabular-nums text-[#ccc]">
-                                    {INSPECTOR_SUMMARY.temp.toFixed(1)}°
-                                </span>
-                            </span>
-                        </button>
-                    )}
+                {/* Inspector column — part of the same card, like the reports rail */}
+                <div className="flex w-full shrink-0 flex-col border-t border-white/8 min-[1100px]:h-full min-[1100px]:w-[372px] min-[1100px]:shrink-0 min-[1100px]:border-l min-[1100px]:border-t-0 min-[1360px]:w-[400px]">
+                    <InspectorPanel />
                 </div>
             </div>
         </Page>

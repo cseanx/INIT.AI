@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode, type RefObject } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { ChartConfiguration } from 'chart.js';
 import type { ResolvedTheme } from '../../types';
@@ -7,7 +7,6 @@ import { useCity } from '../../contexts/CityContext';
 import { baseChartOptions, chartTheme } from '../../utils/chartTheme';
 import { SEVERITY_DOTS } from '../../utils/toneClasses';
 import ChartCanvas from '../common/ChartCanvas';
-import { useBentoFx } from '../common/BentoCard';
 import {
     HOURLY_LABELS,
     HOURLY_TEMPS,
@@ -191,32 +190,25 @@ const SECONDARY_BTN_CLASSES =
     'flex h-[42px] w-full cursor-pointer items-center justify-center gap-[7px] whitespace-nowrap rounded-[11px] border border-white/[.14] bg-white/5 px-[10px] text-[12px] font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-white/9';
 
 /**
- * Right-hand inspector / telemetry panel for the heat map. Stays mounted —
- * the parent clips it with an animated width while collapsed. Pinned header,
- * pinned actions; only the evidence in the middle scrolls. Frontend-only.
+ * Right-hand inspector / telemetry rail for the heat map. Lives inside the
+ * map workspace card (the page provides the divider), so it carries no
+ * surface of its own. Pinned header, pinned actions; only the evidence in
+ * the middle scrolls on desktop. Frontend-only.
  */
-export default function InspectorPanel({
-    onToggle,
-}: {
-    onToggle: () => void;
-}) {
+export default function InspectorPanel() {
     const { resolvedTheme } = usePreferences();
     const { selected: city } = useCity();
     const navigate = useNavigate();
     const sparklineConfig = useSparklineConfig(resolvedTheme);
     const risk = heatRisk(SELECTED.surfaceTemp);
-    // Keep the cursor border glow, drop the confetti: this is a reading surface.
-    const bentoFx = useBentoFx({ particleCount: 0 });
 
     return (
         <aside
-            ref={bentoFx.ref as RefObject<HTMLElement>}
-            style={bentoFx.style}
             aria-labelledby="inspector-title"
-            className={`${bentoFx.className} relative flex h-full flex-col overflow-hidden rounded-[24px] border border-white/8 bg-white/5 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,.35)] sm:rounded-[28px]`}
+            className="relative flex h-full min-h-0 w-full flex-col"
         >
             {/* Pinned header */}
-            <div className="flex h-[48px] shrink-0 items-center justify-between gap-3 border-b border-white/8 px-[18px]">
+            <div className="flex h-[48px] shrink-0 items-center justify-between gap-3 border-b border-white/8 px-[18px] min-[1100px]:h-[60px]">
                 <div className="flex min-w-0 items-center gap-[8px]">
                     <h2 id="inspector-title" className="text-[13px] font-semibold">
                         Inspector
@@ -225,17 +217,6 @@ export default function InspectorPanel({
                         Demo area
                     </span>
                 </div>
-                <button
-                    type="button"
-                    onClick={onToggle}
-                    title="Collapse panel"
-                    aria-label="Collapse inspector panel"
-                    aria-expanded="true"
-                    aria-controls="inspector-body"
-                    className="flex h-[30px] w-[30px] shrink-0 cursor-pointer items-center justify-center rounded-[9px] border border-white/8 bg-white/5 text-[11px] text-[#999] transition duration-200 hover:bg-white/9 hover:text-white max-[1099px]:hidden"
-                >
-                    <i className="fa-solid fa-angles-right" aria-hidden="true"></i>
-                </button>
             </div>
 
             {/* Scrollable evidence */}

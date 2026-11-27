@@ -1,13 +1,13 @@
-"""Deterministic SHA-256 hashing for GeoJSON (LST layers, boundaries).
+"""Deterministic SHA-256 hashing for GeoJSON (area layers, boundaries).
 
 Week 2 deliverable: SHA-256 GeoJSON hashing pipeline.
 
 The report attestation hash (`report_hash.py :: attestation_hash`) remains the
 authoritative proof for reports — it hashes the canonical ReportPayload, whose
-`areas` field is *derived* from GeoJSON layers (e.g. LST FeatureCollection in
-`src/components/map/lstData.ts`). This module provides the lower-level
-primitive: hash any GeoJSON object deterministically, for layer-data
-provenance (future: prove which LST grid a report summary was derived from).
+`areas` field is *derived* from area GeoJSON. This module provides the
+lower-level primitive: hash any GeoJSON object deterministically, for
+layer-data provenance (future: prove which area geometry a report summary was
+derived from).
 
 Rules (`initai-canonical-v1`, GeoJSON annex):
   1. Object keys sorted recursively, arrays keep order — EXCEPT coordinates,

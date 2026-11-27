@@ -1,136 +1,119 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Map as MapLibreMap, Popup } from 'maplibre-gl';
-import type { StyleSpecification } from 'maplibre-gl';
+import { Map as MapLibreMap, setWorkerUrl } from 'maplibre-gl';
+import type { RasterTileSource, StyleSpecification } from 'maplibre-gl';
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import MapLayersPanel from './MapLayersPanel';
-import { LST_RASTER_LAYER_ID, LST_RASTER_SOURCE_ID, fetchLSTPoint, lstTileUrl } from './rasterLST';
 import { useCity } from '../../contexts/CityContext';
 import {
-    MAP_LAYERS,
-    applyLayerVisibility,
-    defaultLayerState,
-    type MapLayerDef,
-} from './layers';
+    GIBS_LST_ATTRIBUTION,
+    GIBS_LST_LAYER_ID,
+    GIBS_LST_SOURCE_ID,
+    gibsLstTileUrl,
+    type LstCadence,
+    type LstMode,
+} from './gibsLst';
+import { lstRecolorUrl, registerLstRecolorProtocol } from './lstRecolor';
+
+// MapLibre needs its worker resolved by the bundler when using a vector style.
+setWorkerUrl(workerUrl);
+registerLstRecolorProtocol();
 
 /**
- * Travel box: the camera cannot leave the Philippines (with a little sea
- * margin around the archipelago), so users can't wander the world.
+ * Free, keyless raster basemap. OpenFreeMap's current public vector tiles are
+ * returning empty z7/z8 tiles over Metro Manila, so use Esri's dark canvas
+ * with a separate transparent labels layer above the thermal raster.
  */
+const BASEMAP_LABELS_ID = 'basemap-labels';
+const BASEMAP_STYLE: StyleSpecification = {
+    version: 8,
+    sources: {
+        basemap: {
+            type: 'raster',
+            tiles: [
+                'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+            ],
+            tileSize: 256,
+            attribution:
+                'Esri, HERE, Garmin, © OpenStreetMap contributors, and the GIS user community',
+        },
+        [BASEMAP_LABELS_ID]: {
+            type: 'raster',
+            tiles: [
+                'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+            ],
+            tileSize: 256,
+        },
+    },
+    layers: [
+        {
+            id: 'basemap-background',
+            type: 'background',
+            paint: { 'background-color': '#0b0e14' },
+        },
+        {
+            id: 'basemap',
+            type: 'raster',
+            source: 'basemap',
+            paint: { 'raster-opacity': 0.92 },
+        },
+        {
+            id: BASEMAP_LABELS_ID,
+            type: 'raster',
+            source: BASEMAP_LABELS_ID,
+        },
+    ],
+};
+
+/** Keep the camera around the Philippines so users can't wander the world. */
 const TRAVEL_LIMITS: [[number, number], [number, number]] = [
     [113.0, 2.0],
     [130.5, 23.5],
 ];
 
-/** Dark satellite basemap + Landsat LST raster (demo scene where unavailable). */
-function satelliteStyle(): StyleSpecification {
-    const thermalTiles = [lstTileUrl()];
-    const thermalAttribution = '© Esri · Landsat LST 30 m · demo scene';
-
-    return {
-        version: 8,
-        sources: {
-            // Dark base: Esri World Imagery darkened via raster paint, keeps roads/labels readable at 0.62 opacity.
-            esri: {
-                type: 'raster',
-                tiles: [
-                    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                ],
-                tileSize: 256,
-                maxzoom: 19,
-                attribution: '© Esri, Maxar',
-            },
-            esriLabels: {
-                type: 'raster',
-                tiles: [
-                    'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-                ],
-                tileSize: 256,
-                maxzoom: 19,
-                attribution: '© Esri',
-            },
-            [LST_RASTER_SOURCE_ID]: {
-                type: 'raster',
-                tiles: thermalTiles,
-                tileSize: 256,
-                minzoom: 0,
-                maxzoom: 19,
-                // Allow overzoom/underzoom to avoid sudden disappearance (§3)
-                attribution: thermalAttribution,
-            },
-        },
-        layers: [
-            {
-                id: 'satellite-basemap',
-                type: 'raster',
-                source: 'esri',
-                paint: {
-                    // Slightly dim base so thermal pops but roads stay readable at 0.62 opacity.
-                    'raster-brightness-min': 0.15,
-                    'raster-brightness-max': 0.95,
-                    'raster-contrast': 0.05,
-                    'raster-saturation': -0.15,
-                },
-            },
-            {
-                id: LST_RASTER_LAYER_ID,
-                type: 'raster',
-                source: LST_RASTER_SOURCE_ID,
-                paint: {
-                    // §2 smooth, §5 readable 0.55-0.75. 0.62 keeps roads/labels readable, hot spots pop.
-                    'raster-opacity': 0.62,
-                    'raster-resampling': 'linear',
-                    'raster-fade-duration': 80,
-                    'raster-contrast': 0.08,
-                    'raster-saturation': 0.15,
-                    'raster-brightness-min': 0.08,
-                    'raster-brightness-max': 0.98,
-                },
-            },
-            {
-                id: 'place-labels',
-                type: 'raster',
-                source: 'esriLabels',
-                paint: {
-                    'raster-opacity': 0.95,
-                },
-            },
-            // Future vector overlays (barangay/city boundaries, hotspots) inserted here
-            // will always render above thermal by design (§7).
-        ],
-    };
-}
-
 interface MapViewProps {
     className?: string;
     children?: ReactNode;
-    /** Notifies the page when a layer toggle changes (e.g. to swap legends). */
-    onLayerStateChange?: (state: Record<string, boolean>) => void;
+    /** UTC date (YYYY-MM-DD) of the daily pass, or start of the 8-day period. */
+    lstDate: string;
+    /** Daily pass or 8-day composite. */
+    lstCadence: LstCadence;
+    /** Day or night pass for the selected date. */
+    lstMode: LstMode;
+    /** Whether the LST raster is visible. */
+    lstVisible: boolean;
 }
 
 const CTRL_BTN_CLASSES =
     'map-ctrl-btn flex h-[30px] w-[30px] cursor-pointer items-center justify-center border-none bg-transparent text-[12.5px] transition duration-200';
 
 /**
- * Large interactive MapLibre GL map for the Heat Map page.
+ * Heat Map workspace: Esri Dark Gray Canvas basemap + NASA GIBS MODIS LST.
  *
- * Now serves continuous raster LST (hourly) instead of 18 vector boxes.
- * Inspector click fetches `GET /api/layers/lst/point?lat=&lng=&date=now`.
- * Hourly tiles auto-refresh every 10 min when LST is visible.
+ * The LST overlay is real satellite data (1 km, one day and one night pass
+ * per day, typically published about four days behind real time), colorized
+ * by NASA. There is no synthetic fallback and no point-value lookup on click;
+ * the inspector remains a prototype record.
  */
-export default function MapView({ className = '', children, onLayerStateChange }: MapViewProps) {
+export default function MapView({
+    className = '',
+    children,
+    lstDate,
+    lstCadence,
+    lstMode,
+    lstVisible,
+}: MapViewProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
-    const controlsRef = useRef<HTMLDivElement>(null);
-    const popupRef = useRef<Popup | null>(null);
-    const refreshTimerRef = useRef<number | null>(null);
+    const latestRef = useRef({ lstDate, lstCadence, lstMode, lstVisible });
+    const appliedSelectionRef = useRef(`${lstDate}:${lstCadence}:${lstMode}`);
     const [mapReady, setMapReady] = useState(false);
-    const [layersOpen, setLayersOpen] = useState(false);
     const { config: cityConfig } = useCity();
-    const [layerState, setLayerState] = useState<Record<string, boolean>>(() => {
-        const s = defaultLayerState();
-        // Open with thermal on by default (continuous surface, honest OpenWeather)
-        return { ...s, lst: true };
-    });
+
+    // Keep the values the one-time style-load handler reads up to date,
+    // including changes made before the style has finished loading.
+    useEffect(() => {
+        latestRef.current = { lstDate, lstCadence, lstMode, lstVisible };
+    }, [lstDate, lstCadence, lstMode, lstVisible]);
 
     useEffect(() => {
         const container = containerRef.current;
@@ -138,7 +121,7 @@ export default function MapView({ className = '', children, onLayerStateChange }
 
         const map = new MapLibreMap({
             container,
-            style: satelliteStyle(),
+            style: BASEMAP_STYLE,
             bounds: cityConfig.bounds,
             fitBoundsOptions: { padding: 36, duration: 0 },
             minZoom: 4.2,
@@ -147,151 +130,107 @@ export default function MapView({ className = '', children, onLayerStateChange }
             attributionControl: { compact: true },
             trackResize: true,
         });
-
-        function formatTemp(v: number | null): string {
-            if (v == null || !Number.isFinite(v)) return '—';
-            return `${v.toFixed(1)}°C`;
-        }
-
-        function sourceLabel(source?: string): string {
-            if (source === 'gee-landsat-lst') return 'Landsat LST (GEE)';
-            if (source === 'titiler-cog-landsat') return 'Landsat LST (TiTiler)';
-            return 'Synthetic demo fallback';
-        }
-
-        async function handleMapClick(e: { lngLat: { lng: number; lat: number } }) {
-            // Only when LST is visible — otherwise click is basemap
-            const lstVisible = map.getLayoutProperty(LST_RASTER_LAYER_ID, 'visibility') !== 'none';
-            if (!lstVisible) return;
-            const { lng, lat } = e.lngLat;
-            // Close previous popup
-            popupRef.current?.remove();
-            const popup = new Popup({
-                closeButton: false,
-                closeOnClick: true,
-                offset: 12,
-                className: 'lst-popup-wrapper',
-                maxWidth: '280px',
-            })
-                .setLngLat([lng, lat])
-                .setHTML(
-                    `<div class="lst-popup">
-                        <div class="lst-popup-title">Fetching…</div>
-                        <div class="lst-popup-sub">${lat.toFixed(3)}, ${lng.toFixed(3)}</div>
-                        <div class="lst-popup-temp">…</div>
-                    </div>`,
-                )
-                .addTo(map);
-            popupRef.current = popup;
-            const data = await fetchLSTPoint(lat, lng, 'now');
-            if (!popup.isOpen()) return;
-            const temp = data?.temperature_c ?? null;
-            const hasReading = temp != null;
-            const ts = data?.timestamp ? new Date(data.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'demo';
-            popup.setHTML(
-                `<div class="lst-popup">
-                    <div class="lst-popup-title">${hasReading ? 'Land-surface temperature' : 'No data'}</div>
-                    <div class="lst-popup-sub">${lat.toFixed(3)}, ${lng.toFixed(3)}</div>
-                    <div class="lst-popup-temp${hasReading ? '' : ' empty'}">${hasReading ? formatTemp(temp) : '—'}</div>
-                    <div class="lst-popup-meta">Scene ${ts}</div>
-                    <div class="lst-popup-meta">Source: ${hasReading ? sourceLabel(data?.source) : 'Unknown'} · 16-day revisit</div>
-                </div>`,
-            );
-        }
-
-        map.on('load', () => {
-            setMapReady(true);
-            map.on('click', handleMapClick);
-            map.getCanvas().style.cursor = 'crosshair';
-        });
         mapRef.current = map;
 
+        const addLstLayer = () => {
+            if (map.getSource(GIBS_LST_SOURCE_ID)) return;
+
+            let styleLayers;
+            try {
+                styleLayers = map.getStyle().layers;
+            } catch {
+                return;
+            }
+            if (!styleLayers?.length) return;
+
+            // Keep the thermal raster below the transparent labels layer.
+            const beforeId = map.getLayer(BASEMAP_LABELS_ID)
+                ? BASEMAP_LABELS_ID
+                : undefined;
+
+            map.addSource(GIBS_LST_SOURCE_ID, {
+                type: 'raster',
+                tiles: [
+                    lstRecolorUrl(
+                        gibsLstTileUrl(
+                            latestRef.current.lstDate,
+                            latestRef.current.lstMode,
+                            latestRef.current.lstCadence,
+                        ),
+                    ),
+                ],
+                tileSize: 256,
+                minzoom: 0,
+                maxzoom: 7,
+                attribution: GIBS_LST_ATTRIBUTION,
+            });
+            map.addLayer(
+                {
+                    id: GIBS_LST_LAYER_ID,
+                    type: 'raster',
+                    source: GIBS_LST_SOURCE_ID,
+                    layout: {
+                        visibility: latestRef.current.lstVisible ? 'visible' : 'none',
+                    },
+                    paint: {
+                        'raster-opacity': 0.55,
+                        'raster-resampling': 'nearest',
+                        'raster-fade-duration': 0,
+                    },
+                },
+                beforeId,
+            );
+            map.triggerRepaint();
+            appliedSelectionRef.current = `${latestRef.current.lstDate}:${latestRef.current.lstCadence}:${latestRef.current.lstMode}`;
+            setMapReady(true);
+        };
+
+        map.on('style.load', addLstLayer);
+        addLstLayer();
+
         return () => {
-            map.off('click', handleMapClick);
-            popupRef.current?.remove();
-            popupRef.current = null;
             map.remove();
             mapRef.current = null;
             setMapReady(false);
         };
+        // The map is created once; city changes are handled below.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // City selector compatibility (§8): keep thermal active, update center/bounds.
+    // City selector: refit the camera when the city changes.
     useEffect(() => {
         const map = mapRef.current;
         if (!mapReady || !map) return;
-        map.fitBounds(cityConfig.bounds, { padding: 36, duration: 700, maxZoom: 13.5, essential: true });
+        map.fitBounds(cityConfig.bounds, {
+            padding: 36,
+            duration: 700,
+            maxZoom: 13.5,
+            essential: true,
+        });
     }, [cityConfig, mapReady]);
 
-    // Push layer visibility onto the map whenever a toggle changes
+    // Swap the pass when the date, cadence, or day/night mode changes.
     useEffect(() => {
         const map = mapRef.current;
         if (!mapReady || !map) return;
-        for (const layer of MAP_LAYERS) {
-            applyLayerVisibility(map, layer, layerState[layer.id] ?? false);
-        }
-    }, [layerState, mapReady]);
+        const selection = `${lstDate}:${lstCadence}:${lstMode}`;
+        if (appliedSelectionRef.current === selection) return;
+        appliedSelectionRef.current = selection;
+        const source = map.getSource(GIBS_LST_SOURCE_ID) as RasterTileSource | undefined;
+        source?.setTiles([
+            lstRecolorUrl(gibsLstTileUrl(lstDate, lstMode, lstCadence)),
+        ]);
+        map.triggerRepaint();
+    }, [lstDate, lstCadence, lstMode, mapReady]);
 
-    // Hourly auto-refresh: when LST is visible, bust tile cache every 10 min
+    // Show/hide the thermal layer.
     useEffect(() => {
-        if (!mapReady) return;
         const map = mapRef.current;
-        if (!map) return;
-        const lstVisible = layerState.lst ?? false;
-        if (refreshTimerRef.current) {
-            window.clearInterval(refreshTimerRef.current);
-            refreshTimerRef.current = null;
+        if (!mapReady || !map) return;
+        if (map.getLayer(GIBS_LST_LAYER_ID)) {
+            map.setLayoutProperty(GIBS_LST_LAYER_ID, 'visibility', lstVisible ? 'visible' : 'none');
         }
-        if (!lstVisible) return;
-        const refresh = () => {
-            const src = map.getSource(LST_RASTER_SOURCE_ID) as unknown as { setTiles?: (tiles: string[]) => void; reload?: () => void } | undefined;
-            const url = lstTileUrl('now') + `&t=${Date.now()}`;
-            if (src?.setTiles) {
-                src.setTiles([url]);
-                if (src.reload) src.reload();
-                map.triggerRepaint();
-            } else {
-                // Fallback: force source reload via style diff
-                const style = map.getStyle();
-                if (style?.sources?.[LST_RASTER_SOURCE_ID]) {
-                    (style.sources[LST_RASTER_SOURCE_ID] as { tiles?: string[] }).tiles = [url];
-                    map.setStyle(style as StyleSpecification);
-                }
-            }
-        };
-        // Refresh every 10 min (600_000ms) — aligns to hourly synthetic variation
-        refreshTimerRef.current = window.setInterval(refresh, 10 * 60 * 1000);
-        return () => {
-            if (refreshTimerRef.current) {
-                window.clearInterval(refreshTimerRef.current);
-                refreshTimerRef.current = null;
-            }
-        };
-    }, [layerState.lst, mapReady]);
-
-    // Let the page react to toggle changes (legend swap etc.).
-    useEffect(() => {
-        onLayerStateChange?.(layerState);
-    }, [layerState, onLayerStateChange]);
-
-    // Close the layers panel on outside click / Escape.
-    useEffect(() => {
-        if (!layersOpen) return;
-        function onDocumentClick(e: MouseEvent) {
-            if (controlsRef.current && !controlsRef.current.contains(e.target as Node)) {
-                setLayersOpen(false);
-            }
-        }
-        function onKeyDown(e: KeyboardEvent) {
-            if (e.key === 'Escape') setLayersOpen(false);
-        }
-        document.addEventListener('click', onDocumentClick);
-        document.addEventListener('keydown', onKeyDown);
-        return () => {
-            document.removeEventListener('click', onDocumentClick);
-            document.removeEventListener('keydown', onKeyDown);
-        };
-    }, [layersOpen]);
+    }, [lstVisible, mapReady]);
 
     // Resize when the containing page becomes visible again (page switches).
     useEffect(() => {
@@ -315,19 +254,9 @@ export default function MapView({ className = '', children, onLayerStateChange }
         mapRef.current?.fitBounds(cityConfig.bounds, { padding: 36, duration: 600 });
     }
 
-    function handleToggle(layer: MapLayerDef, visible: boolean) {
-        setLayerState((prev) => ({ ...prev, [layer.id]: visible }));
-        const map = mapRef.current;
-        if (map) applyLayerVisibility(map, layer, visible);
-    }
-
     return (
         <div ref={containerRef} className={`map-view relative overflow-hidden ${className}`}>
-            {/* Compact control stack: zoom / reset / layers */}
-            <div
-                ref={controlsRef}
-                className="absolute right-[12px] top-[12px] z-20 flex flex-col items-end gap-[8px]"
-            >
+            <div className="absolute right-[12px] top-[12px] z-20 flex flex-col items-end gap-[8px]">
                 <div className="maplibregl-ctrl-group flex flex-col overflow-hidden">
                     <button
                         type="button"
@@ -356,20 +285,7 @@ export default function MapView({ className = '', children, onLayerStateChange }
                     >
                         <i className="fa-solid fa-location-crosshairs"></i>
                     </button>
-                    <button
-                        type="button"
-                        className={`${CTRL_BTN_CLASSES} ${layersOpen ? 'active' : ''}`}
-                        title="Map layers"
-                        aria-label="Map layers"
-                        aria-haspopup="dialog"
-                        aria-expanded={layersOpen}
-                        onClick={() => setLayersOpen((o) => !o)}
-                    >
-                        <i className="fa-solid fa-layer-group"></i>
-                    </button>
                 </div>
-
-                {layersOpen ? <MapLayersPanel state={layerState} onToggle={handleToggle} /> : null}
             </div>
 
             {children}
