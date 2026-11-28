@@ -3,7 +3,7 @@
     "city": "Quezon City",
     "period_start": "2026-11-17",
     "period_end": "2026-11-24",
-    "generated_at": "2026-11-28T08:40:38.131074+00:00",
+    "generated_at": "2026-11-28T09:06:09.733443+00:00",
     "source": "NASA MODIS Aqua MYD11A2 8-day LST (LST_Day_1km), QC_Day",
     "source_url": "https://planetarycomputer.microsoft.com/dataset/modis-11A2-061",
     "canopy_source": "ESA WorldCover 2021 v200 (tree cover class 10)",
