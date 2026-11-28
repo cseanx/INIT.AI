@@ -2,6 +2,7 @@
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
 import { useApiData } from '../hooks/useApiData';
+import { useCity } from '../contexts/CityContext';
 import Page from '../components/layout/Page';
 import PanelHead from '../components/common/PanelHead';
 import Card from '../components/common/Card';
@@ -52,7 +53,15 @@ function LadderSkeleton() {
 }
 
 export default function Hotspots() {
-    const hotspots = useApiData(api.getHotspots);
+    const { selected: activeCity, setSelected: setActiveCity } = useCity();
+    const snapshot = useApiData(api.getHotspotSnapshot);
+    const allHotspots = snapshot?.items ?? null;
+    // The real 8-day run has 82 above-median barangays; the ladder is legible
+    // with the top 17. The meta still reports the full detected set.
+    const hotspots = useMemo(
+        () => (allHotspots ? allHotspots.slice(0, 17) : null),
+        [allHotspots],
+    );
     const [searchParams, setSearchParams] = useSearchParams();
     const query = (searchParams.get('q') ?? '').trim();
     const [filter, setFilter] = useState<HotspotFilterValue>('all');
@@ -119,6 +128,43 @@ export default function Hotspots() {
             ? cityRanking[rankIndex + 1]
             : null;
 
+    if (activeCity !== 'Quezon City') {
+        return (
+            <Page>
+                <Card>
+                    <PanelHead
+                        title="Hotspot pilot"
+                        actions={
+                            <span className="rounded-full border border-white/8 bg-white/5 p-[6px_14px] text-[12px] text-[#999]">
+                                Quezon City only
+                            </span>
+                        }
+                    />
+                    <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
+                        <i className="fa-solid fa-satellite-dish text-[26px] text-[#777]"></i>
+                        <h2 className="max-w-[34ch] text-[18px] font-semibold leading-snug text-white">
+                            The real 8-day hotspot pilot currently covers Quezon City only.
+                        </h2>
+                        <p className="max-w-[52ch] text-[13px] leading-[1.7] text-[#999]">
+                            Barangay boundaries, clear-sky filtering, and severity
+                            thresholds are built for Quezon City&rsquo;s 142 barangays.{' '}
+                            {activeCity} will get its own snapshot when the pilot expands;
+                            no other city is shown with borrowed data.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setActiveCity('Quezon City')}
+                            className="mt-2 inline-flex min-h-[42px] cursor-pointer items-center gap-2 rounded-[12px] border border-white/14 bg-white/6 px-4 text-[13px] font-semibold text-white transition hover:bg-white/10"
+                        >
+                            <i className="fa-solid fa-city text-[12px] text-accent"></i>
+                            Switch to Quezon City
+                        </button>
+                    </div>
+                </Card>
+            </Page>
+        );
+    }
+
     return (
         <Page>
             <Card>
@@ -176,8 +222,24 @@ export default function Hotspots() {
                 )}
 
                 <p className="mt-5 flex items-center gap-2 border-t border-white/6 pt-4 text-[12px] text-[#888]">
-                    <i className="fa-solid fa-flask text-[11.5px] text-accent"></i>
-                    Prototype dataset — mock observations
+                    <i className="fa-solid fa-satellite text-[11.5px] text-mint"></i>
+                    {snapshot ? (
+                        <>
+                            Real 8-day snapshot · {snapshot.meta.period_start} to{' '}
+                            {snapshot.meta.period_end} · {snapshot.meta.hotspot_count} above
+                            median, showing top {hotspots?.length ?? 0}
+                            {snapshot.meta.no_data_count > 0
+                                ? ` · ${snapshot.meta.no_data_count} without clear-sky data`
+                                : ''}
+                            <span className="text-[#666]">
+                                {snapshot.meta.storage === 'bundled'
+                                    ? ' · bundled snapshot'
+                                    : ' · latest snapshot'}
+                            </span>
+                        </>
+                    ) : (
+                        'Loading the real Quezon City hotspot snapshot…'
+                    )}
                 </p>
             </Card>
         </Page>

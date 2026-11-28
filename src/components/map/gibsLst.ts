@@ -145,8 +145,8 @@ export const LST_CADENCE_LABEL: Record<LstCadence, string> = {
 
 const DAILY_LATENCY_DAYS = 3;
 const PERIOD_DAYS = 8;
-/** Allow two full 8-day periods for publication. */
-const PERIODS_OF_LAG = 2;
+/** The current GIBS 8-day product is typically one period behind. */
+const PERIODS_OF_LAG = 1;
 const ARCHIVE_DAYS = 90;
 
 function isoDate(date: Date): string {

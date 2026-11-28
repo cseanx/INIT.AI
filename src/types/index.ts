@@ -39,10 +39,42 @@ export interface Barangay {
     canopy: number;
     severity: Severity;
     driver: string;
-    trend: number;
+    trend?: number | null;
     area: number;
-    canopyChange: number;
+    canopyChange?: number | null;
     priority: boolean;
+    psgc?: string;
+    mean_lst?: number;
+    p90_lst?: number;
+    valid_pixel_pct?: number;
+    valid_pixels?: number;
+    built_pct?: number;
+    tree_cover_pct?: number;
+}
+
+export interface HotspotMeta {
+    city: string;
+    period_start: string;
+    period_end: string;
+    generated_at: string;
+    source: string;
+    source_url?: string;
+    canopy_source: string;
+    boundary_source: string;
+    method_version: string;
+    valid_pixel_min_pct: number;
+    total_barangays: number;
+    hotspot_count: number;
+    no_data_count: number;
+    below_threshold_count: number;
+    no_data_areas?: string[];
+    thresholds?: Record<string, number>;
+    storage?: 'database' | 'bundled';
+}
+
+export interface HotspotSnapshot {
+    meta: HotspotMeta;
+    items: Barangay[];
 }
 
 export interface HeatReading {

@@ -63,6 +63,36 @@ python -m pytest tests -q
 The suite uses an in-memory SQLite database with auth stubbed out — no
 PostgreSQL or network access required.
 
+## Hotspot snapshot (Quezon City pilot)
+
+`/api/hotspots/latest` serves the newest persisted snapshot for Quezon City.
+If the database has none, it serves
+`app/data/hotspots_qc_latest.json`, which is bundled with the API. There is no
+mock hotspot fallback.
+
+Refresh from `backend/`:
+
+```bash
+python -m app.jobs.hotspots_qc            # write the bundled JSON
+python -m app.jobs.hotspots_qc --persist  # also insert/update the database row
+python -m app.jobs.hotspots_qc --persist --if-newer  # skip when already current
+```
+
+The `Refresh QC hotspot snapshot` GitHub Actions workflow runs daily with
+`--if-newer`. When the `DATABASE_URL` repository secret is set it also writes to
+the production database; the bundled JSON commit is what updates the frontend
+fallback and triggers the normal deployment.
+
+The job reads NASA MODIS Aqua `MYD11A2` 8-day daytime LST and `QC_Day` from the
+Microsoft Planetary Computer, computes zonal p90 values on the 142 PSA/NAMRIA
+Quezon City barangay polygons, joins ESA WorldCover 2021 tree/built-up
+fractions, and derives severity from city quantiles. It needs network access but
+no API key. A barangay needs at least 30% clear-sky pixels; otherwise it is
+reported as missing data.
+
+The bundled JSON is also copied to
+`../public/data/hotspots_qc_latest.json` for the frontend fallback.
+
 ## Migrations (Alembic)
 
 ```bash
@@ -106,6 +136,7 @@ All routes are mounted under `/api`.
 | GET    | /api/cities | – | List cities |
 | GET    | /api/barangays | – | List barangays (with city name) |
 | GET    | /api/heat | – | Heat readings, newest first |
+| GET    | /api/hotspots/latest?city=Quezon%20City | – | Newest real hotspot snapshot (DB, else bundled JSON) |
 | GET    | /api/canopy | – | Canopy readings, newest first |
 | GET    | /api/mitigation | – | Mitigation projects |
 | GET    | /api/preferences | ✓ | Get the current user's preferences |

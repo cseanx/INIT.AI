@@ -4,6 +4,7 @@ import type {
     CanopySnapshot,
     HealthResponse,
     HeatSnapshot,
+    HotspotSnapshot,
     MitigationProject,
     Report,
     ReportPayload,
@@ -18,7 +19,6 @@ import type {
     XdrPrepareParams,
 } from '../types/stellar';
 import {
-    barangays,
     canopySnapshot,
     heatSnapshot,
     mitigationProjects,
@@ -61,6 +61,18 @@ function isBarangayArray(data: unknown): data is Barangay[] {
                 typeof b?.canopy === 'number' &&
                 typeof b?.severity === 'string',
         )
+    );
+}
+
+function isHotspotSnapshot(data: unknown): data is HotspotSnapshot {
+    const snapshot = data as HotspotSnapshot | null;
+    return (
+        !!snapshot &&
+        typeof snapshot.meta?.city === 'string' &&
+        typeof snapshot.meta?.period_start === 'string' &&
+        typeof snapshot.meta?.period_end === 'string' &&
+        typeof snapshot.meta?.source === 'string' &&
+        isBarangayArray(snapshot.items)
     );
 }
 
@@ -216,6 +228,40 @@ async function authFetch<T>(path: string, init?: RequestInit): Promise<T> {
     return (await res.json()) as T;
 }
 
+/* ---------- hotspot snapshot ---------- */
+
+const HOTSPOT_CITY = 'Quezon City';
+const BUNDLED_HOTSPOTS_URL = '/data/hotspots_qc_latest.json';
+
+async function fetchHotspotSnapshot(): Promise<HotspotSnapshot> {
+    const apiUrl = `${API_BASE}/api/hotspots/latest?city=${encodeURIComponent(HOTSPOT_CITY)}`;
+
+    try {
+        const response = await fetch(apiUrl, { credentials: 'include' });
+        if (response.ok) {
+            const data: unknown = await response.json();
+            if (isHotspotSnapshot(data)) {
+                return {
+                    ...data,
+                    meta: { ...data.meta, storage: data.meta.storage ?? 'database' },
+                };
+            }
+        }
+    } catch {
+        // The bundled snapshot below keeps the pilot usable without a live API.
+    }
+
+    const bundled = await fetch(BUNDLED_HOTSPOTS_URL);
+    if (bundled.ok) {
+        const data: unknown = await bundled.json();
+        if (isHotspotSnapshot(data)) {
+            return { ...data, meta: { ...data.meta, storage: 'bundled' } };
+        }
+    }
+
+    throw new Error('No real hotspot snapshot is available.');
+}
+
 /* ---------- api surface ---------- */
 
 export const api = {
@@ -225,8 +271,9 @@ export const api = {
         ),
     getHeat: (): Promise<HeatSnapshot> =>
         fromApi('/api/heat', heatSnapshot, isHeatSnapshot),
-    getHotspots: (): Promise<Barangay[]> =>
-        fromApi('/api/hotspots', barangays, isBarangayArray),
+    getHotspots: async (): Promise<Barangay[]> =>
+        (await fetchHotspotSnapshot()).items,
+    getHotspotSnapshot: fetchHotspotSnapshot,
     getCanopy: (): Promise<CanopySnapshot> =>
         fromApi('/api/canopy', canopySnapshot, isCanopySnapshot),
     getMitigation: (): Promise<MitigationProject[]> =>

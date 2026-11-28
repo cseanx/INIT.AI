@@ -7,3 +7,7 @@ pydantic-settings>=2.10
 argon2-cffi>=23.1
 email-validator>=2.2
 httpx>=0.27
+numpy>=1.26
+rasterio>=1.4
+pystac-client>=0.8
+planetary-computer>=1.0

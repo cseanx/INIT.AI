@@ -286,6 +286,19 @@ function trajectoryPlugin(): Plugin<'scatter', TrajectoryFurniture> {
 
 export function CanopyTrajectoryChart({ data }: { data: Barangay[] }) {
     const { resolvedTheme } = usePreferences();
+    // Five-year change is not part of the real 8-day hotspot pilot yet, so
+    // only barangays that actually carry a numeric change are plotted. The
+    // rest get an explicit unavailable state instead of a fabricated point.
+    const points = useMemo(
+        () =>
+            data
+                .filter(
+                    (b): b is Barangay & { canopyChange: number } =>
+                        typeof b.canopyChange === 'number',
+                )
+                .map((b) => ({ barangay: b, change: b.canopyChange })),
+        [data],
+    );
     const config = useMemo<ChartConfiguration<'scatter'>>(() => {
         const th = chartTheme(resolvedTheme);
         const light = resolvedTheme === 'light';
@@ -296,12 +309,19 @@ export function CanopyTrajectoryChart({ data }: { data: Barangay[] }) {
                 datasets: [
                     {
                         label: 'Barangays',
-                        data: data.map((b) => ({ x: b.canopy, y: b.canopyChange })),
-                        backgroundColor: data.map((b) => canopyBandColor(b.canopy, th)),
+                        data: points.map((p) => ({
+                            x: p.barangay.canopy,
+                            y: p.change,
+                        })),
+                        backgroundColor: points.map((p) =>
+                            canopyBandColor(p.barangay.canopy, th),
+                        ),
                         borderColor: light ? 'rgba(255,255,255,.9)' : 'rgba(5,5,5,.55)',
                         borderWidth: 1,
-                        pointRadius: data.map(
-                            (b) => 4.5 + (Math.sqrt(b.area) / Math.sqrt(640)) * 4.5,
+                        pointRadius: points.map(
+                            (p) =>
+                                4.5 +
+                                (Math.sqrt(p.barangay.area) / Math.sqrt(640)) * 4.5,
                         ),
                         pointHoverRadius: 7,
                         pointHoverBorderWidth: 1.5,
@@ -315,13 +335,21 @@ export function CanopyTrajectoryChart({ data }: { data: Barangay[] }) {
                 plugins: {
                     legend: { display: false },
                     trajectoryFurniture: {
-                        labels: data.map((b) => b.name),
+                        labels: points.map((p) => p.barangay.name),
                         threshold: 18,
                         counts: {
-                            thinShrinking: data.filter((b) => b.canopy < 18 && b.canopyChange < 0).length,
-                            thinRecovering: data.filter((b) => b.canopy < 18 && b.canopyChange >= 0).length,
-                            losing: data.filter((b) => b.canopy >= 18 && b.canopyChange < 0).length,
-                            gaining: data.filter((b) => b.canopy >= 18 && b.canopyChange >= 0).length,
+                            thinShrinking: points.filter(
+                                (p) => p.barangay.canopy < 18 && p.change < 0,
+                            ).length,
+                            thinRecovering: points.filter(
+                                (p) => p.barangay.canopy < 18 && p.change >= 0,
+                            ).length,
+                            losing: points.filter(
+                                (p) => p.barangay.canopy >= 18 && p.change < 0,
+                            ).length,
+                            gaining: points.filter(
+                                (p) => p.barangay.canopy >= 18 && p.change >= 0,
+                            ).length,
                         },
                         theme: resolvedTheme,
                     } satisfies TrajectoryFurniture,
@@ -338,11 +366,11 @@ export function CanopyTrajectoryChart({ data }: { data: Barangay[] }) {
                         bodyFont: { size: 12 },
                         callbacks: {
                             title: (items) =>
-                                data[items[0]?.dataIndex ?? -1]?.name ?? '',
+                                points[items[0]?.dataIndex ?? -1]?.barangay.name ?? '',
                             label: (ctx) => {
-                                const b = data[ctx.dataIndex];
-                                if (!b) return '';
-                                const change = b.canopyChange;
+                                const point = points[ctx.dataIndex];
+                                if (!point) return '';
+                                const { barangay: b, change } = point;
                                 return `${b.canopy}% canopy · ${change >= 0 ? '+' : '−'}${Math.abs(change).toFixed(1)} pts in 5 yrs · ${b.area.toLocaleString()} ha`;
                             },
                         },
@@ -400,7 +428,23 @@ export function CanopyTrajectoryChart({ data }: { data: Barangay[] }) {
                 },
             },
         };
-    }, [data, resolvedTheme]);
+    }, [points, resolvedTheme]);
+
+    if (points.length === 0) {
+        return (
+            <div className="flex h-full flex-col items-center justify-center gap-2 rounded-[16px] border border-dashed border-white/10 bg-white/[.02] px-6 text-center">
+                <i className="fa-solid fa-satellite-dish text-[18px] text-[#666]"></i>
+                <p className="text-[13px] font-semibold text-[#ccc]">
+                    Five-year canopy change is not available yet
+                </p>
+                <p className="max-w-[40ch] text-[12px] leading-[1.6] text-[#888]">
+                    The QC pilot covers the latest 8-day surface temperature and
+                    current tree cover. A historical canopy epoch is needed before
+                    this chart can show real change.
+                </p>
+            </div>
+        );
+    }
 
     return <ChartCanvas id="canopyTrajectoryChart" config={config} />;
 }

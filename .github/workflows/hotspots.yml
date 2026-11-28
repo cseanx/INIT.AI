@@ -1,0 +1,55 @@
+name: Refresh QC hotspot snapshot
+
+# The NASA MODIS Aqua 8-day composite advances every eight days. Running daily
+# keeps the refresh simple; the job exits early when the bundled snapshot
+# already covers the newest period, so unchanged runs cost one STAC search.
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: qc-hotspot-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
+
+      - name: Build the snapshot
+        working-directory: backend
+        env:
+          # Optional: when set, the snapshot is also persisted to the
+          # production database. Without it, only the bundled JSON changes.
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -m app.jobs.hotspots_qc --persist --if-newer
+
+      - name: Commit the refreshed snapshot
+        run: |
+          if git diff --quiet -- backend/app/data/hotspots_qc_latest.json public/data/hotspots_qc_latest.json; then
+            echo "Snapshot unchanged; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/app/data/hotspots_qc_latest.json public/data/hotspots_qc_latest.json
+          git commit -m "chore: refresh QC hotspot snapshot"
+          git push

@@ -33,7 +33,7 @@ npm run preview    # serve the production build
 
 - All chart instances are destroyed on unmount (`components/common/ChartCanvas.tsx`).
 - Pages are lazy-loaded; Chart.js is split into its own chunk.
-- The Heat Map's LST overlay is real NASA GIBS MODIS daily or 8-day land-surface temperature (1 km, day/night, about a three-to-four-day daily delay), rendered on the INIT.AI 10–40°C color scale. Hotspot records, inspector values, canopy, mitigation, and other environmental metrics remain prototype mock data.
+- The Heat Map's LST overlay is real NASA GIBS MODIS daily or 8-day land-surface temperature (1 km, day/night, about a three-to-four-day daily delay), rendered on the INIT.AI 10-40°C color scale. The Quezon City 8-day hotspot pilot is real too: raw NASA MODIS Aqua `MYD11A2` daytime LST with `QC_Day` clear-sky filtering, a p90 per PSA/NAMRIA barangay, and ESA WorldCover 2021 tree/built-up fractions. Hotspots are 1 km satellite pixels, not barangay sensors; the inspector, canopy time series, mitigation, and other environmental metrics remain prototype data.
 
 
 ## 1. The Problem
@@ -80,6 +80,29 @@ Visualizes spatial heat patterns across a selected city, allowing users to quick
 ### Hotspot Detection
 
 Ranks areas based on heat severity and identifies locations that may require greater attention or mitigation.
+
+The current pilot is **Quezon City only**. It uses the latest NASA MODIS Aqua
+`MYD11A2` 8-day composite on the Microsoft Planetary Computer:
+
+- **Metric:** p90 daytime land-surface temperature per barangay, from the raw
+  Kelvin COG, not the colorized GIBS tiles.
+- **Clear sky:** pixels must pass the `QC_Day` mandatory-quality and LST-error
+  checks; a barangay needs at least 30% valid pixels or it is reported as
+  missing data instead of being estimated.
+- **Boundaries:** PSA/NAMRIA barangays (142) via
+  `faeldon/philippines-json-maps`, treated as indicative boundaries.
+- **Canopy context:** ESA WorldCover 2021 tree and built-up fractions. A
+  historical canopy epoch is not part of the pilot, so five-year canopy change
+  shows an unavailable state.
+- **Severity:** city quantiles of p90 LST, so the labels describe this snapshot
+  relative to Quezon City, not an absolute health standard.
+- **Resolution:** 1 km satellite pixels. A barangay reading is a zonal summary
+  of those pixels and must not be read as a barangay-level sensor.
+
+Other cities show an explicit unavailable state. The snapshot is refreshed by
+`python -m app.jobs.hotspots_qc --persist` from `backend/`; the API serves the
+newest persisted snapshot and the frontend falls back to the bundled JSON in
+`public/data/hotspots_qc_latest.json`.
 
 ### Heat Canopy Analysis
 

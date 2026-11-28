@@ -167,10 +167,16 @@ export default function CreateReport() {
         return () => window.removeEventListener('beforeunload', handler);
     }, [dirty]);
 
-    const barangayNames = useMemo(() => (hotspots ?? []).map((b) => b.name), [hotspots]);
+    const barangayNames = useMemo(
+        () => (draft.city === 'Quezon City' ? (hotspots ?? []).map((b) => b.name) : []),
+        [hotspots, draft.city],
+    );
     const priorityAreas = useMemo(
-        () => (hotspots ?? []).filter((b) => b.priority).map((b) => b.name),
-        [hotspots],
+        () =>
+            draft.city === 'Quezon City'
+                ? (hotspots ?? []).filter((b) => b.priority).map((b) => b.name)
+                : [],
+        [hotspots, draft.city],
     );
 
     const visibleAreas = useMemo(() => {
@@ -189,7 +195,9 @@ export default function CreateReport() {
             periodValid &&
             !!draft.preparedBy.trim(),
         draft.datasets.length > 0,
-        draft.areas.length > 0 || draft.autoPriorityAreas,
+        (draft.city !== 'Quezon City' && draft.coverage === 'Entire city') ||
+            draft.areas.length > 0 ||
+            draft.autoPriorityAreas,
         draft.sections.length > 0,
         draft.recommendations.trim().length > 0,
     ];
@@ -208,7 +216,13 @@ export default function CreateReport() {
         if (!d.periodStart || !d.periodEnd || d.periodEnd < d.periodStart) fields.add('period');
         if (!d.preparedBy.trim()) fields.add('preparedBy');
         if (d.datasets.length === 0) fields.add('datasets');
-        if (d.areas.length === 0 && !d.autoPriorityAreas) fields.add('areas');
+        if (
+            d.areas.length === 0 &&
+            !d.autoPriorityAreas &&
+            !(d.city !== 'Quezon City' && d.coverage === 'Entire city')
+        ) {
+            fields.add('areas');
+        }
         return fields;
     }
 
@@ -415,7 +429,18 @@ export default function CreateReport() {
                             <Field label="Selected city" required error={invalid('city')} errorText={errorMessages.city}>
                                 <MenuSelect
                                     value={draft.city}
-                                    onChange={(value) => setDraft({ ...draft, city: value })}
+                                    onChange={(value) =>
+                                        setDraft({
+                                            ...draft,
+                                            city: value,
+                                            // Hotspot-backed areas are QC-only.
+                                            areas: value === 'Quezon City' ? draft.areas : [],
+                                            autoPriorityAreas:
+                                                value === 'Quezon City'
+                                                    ? draft.autoPriorityAreas
+                                                    : false,
+                                        })
+                                    }
                                     options={REPORT_CITIES.map((c) => ({ value: c, label: c }))}
                                     ariaLabel="Selected city"
                                 />
@@ -502,22 +527,34 @@ export default function CreateReport() {
                         action={
                             <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-[12px] text-[#999]">
-                                    {draft.autoPriorityAreas
-                                        ? `${priorityAreas.length} priority areas`
-                                        : `${draft.areas.length} of ${barangayNames.length} selected`}
+                                    {draft.city !== 'Quezon City'
+                                        ? 'Hotspot areas · QC pilot only'
+                                        : draft.autoPriorityAreas
+                                          ? `${priorityAreas.length} priority areas`
+                                          : `${draft.areas.length} of ${barangayNames.length} selected`}
                                 </span>
-                                <button
-                                    type="button"
-                                    onClick={() => setDraft({ ...draft, autoPriorityAreas: !draft.autoPriorityAreas, areas: draft.autoPriorityAreas ? draft.areas : [] })}
-                                    className={`${CHIP_CLASSES} ${draft.autoPriorityAreas ? 'chip-btn active' : ''}`}
-                                    aria-pressed={draft.autoPriorityAreas}
-                                >
-                                    <i className="fa-solid fa-triangle-exclamation mr-[7px] text-[12px]"></i>
-                                    Auto-select priority areas
-                                </button>
+                                {draft.city === 'Quezon City' ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setDraft({ ...draft, autoPriorityAreas: !draft.autoPriorityAreas, areas: draft.autoPriorityAreas ? draft.areas : [] })}
+                                        className={`${CHIP_CLASSES} ${draft.autoPriorityAreas ? 'chip-btn active' : ''}`}
+                                        aria-pressed={draft.autoPriorityAreas}
+                                    >
+                                        <i className="fa-solid fa-triangle-exclamation mr-[7px] text-[12px]"></i>
+                                        Auto-select priority areas
+                                    </button>
+                                ) : null}
                             </div>
                         }
                     >
+                        {draft.city !== 'Quezon City' ? (
+                            <div className="flex items-center gap-[10px] rounded-[12px] border border-dashed border-white/10 p-[12px] text-[12px] leading-relaxed text-[#999]">
+                                <i className="fa-solid fa-satellite-dish text-[#999]"></i>
+                                Barangay-level hotspot areas are only available for the
+                                Quezon City pilot. This report can use entire-city coverage.
+                            </div>
+                        ) : (
+                            <>
                         {draft.autoPriorityAreas ? (
                             <p className="mb-[12px] text-[12px] leading-relaxed text-[#ccc]">
                                 <i className="fa-solid fa-circle-check mr-[6px] text-mint"></i>
@@ -552,6 +589,8 @@ export default function CreateReport() {
                                 No areas selected yet — pick barangays above or enable Priority Areas.
                             </div>
                         ) : null}
+                            </>
+                        )}
                         {invalid('areas') ? (
                             <p className="mt-[10px] text-[12px] text-[#ff5577]">{errorMessages.areas}</p>
                         ) : null}

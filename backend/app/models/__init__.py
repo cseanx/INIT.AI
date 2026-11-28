@@ -3,6 +3,7 @@ from app.models.canopy import CanopyData
 from app.models.city import City
 from app.models.email_change_token import EmailChangeToken
 from app.models.heat import HeatData
+from app.models.hotspot_snapshot import HotspotSnapshot
 from app.models.login_attempt import LoginAttempt
 from app.models.mitigation import MitigationProject
 from app.models.password_reset_token import PasswordResetToken
@@ -19,6 +20,7 @@ __all__ = [
     "City",
     "EmailChangeToken",
     "HeatData",
+    "HotspotSnapshot",
     "LoginAttempt",
     "MitigationProject",
     "PasswordResetToken",

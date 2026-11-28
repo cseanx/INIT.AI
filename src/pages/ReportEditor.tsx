@@ -221,7 +221,10 @@ export default function ReportEditor() {
         }
     }
 
-    const priorityCount = (hotspots ?? []).filter((b) => b.priority).length;
+    const priorityCount =
+        report.city === 'Quezon City'
+            ? (hotspots ?? []).filter((b) => b.priority).length
+            : 0;
     const period = reportPeriod(report.periodStart, report.periodEnd);
 
     return (

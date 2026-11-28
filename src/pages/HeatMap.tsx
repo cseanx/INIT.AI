@@ -42,7 +42,10 @@ export default function HeatMap() {
     const hotspots = useApiData(api.getHotspots);
 
     const lstSource = getLstSource(lstSourceId);
-    const criticalCount = (hotspots ?? []).filter((b) => b.severity === 'critical').length;
+    const isPilotCity = selected === 'Quezon City';
+    const criticalCount = isPilotCity
+        ? (hotspots ?? []).filter((b) => b.severity === 'critical').length
+        : 0;
 
     useEffect(() => {
         if (lstCadence !== 'daily') return;
@@ -129,17 +132,19 @@ export default function HeatMap() {
                             </span>
                             <span
                                 className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[.04] px-2 py-[2px] text-[10.5px] font-semibold uppercase tracking-[.06em] text-[#999]"
-                                title="Hotspot records and the inspector are still prototype demo data."
+                                title="Real 8-day satellite hotspot snapshot for Quezon City. Hotspots are not mapped for other cities in this pilot."
                             >
-                                Demo hotspots
+                                {isPilotCity ? 'Satellite hotspots' : 'Hotspots · QC pilot'}
                             </span>
                             <Link
                                 to="/hotspots"
                                 className="inline-flex min-h-[30px] items-center gap-1.5 rounded-full border border-white/10 bg-white/[.04] px-[10px] text-[11px] font-semibold text-[#ddd] transition hover:bg-white/10 hover:text-white"
-                                title="Prototype hotspot records (demo data)"
+                                title="Real 8-day satellite hotspots (QC pilot)."
                             >
                                 <span className="h-1.5 w-1.5 rounded-full bg-[#ff2d55] shadow-[0_0_6px_#ff2d55]"></span>
-                                {criticalCount} critical hotspots
+                                {isPilotCity
+                                    ? `${criticalCount} critical hotspots`
+                                    : 'Quezon City only'}
                                 <i className="fa-solid fa-arrow-right text-[11px]"></i>
                             </Link>
                         </div>

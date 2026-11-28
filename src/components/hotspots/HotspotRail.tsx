@@ -39,8 +39,10 @@ export default function HotspotRail({
     cooler,
     onSelect,
 }: HotspotRailProps) {
-    const trendUp = hotspot.trend >= 0;
-    const canopyLoss = hotspot.canopyChange < 0;
+    const trend = hotspot.trend ?? null;
+    const canopyChange = hotspot.canopyChange ?? null;
+    const trendUp = trend !== null && trend >= 0;
+    const canopyLoss = canopyChange !== null && canopyChange < 0;
 
     return (
         <div className="flex h-full flex-col" aria-live="polite">
@@ -63,19 +65,24 @@ export default function HotspotRail({
                     </span>
                 </p>
                 <p className="mt-2 text-[12.5px] text-[#999]">
-                    Peak surface reading · rank {rank} of {total} by temperature
+                    p90 surface reading · rank {rank} of {total} on the ladder
                 </p>
 
                 <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 border-y border-white/8 py-4">
                     <div>
-                        <SectionLabel>7-day trend</SectionLabel>
+                        <SectionLabel>vs previous 8-day</SectionLabel>
                         <strong
                             className={`mt-1 block text-[15px] font-semibold tabular-nums ${
-                                trendUp ? 'text-[#ff5577]' : 'text-mint'
+                                trend === null
+                                    ? 'text-[#888]'
+                                    : trendUp
+                                      ? 'text-[#ff5577]'
+                                      : 'text-mint'
                             }`}
                         >
-                            {trendUp ? '+' : '−'}
-                            {Math.abs(hotspot.trend).toFixed(1)}°C
+                            {trend === null
+                                ? '—'
+                                : `${trendUp ? '+' : '−'}${Math.abs(trend).toFixed(1)}°C`}
                         </strong>
                     </div>
                     <div>
@@ -87,12 +94,22 @@ export default function HotspotRail({
                     <div>
                         <SectionLabel>Canopy change</SectionLabel>
                         <strong
+                            title={
+                                canopyChange === null
+                                    ? 'Historical canopy change is not part of this pilot yet.'
+                                    : undefined
+                            }
                             className={`mt-1 block text-[15px] font-semibold tabular-nums ${
-                                canopyLoss ? 'text-[#ff5577]' : 'text-mint'
+                                canopyChange === null
+                                    ? 'text-[#888]'
+                                    : canopyLoss
+                                      ? 'text-[#ff5577]'
+                                      : 'text-mint'
                             }`}
                         >
-                            {canopyLoss ? '−' : '+'}
-                            {Math.abs(hotspot.canopyChange).toFixed(1)} pts
+                            {canopyChange === null
+                                ? '—'
+                                : `${canopyLoss ? '−' : '+'}${Math.abs(canopyChange).toFixed(1)} pts`}
                         </strong>
                     </div>
                     <div>
