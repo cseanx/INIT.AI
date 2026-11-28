@@ -1,10 +1,19 @@
-import { gibsLstTileUrl, type LstCadence, type LstMode } from './gibsLst';
+import {
+    gibsLstTileUrl,
+    shiftLstDate,
+    type LstMode,
+    type LstSourceId,
+} from './gibsLst';
 
 /**
- * Sample the real MODIS LST value at a point from the same NASA GIBS raster
- * the map displays. GIBS publishes pre-colorized PNGs; the colormap below
- * decodes each published color back to °C. This is a 1 km color-bin estimate,
- * not a live sensor reading and not a separate point API.
+ * Sample the real land-surface temperature at a point from the same NASA GIBS
+ * raster the map displays. GIBS publishes pre-colorized PNGs; the colormap
+ * below decodes each published color back to °C. This is a ~1 km color-bin
+ * estimate, not a live sensor reading and not a separate point API.
+ *
+ * The caller supplies the tile template, so every platform and cadence shares
+ * the same decoder and cache while keeping the sampled pixel aligned with the
+ * visible layer.
  */
 
 const PALETTE_URL =
@@ -13,11 +22,16 @@ const SAMPLE_ZOOM = 7; // GIBS GoogleMapsCompatible_Level7 native zoom
 const TILE_SIZE = 256;
 const TILE_CACHE_LIMIT = 16;
 const MAX_MATCH_DISTANCE = 4500;
+/** Physical gate: MODIS LST bins run 200–350 K; fill/below-range colors must not decode. */
+const MIN_VALID_LST_C = -90;
+const MAX_VALID_LST_C = 80;
+const MIN_PALETTE_KELVIN = 180;
 
 let palettePromise: Promise<Map<number, number>> | null = null;
 const nearestCache = new Map<number, number | null>();
 const tileCache = new Map<string, Uint8ClampedArray | null>();
 const inflight = new Map<string, Promise<Uint8ClampedArray | null>>();
+const latestDateCache = new Map<string, string>();
 
 function createCanvas(width: number, height: number) {
     if (typeof OffscreenCanvas !== 'undefined') {
@@ -45,18 +59,40 @@ export function loadGibsLstPalette(): Promise<Map<number, number>> {
         }
         const xml = await response.text();
         const palette = new Map<number, number>();
-        const entryPattern =
-            /<ColorMapEntry\b[^>]*rgb="(\d+),(\d+),(\d+)"[^>]*sourceValue="\[([\d.]+),([\d.]+)\)"/g;
+        const entryPattern = /<ColorMapEntry\b([^>]*)>/g;
         let match: RegExpExecArray | null;
 
         while ((match = entryPattern.exec(xml)) !== null) {
+            const attributes = match[1];
+            // The colormap starts with a transparent fill entry whose
+            // sourceValue maps to 0 K. Never treat it as a temperature.
+            if (
+                /transparent="true"/.test(attributes) ||
+                /nodata="true"/.test(attributes)
+            ) {
+                continue;
+            }
+
+            const rgb = /rgb="(\d+),(\d+),(\d+)"/.exec(attributes);
+            const source = /sourceValue="\[([\d.]+),([\d.]+)\)"/.exec(attributes);
+            if (!rgb || !source) continue;
+
             const kelvin =
-                ((Number(match[4]) + Number(match[5])) / 2) * 0.02;
+                ((Number(source[1]) + Number(source[2])) / 2) * 0.02;
+            const tempC = kelvin - 273.15;
+            if (
+                kelvin < MIN_PALETTE_KELVIN ||
+                tempC < MIN_VALID_LST_C ||
+                tempC > MAX_VALID_LST_C
+            ) {
+                continue;
+            }
+
             palette.set(
-                (Number(match[1]) << 16) |
-                    (Number(match[2]) << 8) |
-                    Number(match[3]),
-                kelvin - 273.15,
+                (Number(rgb[1]) << 16) |
+                    (Number(rgb[2]) << 8) |
+                    Number(rgb[3]),
+                tempC,
             );
         }
 
@@ -65,6 +101,10 @@ export function loadGibsLstPalette(): Promise<Map<number, number>> {
     })();
 
     return palettePromise;
+}
+
+function isPlausibleLst(tempC: number): boolean {
+    return tempC >= MIN_VALID_LST_C && tempC <= MAX_VALID_LST_C;
 }
 
 /** Decode one published GIBS RGB color to °C (null when off-palette). */
@@ -76,7 +116,7 @@ export function decodeGibsLstRgb(
 ): number | null {
     const key = (red << 16) | (green << 8) | blue;
     const exact = palette.get(key);
-    if (exact !== undefined) return exact;
+    if (exact !== undefined) return isPlausibleLst(exact) ? exact : null;
     if (nearestCache.has(key)) return nearestCache.get(key) ?? null;
 
     let bestTemp: number | null = null;
@@ -95,7 +135,12 @@ export function decodeGibsLstRgb(
         }
     }
 
-    const result = bestDistance <= MAX_MATCH_DISTANCE ? bestTemp : null;
+    const result =
+        bestDistance <= MAX_MATCH_DISTANCE &&
+        bestTemp !== null &&
+        isPlausibleLst(bestTemp)
+            ? bestTemp
+            : null;
     nearestCache.set(key, result);
     return result;
 }
@@ -156,16 +201,89 @@ function readTile(url: string): Promise<Uint8ClampedArray | null> {
     return job;
 }
 
-/** Read the real GIBS LST pixel under a coordinate for the active pass. */
+/**
+ * Walk back from the newest processed date until the city has real coverage.
+ * A tile can be mostly data while the city is cloud or water, so this checks a
+ * five-point cross around the city center and prefers the latest date with
+ * broad coverage. It only falls back to the newest date when every day is
+ * mostly cloudy.
+ */
+const PROBE_OFFSETS_SURROUNDING: Array<[number, number]> = [
+    [0.02, 0],
+    [-0.02, 0],
+    [0, 0.02],
+    [0, -0.02],
+];
+
+export async function findLatestLstDate(
+    center: [number, number],
+    sourceId: LstSourceId,
+    mode: LstMode,
+    maxDate: string,
+    attempts = 14,
+): Promise<string> {
+    const cacheKey = `${sourceId}:${mode}:${center[0].toFixed(3)}:${center[1].toFixed(3)}:${maxDate}`;
+    const cached = latestDateCache.get(cacheKey);
+    if (cached) return cached;
+
+    let date = maxDate;
+    let bestDate = maxDate;
+    let bestScore = -1;
+
+    for (let index = 0; index < attempts; index += 1) {
+        const tileTemplate = gibsLstTileUrl(sourceId, date, mode, 'daily');
+        const centerSample = await sampleGibsLstPoint(
+            center[0],
+            center[1],
+            tileTemplate,
+        );
+
+        // The map opens on the city center; a date with no pixel there is a
+        // blank first impression even if the surrounding ring is clear.
+        if (centerSample.status !== 'ok') {
+            date = shiftLstDate(date, -1);
+            continue;
+        }
+
+        let score = 1;
+        for (const [dLng, dLat] of PROBE_OFFSETS_SURROUNDING) {
+            const sample = await sampleGibsLstPoint(
+                center[0] + dLng,
+                center[1] + dLat,
+                tileTemplate,
+            );
+            if (sample.status === 'ok') score += 1;
+        }
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestDate = date;
+        }
+        if (score >= 4) {
+            latestDateCache.set(cacheKey, date);
+            return date;
+        }
+
+        date = shiftLstDate(date, -1);
+    }
+
+    const result = bestScore > 0 ? bestDate : maxDate;
+    latestDateCache.set(cacheKey, result);
+    if (latestDateCache.size > 32) {
+        const oldest = latestDateCache.keys().next().value;
+        if (oldest !== undefined) latestDateCache.delete(oldest);
+    }
+    return result;
+}
+
+/** Read the real GIBS LST pixel under a coordinate for the supplied layer. */
 export async function sampleGibsLstPoint(
     lng: number,
     lat: number,
-    date: string,
-    mode: LstMode,
-    cadence: LstCadence,
+    tileTemplate: string,
 ): Promise<GibsLstSample> {
     const { x, y, px, py } = tileForPoint(lng, lat);
-    const tileUrl = gibsLstTileUrl(date, mode, cadence).replace(
+    const tileUrl = tileTemplate.replace(
         '{z}/{y}/{x}',
         `${SAMPLE_ZOOM}/${y}/${x}`,
     );

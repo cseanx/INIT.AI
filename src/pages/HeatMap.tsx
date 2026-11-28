@@ -13,13 +13,17 @@ import {
     LST_DAILY_MAX_DATE,
     LST_DAILY_MIN_DATE,
     LST_CADENCE_LABEL,
+    LST_SOURCE_IDS,
+    LST_SOURCES,
     LST_WEEKLY_MAX_DATE,
     LST_WEEKLY_MIN_DATE,
-    findLatestLstDate,
+    getLstSource,
     weeklyStartFor,
     type LstCadence,
     type LstMode,
+    type LstSourceId,
 } from '../components/map/gibsLst';
+import { findLatestLstDate } from '../components/map/gibsLstSample';
 
 /**
  * Map workspace. Desktop: map + fixed-height inspector side by side.
@@ -28,15 +32,16 @@ import {
  */
 export default function HeatMap() {
     const [lstVisible, setLstVisible] = useState(true);
+    const [lstSourceId, setLstSourceId] = useState<LstSourceId>('modis-aqua');
     const [lstCadence, setLstCadence] = useState<LstCadence>('daily');
     const [lstMode, setLstMode] = useState<LstMode>('day');
     const [lstDate, setLstDate] = useState(LST_DAILY_MAX_DATE);
-    const [latestDailyDate, setLatestDailyDate] = useState(LST_DAILY_MAX_DATE);
     const dateTouchedRef = useRef(false);
     const mapCardFx = useBentoFx({ particleCount: 0 });
     const { selected, config: cityConfig } = useCity();
     const hotspots = useApiData(api.getHotspots);
 
+    const lstSource = getLstSource(lstSourceId);
     const criticalCount = (hotspots ?? []).filter((b) => b.severity === 'critical').length;
 
     useEffect(() => {
@@ -46,19 +51,23 @@ export default function HeatMap() {
         const [[west, south], [east, north]] = cityConfig.bounds;
         const center: [number, number] = [(west + east) / 2, (south + north) / 2];
 
-        void findLatestLstDate(center, lstMode, LST_DAILY_MAX_DATE).then((date) => {
+        void findLatestLstDate(
+            center,
+            lstSourceId,
+            lstMode,
+            LST_DAILY_MAX_DATE,
+        ).then((date) => {
             if (cancelled) return;
-            setLatestDailyDate(date);
             if (!dateTouchedRef.current) setLstDate(date);
         });
 
         return () => {
             cancelled = true;
         };
-    }, [cityConfig, lstCadence, lstMode]);
+    }, [cityConfig, lstSourceId, lstCadence, lstMode]);
 
     const dateMin = lstCadence === 'weekly' ? LST_WEEKLY_MIN_DATE : LST_DAILY_MIN_DATE;
-    const dateMax = lstCadence === 'weekly' ? LST_WEEKLY_MAX_DATE : latestDailyDate;
+    const dateMax = lstCadence === 'weekly' ? LST_WEEKLY_MAX_DATE : LST_DAILY_MAX_DATE;
 
     function handleDateChange(date: string) {
         dateTouchedRef.current = true;
@@ -83,10 +92,19 @@ export default function HeatMap() {
         setLstDate(
             lstDate < LST_DAILY_MIN_DATE
                 ? LST_DAILY_MIN_DATE
-                : lstDate > latestDailyDate
-                  ? latestDailyDate
+                : lstDate > LST_DAILY_MAX_DATE
+                  ? LST_DAILY_MAX_DATE
                   : lstDate,
         );
+    }
+
+    function changeSource(next: LstSourceId) {
+        if (next === lstSourceId) return;
+        setLstSourceId(next);
+        dateTouchedRef.current = false;
+
+        // The latest clear-date probe for the new platform replaces this.
+        if (lstCadence === 'daily') setLstDate(LST_DAILY_MAX_DATE);
     }
 
     return (
@@ -105,7 +123,7 @@ export default function HeatMap() {
                             </h3>
                             <span
                                 className="inline-flex items-center gap-1 rounded-full border border-mint/30 bg-mint/10 px-2 py-[2px] text-[10.5px] font-bold uppercase tracking-[.06em] text-mint"
-                                title="NASA GIBS MODIS Aqua land-surface temperature. Daily or 8-day composite, day and night passes at 1 km, about three to four days (daily) or two weeks (composite) behind real time. Colors use the INIT.AI 10–40°C scale."
+                                title="NASA GIBS land-surface temperature from MODIS Aqua, MODIS Terra, or VIIRS NOAA-20. Daily or 8-day composite, day and night passes at 1 km, a few days behind real time. Colors use the INIT.AI 10–40°C scale."
                             >
                                 <i className="fa-solid fa-satellite text-[10px]"></i> Real LST
                             </span>
@@ -115,9 +133,44 @@ export default function HeatMap() {
                             >
                                 Demo hotspots
                             </span>
+                            <Link
+                                to="/hotspots"
+                                className="inline-flex min-h-[30px] items-center gap-1.5 rounded-full border border-white/10 bg-white/[.04] px-[10px] text-[11px] font-semibold text-[#ddd] transition hover:bg-white/10 hover:text-white"
+                                title="Prototype hotspot records (demo data)"
+                            >
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#ff2d55] shadow-[0_0_6px_#ff2d55]"></span>
+                                {criticalCount} critical hotspots
+                                <i className="fa-solid fa-arrow-right text-[11px]"></i>
+                            </Link>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
+                            <div className="relative inline-flex items-center">
+                                <i
+                                    className="fa-solid fa-satellite pointer-events-none absolute left-3 text-[10px] text-[#777]"
+                                    aria-hidden="true"
+                                ></i>
+                                <select
+                                    aria-label="LST satellite source"
+                                    title={`${lstSource.label}: ${lstSource.algorithm} LST, ${lstSource.resolution}. Day pass ${lstSource.overpass.day}, night pass ${lstSource.overpass.night}. ${lstSource.description} The map opens on the latest date with a clear city retrieval.`}
+                                    value={lstSourceId}
+                                    onChange={(event) =>
+                                        changeSource(event.target.value as LstSourceId)
+                                    }
+                                    className="h-[34px] min-w-[132px] cursor-pointer appearance-none rounded-full border border-white/10 bg-white/[.04] pl-7 pr-7 text-[11px] font-semibold text-[#ddd] outline-none transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/35"
+                                >
+                                    {LST_SOURCE_IDS.map((id) => (
+                                        <option key={id} value={id}>
+                                            {LST_SOURCES[id].label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <i
+                                    className="fa-solid fa-chevron-down pointer-events-none absolute right-2.5 text-[8px] text-[#777]"
+                                    aria-hidden="true"
+                                ></i>
+                            </div>
+
                             <LstDatePicker
                                 value={lstDate}
                                 minDate={dateMin}
@@ -153,7 +206,7 @@ export default function HeatMap() {
                                 <button
                                     type="button"
                                     aria-pressed={lstMode === 'day'}
-                                    title="Day pass · nominal Aqua overpass ~13:30 local. Exact per-pixel time is not included in this layer."
+                                    title={`Day pass · nominal ${lstSource.shortLabel} overpass ${lstSource.overpass.day}. Exact per-pixel time is not included in this layer.`}
                                     onClick={() => setLstMode('day')}
                                     style={{ outline: 'none' }}
                                     className={`inline-flex min-h-[30px] cursor-pointer items-center gap-1.5 rounded-full border-none px-[9px] text-[11px] font-semibold transition focus:outline-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/35 ${
@@ -168,7 +221,7 @@ export default function HeatMap() {
                                 <button
                                     type="button"
                                     aria-pressed={lstMode === 'night'}
-                                    title="Night pass · nominal Aqua overpass ~01:30 local. Exact per-pixel time is not included in this layer."
+                                    title={`Night pass · nominal ${lstSource.shortLabel} overpass ${lstSource.overpass.night}. Exact per-pixel time is not included in this layer.`}
                                     onClick={() => setLstMode('night')}
                                     style={{ outline: 'none' }}
                                     className={`inline-flex min-h-[30px] cursor-pointer items-center gap-1.5 rounded-full border-none px-[9px] text-[11px] font-semibold transition focus:outline-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/35 ${
@@ -195,21 +248,12 @@ export default function HeatMap() {
                                 ></i>
                                 {lstVisible ? 'LST on' : 'LST off'}
                             </button>
-
-                            <Link
-                                to="/hotspots"
-                                className="inline-flex min-h-[34px] items-center gap-1.5 rounded-full border border-white/10 bg-white/[.04] px-[10px] text-[12px] font-semibold text-[#ddd] transition hover:bg-white/10 hover:text-white"
-                                title="Prototype hotspot records (demo data)"
-                            >
-                                <span className="h-1.5 w-1.5 rounded-full bg-[#ff2d55] shadow-[0_0_6px_#ff2d55]"></span>
-                                {criticalCount} critical hotspots
-                                <i className="fa-solid fa-arrow-right text-[11px]"></i>
-                            </Link>
                         </div>
                     </div>
                     <div className="relative h-[58vh] min-h-[380px] p-[10px] min-[1100px]:h-auto min-[1100px]:min-h-0 min-[1100px]:flex-1 sm:p-[14px]">
                         <MapView
                             className="h-full w-full rounded-[16px] sm:rounded-[18px]"
+                            lstSourceId={lstSourceId}
                             lstDate={lstDate}
                             lstCadence={lstCadence}
                             lstMode={lstMode}
@@ -217,6 +261,7 @@ export default function HeatMap() {
                         >
                             {lstVisible ? (
                                 <LstLegend
+                                    source={lstSource}
                                     date={lstDate}
                                     cadence={lstCadence}
                                     mode={lstMode}

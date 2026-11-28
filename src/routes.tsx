@@ -27,7 +27,7 @@ export const ROUTES: RouteMeta[] = [
         label: 'Heat Map',
         icon: 'fa-earth-americas',
         title: 'Heat Map',
-        sub: 'MODIS daily & 8-day LST · day/night · NASA GIBS, 1 km',
+        sub: 'MODIS & VIIRS LST · daily/8-day · NASA GIBS, 1 km',
     },
     {
         path: '/hotspots',

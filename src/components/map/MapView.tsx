@@ -10,9 +10,11 @@ import {
     GIBS_LST_SOURCE_ID,
     LST_CADENCE_LABEL,
     LST_MODE_LABEL,
+    getLstSource,
     gibsLstTileUrl,
     type LstCadence,
     type LstMode,
+    type LstSourceId,
 } from './gibsLst';
 import { sampleGibsLstPoint, type GibsLstSample } from './gibsLstSample';
 import { lstRecolorUrl, registerLstRecolorProtocol } from './lstRecolor';
@@ -76,6 +78,8 @@ const TRAVEL_LIMITS: [[number, number], [number, number]] = [
 interface MapViewProps {
     className?: string;
     children?: ReactNode;
+    /** NASA platform whose LST layer is active. */
+    lstSourceId: LstSourceId;
     /** UTC date (YYYY-MM-DD) of the daily pass, or start of the 8-day period. */
     lstDate: string;
     /** Daily pass or 8-day composite. */
@@ -102,66 +106,79 @@ function popupShell(body: string): string {
     return `<div class="lst-popup">${body}</div>`;
 }
 
-function loadingPopupHtml(lat: number, lng: number): string {
+function loadingPopupHtml(
+    sourceLabel: string,
+    lat: number,
+    lng: number,
+): string {
     return popupShell(`
         <div class="lst-popup-title">Reading NASA LST…</div>
-        <div class="lst-popup-sub">MODIS Aqua · 1 km pixel</div>
+        <div class="lst-popup-sub">${sourceLabel} · 1 km pixel</div>
         <div class="lst-popup-meta">${lat.toFixed(4)}, ${lng.toFixed(4)}</div>
     `);
 }
 
 function resultPopupHtml(
     sample: GibsLstSample,
-    pass: { lstDate: string; lstMode: LstMode; lstCadence: LstCadence },
+    pass: {
+        lstSourceId: LstSourceId;
+        lstDate: string;
+        lstMode: LstMode;
+        lstCadence: LstCadence;
+    },
     lat: number,
     lng: number,
 ): string {
+    const source = getLstSource(pass.lstSourceId);
     const passLine = `${formatPassDate(pass.lstDate)} · ${LST_MODE_LABEL[pass.lstMode]} · ${LST_CADENCE_LABEL[pass.lstCadence]}`;
     const coords = `${lat.toFixed(3)}, ${lng.toFixed(3)} · NASA GIBS`;
+    const sub = `${source.label} LST · ${source.algorithm} · 1 km`;
 
     if (sample.status === 'ok') {
         return popupShell(`
             <div class="lst-popup-title">Land-surface temperature</div>
-            <div class="lst-popup-sub">MODIS Aqua LST · 1 km pixel</div>
+            <div class="lst-popup-sub">${sub}</div>
             <div class="lst-popup-temp">≈ ${sample.tempC.toFixed(1)} °C</div>
             <div class="lst-popup-meta">${passLine}</div>
             <div class="lst-popup-meta">${coords}</div>
-            <div class="lst-popup-note">1 km color-bin estimate from the NASA raster shown — not a live sensor reading.</div>
+            <div class="lst-popup-note">~1 km color-bin estimate from the NASA raster shown — not a live sensor reading.</div>
         `);
     }
 
     if (sample.status === 'nodata') {
         return popupShell(`
             <div class="lst-popup-title">Land-surface temperature</div>
-            <div class="lst-popup-sub">MODIS Aqua LST · 1 km pixel</div>
+            <div class="lst-popup-sub">${sub}</div>
             <div class="lst-popup-temp empty">No retrieval</div>
             <div class="lst-popup-meta">${passLine}</div>
             <div class="lst-popup-meta">${coords}</div>
-            <div class="lst-popup-note">Cloud or ocean for this pass — there is no LST pixel here.</div>
+            <div class="lst-popup-note">Cloud or ocean for this ${source.label} pass — there is no LST pixel here.</div>
         `);
     }
 
     return popupShell(`
         <div class="lst-popup-title">Land-surface temperature</div>
-        <div class="lst-popup-sub">MODIS Aqua LST · 1 km pixel</div>
+        <div class="lst-popup-sub">${sub}</div>
         <div class="lst-popup-temp empty">Unavailable</div>
         <div class="lst-popup-meta">${passLine}</div>
         <div class="lst-popup-meta">${coords}</div>
-        <div class="lst-popup-note">The NASA GIBS tile for this pass could not be read. Try another date or pass.</div>
+        <div class="lst-popup-note">The NASA GIBS tile for this pass could not be read. Try another date, pass, or satellite source.</div>
     `);
 }
 
 /**
- * Heat Map workspace: Esri Dark Gray Canvas basemap + NASA GIBS MODIS LST.
+ * Heat Map workspace: Esri Dark Gray Canvas basemap + NASA GIBS LST.
  *
- * The LST overlay is real satellite data (1 km, one day and one night pass
- * per day, typically published about four days behind real time), colorized
- * by NASA. Clicking the map while LST is visible reads the same GIBS raster
- * at that point and shows the decoded 1 km color-bin value in a popup.
+ * The LST overlay is real satellite data from MODIS Aqua, MODIS Terra, or
+ * VIIRS NOAA-20: ~1 km, one day and one night pass per day, typically
+ * published a few days behind real time, colorized by NASA. Clicking the map
+ * while LST is visible reads the same GIBS raster at that point and shows the
+ * decoded color-bin value for the active platform in a popup.
  */
 export default function MapView({
     className = '',
     children,
+    lstSourceId,
     lstDate,
     lstCadence,
     lstMode,
@@ -170,16 +187,18 @@ export default function MapView({
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
     const popupRef = useRef<Popup | null>(null);
-    const latestRef = useRef({ lstDate, lstCadence, lstMode, lstVisible });
-    const appliedSelectionRef = useRef(`${lstDate}:${lstCadence}:${lstMode}`);
+    const latestRef = useRef({ lstSourceId, lstDate, lstCadence, lstMode, lstVisible });
+    const appliedSelectionRef = useRef(
+        `${lstSourceId}:${lstDate}:${lstCadence}:${lstMode}`,
+    );
     const [mapReady, setMapReady] = useState(false);
     const { config: cityConfig } = useCity();
 
     // Keep the values the one-time style-load handler reads up to date,
     // including changes made before the style has finished loading.
     useEffect(() => {
-        latestRef.current = { lstDate, lstCadence, lstMode, lstVisible };
-    }, [lstDate, lstCadence, lstMode, lstVisible]);
+        latestRef.current = { lstSourceId, lstDate, lstCadence, lstMode, lstVisible };
+    }, [lstSourceId, lstDate, lstCadence, lstMode, lstVisible]);
 
     useEffect(() => {
         const container = containerRef.current;
@@ -219,6 +238,7 @@ export default function MapView({
                 tiles: [
                     lstRecolorUrl(
                         gibsLstTileUrl(
+                            latestRef.current.lstSourceId,
                             latestRef.current.lstDate,
                             latestRef.current.lstMode,
                             latestRef.current.lstCadence,
@@ -247,7 +267,7 @@ export default function MapView({
                 beforeId,
             );
             map.triggerRepaint();
-            appliedSelectionRef.current = `${latestRef.current.lstDate}:${latestRef.current.lstCadence}:${latestRef.current.lstMode}`;
+            appliedSelectionRef.current = `${latestRef.current.lstSourceId}:${latestRef.current.lstDate}:${latestRef.current.lstCadence}:${latestRef.current.lstMode}`;
             setMapReady(true);
         };
 
@@ -275,19 +295,19 @@ export default function MapView({
         });
     }, [cityConfig, mapReady]);
 
-    // Swap the pass when the date, cadence, or day/night mode changes.
+    // Swap the layer when the platform, date, cadence, or day/night mode changes.
     useEffect(() => {
         const map = mapRef.current;
         if (!mapReady || !map) return;
-        const selection = `${lstDate}:${lstCadence}:${lstMode}`;
+        const selection = `${lstSourceId}:${lstDate}:${lstCadence}:${lstMode}`;
         if (appliedSelectionRef.current === selection) return;
         appliedSelectionRef.current = selection;
         const source = map.getSource(GIBS_LST_SOURCE_ID) as RasterTileSource | undefined;
         source?.setTiles([
-            lstRecolorUrl(gibsLstTileUrl(lstDate, lstMode, lstCadence)),
+            lstRecolorUrl(gibsLstTileUrl(lstSourceId, lstDate, lstMode, lstCadence)),
         ]);
         map.triggerRepaint();
-    }, [lstDate, lstCadence, lstMode, mapReady]);
+    }, [lstSourceId, lstDate, lstCadence, lstMode, mapReady]);
 
     // Show/hide the thermal layer.
     useEffect(() => {
@@ -323,6 +343,7 @@ export default function MapView({
             const { lng, lat } = event.lngLat;
             close();
             const request = ++token;
+            const source = getLstSource(pass.lstSourceId);
 
             const created = new Popup({
                 closeButton: false,
@@ -332,16 +353,19 @@ export default function MapView({
                 maxWidth: '300px',
             })
                 .setLngLat(event.lngLat)
-                .setHTML(loadingPopupHtml(lat, lng))
+                .setHTML(loadingPopupHtml(source.label, lat, lng))
                 .addTo(map);
             popupRef.current = created;
 
             const sample = await sampleGibsLstPoint(
                 lng,
                 lat,
-                pass.lstDate,
-                pass.lstMode,
-                pass.lstCadence,
+                gibsLstTileUrl(
+                    pass.lstSourceId,
+                    pass.lstDate,
+                    pass.lstMode,
+                    pass.lstCadence,
+                ),
             );
 
             if (request !== token || popupRef.current !== created || !created.isOpen()) return;
@@ -360,11 +384,11 @@ export default function MapView({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // The popup belongs to one pass; drop it when the pass or visibility changes.
+    // The popup belongs to one layer state; drop it when the source or pass changes.
     useEffect(() => {
         popupRef.current?.remove();
         popupRef.current = null;
-    }, [lstDate, lstCadence, lstMode, lstVisible]);
+    }, [lstSourceId, lstDate, lstCadence, lstMode, lstVisible]);
 
     // Resize when the containing page becomes visible again (page switches).
     useEffect(() => {

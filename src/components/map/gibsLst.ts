@@ -1,48 +1,146 @@
 /**
  * Real land-surface temperature for the map.
  *
- * Source: NASA GIBS — MODIS Aqua daily Land Surface Temperature (Day and
- * Night) and its 8-day composite sibling, 1 km, colorized by NASA. There is
- * one daytime and one nighttime overpass per day, not an hourly product.
- * The daily L3 product typically publishes about three to four days behind
- * real time; the 8-day composite about two weeks behind. Free and keyless.
+ * Sources: NASA GIBS MODIS Aqua, MODIS Terra, and VIIRS NOAA-20 Level 3
+ * land-surface temperature, daily and 8-day, day and night, ~1 km. Each
+ * platform has one daytime and one nighttime overpass per day, not an hourly
+ * product. The daily L3 product typically publishes a few days behind real
+ * time; the 8-day composite about two weeks behind. Free and keyless.
  *
- * GIBS tiles are PNGs pre-colorized with NASA's global palette. The map
- * recolors them to the local scale in `lstScale.ts`; the legend uses the same
- * scale. The colorized tiles do not carry the per-pixel observation time.
+ * GIBS tiles are PNGs pre-colorized with NASA's LST palette. The map recolors
+ * them to the local scale in `lstScale.ts`; the legend uses the same scale.
+ * The colorized tiles do not carry the per-pixel observation time.
+ *
+ * The platforms use different retrieval algorithms (MODIS split-window,
+ * VIIRS TES) and overpass times, so values at the same point can differ by a
+ * few K. The UI labels the active platform rather than blending the sources.
  */
 
-export const GIBS_LST_SOURCE_ID = 'gibs-modis-lst';
-export const GIBS_LST_LAYER_ID = 'gibs-modis-lst-layer';
+export const GIBS_LST_SOURCE_ID = 'gibs-lst';
+export const GIBS_LST_LAYER_ID = 'gibs-lst-layer';
 export const GIBS_LST_ATTRIBUTION =
-    'NASA EOSDIS GIBS · MODIS Aqua LST, 1 km · color scale: INIT.AI';
+    'NASA EOSDIS GIBS · MODIS/VIIRS LST, 1 km · color scale: INIT.AI';
 
 export type LstMode = 'day' | 'night';
 export type LstCadence = 'daily' | 'weekly';
+export type LstSourceId = 'modis-aqua' | 'modis-terra' | 'viirs-noaa20';
+
+export interface LstSource {
+    id: LstSourceId;
+    /** Full name used in the popup and source control. */
+    label: string;
+    /** Short name for the compact legend chip. */
+    shortLabel: string;
+    sensor: 'MODIS' | 'VIIRS';
+    platform: string;
+    resolution: '1 km';
+    /** Retrieval family, shown as provenance in the legend/popup. */
+    algorithm: string;
+    /** Nominal local overpass; the colorized tiles carry no exact time. */
+    overpass: Record<LstMode, string>;
+    description: string;
+    layers: Record<LstCadence, Record<LstMode, string>>;
+}
+
+const GIBS_ROOT = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best';
+
+const MODIS_AQUA_LAYERS: LstSource['layers'] = {
+    daily: {
+        day: `${GIBS_ROOT}/MODIS_Aqua_L3_Land_Surface_Temp_Daily_Day/default`,
+        night: `${GIBS_ROOT}/MODIS_Aqua_L3_Land_Surface_Temp_Daily_Night/default`,
+    },
+    weekly: {
+        day: `${GIBS_ROOT}/MODIS_Aqua_L3_Land_Surface_Temp_8Day_Day/default`,
+        night: `${GIBS_ROOT}/MODIS_Aqua_L3_Land_Surface_Temp_8Day_Night/default`,
+    },
+};
+
+const MODIS_TERRA_LAYERS: LstSource['layers'] = {
+    daily: {
+        day: `${GIBS_ROOT}/MODIS_Terra_L3_Land_Surface_Temp_Daily_Day/default`,
+        night: `${GIBS_ROOT}/MODIS_Terra_L3_Land_Surface_Temp_Daily_Night/default`,
+    },
+    weekly: {
+        day: `${GIBS_ROOT}/MODIS_Terra_L3_Land_Surface_Temp_8Day_Day/default`,
+        night: `${GIBS_ROOT}/MODIS_Terra_L3_Land_Surface_Temp_8Day_Night/default`,
+    },
+};
+
+const VIIRS_NOAA20_LAYERS: LstSource['layers'] = {
+    daily: {
+        day: `${GIBS_ROOT}/VIIRS_NOAA20_L3_Land_Surface_Temp_Daily_Day/default`,
+        night: `${GIBS_ROOT}/VIIRS_NOAA20_L3_Land_Surface_Temp_Daily_Night/default`,
+    },
+    weekly: {
+        day: `${GIBS_ROOT}/VIIRS_NOAA20_L3_Land_Surface_Temp_8Day_Day/default`,
+        night: `${GIBS_ROOT}/VIIRS_NOAA20_L3_Land_Surface_Temp_8Day_Night/default`,
+    },
+};
+
+const SOURCES: LstSource[] = [
+    {
+        id: 'modis-aqua',
+        label: 'MODIS Aqua',
+        shortLabel: 'Aqua',
+        sensor: 'MODIS',
+        platform: 'Aqua',
+        resolution: '1 km',
+        algorithm: 'split-window (MYD11)',
+        overpass: { day: '~13:30 local', night: '~01:30 local' },
+        description:
+            'NASA MODIS Aqua Level 3 LST, 1 km. Afternoon pass; the standard product publishes a few days behind real time.',
+        layers: MODIS_AQUA_LAYERS,
+    },
+    {
+        id: 'modis-terra',
+        label: 'MODIS Terra',
+        shortLabel: 'Terra',
+        sensor: 'MODIS',
+        platform: 'Terra',
+        resolution: '1 km',
+        algorithm: 'split-window (MOD11)',
+        overpass: { day: '~10:30 local', night: '~22:30 local' },
+        description:
+            'NASA MODIS Terra Level 3 LST, 1 km. Morning pass; the standard product publishes a few days behind real time.',
+        layers: MODIS_TERRA_LAYERS,
+    },
+    {
+        id: 'viirs-noaa20',
+        label: 'VIIRS NOAA-20',
+        shortLabel: 'NOAA-20',
+        sensor: 'VIIRS',
+        platform: 'NOAA-20',
+        resolution: '1 km',
+        algorithm: 'TES (VNP21)',
+        overpass: { day: '~13:30 local', night: '~01:30 local' },
+        description:
+            'NASA VIIRS NOAA-20 Level 3 LST, 1 km (native 750 m, gridded 1 km). Early-afternoon pass using the TES retrieval.',
+        layers: VIIRS_NOAA20_LAYERS,
+    },
+];
+
+export const LST_SOURCE_IDS = SOURCES.map((source) => source.id);
+
+export const LST_SOURCES: Record<LstSourceId, LstSource> = SOURCES.reduce(
+    (record, source) => {
+        record[source.id] = source;
+        return record;
+    },
+    {} as Record<LstSourceId, LstSource>,
+);
+
+export function getLstSource(id: LstSourceId): LstSource {
+    return LST_SOURCES[id] ?? LST_SOURCES['modis-aqua'];
+}
 
 export const LST_MODE_LABEL: Record<LstMode, string> = {
     day: 'Day',
     night: 'Night',
 };
 
-/** Nominal Aqua overpass; the colorized tiles do not include actual times. */
-export const LST_MODE_OVERPASS: Record<LstMode, string> = {
-    day: '~13:30 local',
-    night: '~01:30 local',
-};
-
 export const LST_CADENCE_LABEL: Record<LstCadence, string> = {
     daily: 'Daily',
     weekly: '8-day',
-};const GIBS_LST_TILE_ROOTS: Record<LstCadence, Record<LstMode, string>> = {
-    daily: {
-        day: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Aqua_L3_Land_Surface_Temp_Daily_Day/default',
-        night: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Aqua_L3_Land_Surface_Temp_Daily_Night/default',
-    },
-    weekly: {
-        day: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Aqua_L3_Land_Surface_Temp_8Day_Day/default',
-        night: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Aqua_L3_Land_Surface_Temp_8Day_Night/default',
-    },
 };
 
 const DAILY_LATENCY_DAYS = 3;
@@ -105,59 +203,19 @@ export function isLstPeriodStart(iso: string): boolean {
 }
 
 export function gibsLstTileUrl(
+    sourceId: LstSourceId,
     date: string,
     mode: LstMode,
     cadence: LstCadence,
 ): string {
-    return `${GIBS_LST_TILE_ROOTS[cadence][mode]}/${date}/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png`;
+    return `${getLstSource(sourceId).layers[cadence][mode]}/${date}/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png`;
 }
 
-function tilePathFor(lng: number, lat: number, zoom: number): string {
-    const count = 2 ** zoom;
-    const x = Math.floor(((lng + 180) / 360) * count);
-    const radians = (lat * Math.PI) / 180;
-    const y = Math.floor(
-        ((1 -
-            Math.log(Math.tan(radians) + 1 / Math.cos(radians)) / Math.PI) /
-            2) *
-            count,
-    );
-    return `${zoom}/${y}/${x}`;
-}
-
-/**
- * Walk back from the newest processed date until the daily tile over the
- * current city has an actual retrieval. A 200 response with a near-empty PNG
- * means the whole city was cloudy, which is not a useful default.
- */
-export async function findLatestLstDate(
-    center: [number, number],
-    mode: LstMode,
-    maxDate: string,
-    attempts = 7,
-): Promise<string> {
-    let date = maxDate;
-
-    for (let index = 0; index < attempts; index += 1) {
-        const tileUrl = gibsLstTileUrl(date, mode, 'daily').replace(
-            '{z}/{y}/{x}',
-            tilePathFor(center[0], center[1], 7),
-        );
-
-        try {
-            const response = await fetch(tileUrl);
-            if (response.ok) {
-                const blob = await response.blob();
-                if (blob.size >= 2500) return date;
-            }
-        } catch {
-            // Try the previous day; the map will show its normal cloud gaps.
-        }
-
-        date = shiftLstDate(date, -1);
-    }
-
-    return maxDate;
+/** Whole UTC days between an ISO date and today. */
+export function lstDaysAgo(iso: string, now = new Date()): number {
+    const today = utcDay(now).getTime();
+    const selected = new Date(`${iso}T00:00:00Z`).getTime();
+    return Math.max(0, Math.round((today - selected) / 86_400_000));
 }
 
 /** Human-readable date, e.g. "Nov 22, 2026". */
