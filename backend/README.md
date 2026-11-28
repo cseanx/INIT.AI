@@ -81,7 +81,8 @@ python -m app.jobs.hotspots_qc --persist --if-newer  # skip when already current
 The `Refresh QC hotspot snapshot` GitHub Actions workflow runs daily with
 `--if-newer`. When the `DATABASE_URL` repository secret is set it also writes to
 the production database; the bundled JSON commit is what updates the frontend
-fallback and triggers the normal deployment.
+fallback and triggers the normal deployment. Manual runs can enable **force** to
+rebuild and persist the current period even when it is already bundled.
 
 The job reads NASA MODIS Aqua `MYD11A2` 8-day daytime LST and `QC_Day` from the
 Microsoft Planetary Computer, computes zonal p90 values on the 142 PSA/NAMRIA

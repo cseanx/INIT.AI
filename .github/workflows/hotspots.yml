@@ -7,6 +7,11 @@ on:
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Rebuild even when this period is already bundled"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -40,7 +45,12 @@ jobs:
           # Optional: when set, the snapshot is also persisted to the
           # production database. Without it, only the bundled JSON changes.
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: python -m app.jobs.hotspots_qc --persist --if-newer
+        run: |
+          EXTRA=""
+          if [ "${{ inputs.force }}" != "true" ]; then
+            EXTRA="--if-newer"
+          fi
+          python -m app.jobs.hotspots_qc --persist $EXTRA
 
       - name: Commit the refreshed snapshot
         run: |
