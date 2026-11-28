@@ -6,17 +6,22 @@ import { useCity } from '../contexts/CityContext';
 import Page from '../components/layout/Page';
 import PanelHead from '../components/common/PanelHead';
 import Card from '../components/common/Card';
-import ThermalLadder from '../components/hotspots/ThermalLadder';
+import HotspotList from '../components/hotspots/HotspotList';
 import HotspotRail from '../components/hotspots/HotspotRail';
 import HotspotFilter, { type HotspotFilterValue } from '../components/hotspots/HotspotFilter';
 import type { Barangay } from '../types';
 
+/* The search field mirrors the reports filter rail's input so both list
+   pages read as one system. */
+const SEARCH_INPUT_CLASSES =
+    'w-full rounded-[14px] border border-white/10 bg-white/[.04] p-[10px_34px_10px_38px] text-[16px] text-white outline-none transition duration-200 placeholder:text-[#888] focus:border-primary focus:shadow-[0_0_0_3px_rgba(var(--accent-glow),.15)] sm:text-[13.5px] [&::-webkit-search-cancel-button]:hidden';
+
 /* ==========================
    HOTSPOTS — the city on one thermometer.
-   Instead of a ranked table, every barangay sits at its true peak
-   temperature on a shared thermal ladder; selecting a reading opens the
-   detail rail. The severity filter re-weights the instrument, and the
-   sort order flips it. Deep links (?q=) pre-select their barangay.
+   A ranked list of every detected hotspot; selecting a reading opens the
+   detail rail on the right. The severity filter re-weights the list, the
+   sort order flips it, and search narrows it by name or driver. Deep
+   links (?q=) pre-select their barangay.
 ========================== */
 
 function matchesQuery(b: Barangay, term: string): boolean {
@@ -26,19 +31,26 @@ function matchesQuery(b: Barangay, term: string): boolean {
     );
 }
 
-function LadderSkeleton() {
+function ListSkeleton() {
     return (
         <div
             className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_372px] lg:gap-7"
             aria-hidden="true"
         >
-            <div className="relative h-[520px]">
-                <div className="absolute bottom-0 top-0 w-[12px] rounded-full bg-white/5" style={{ left: 46 }} />
-                {[92, 168, 240, 318, 402].map((top) => (
-                    <div key={top} className="absolute left-[64px] h-3 w-3 animate-pulse rounded-full bg-white/10" style={{ top }} />
-                ))}
-                {[80, 150, 226, 308, 396].map((top) => (
-                    <div key={top} className="absolute left-[252px] h-[16px] w-[190px] animate-pulse rounded-full bg-white/5" style={{ top }} />
+            <div className="flex flex-col">
+                {Array.from({ length: 10 }).map((_, index) => (
+                    <div
+                        key={index}
+                        className="flex items-center gap-3 border-b border-white/6 px-3 py-[10px] last:border-b-0"
+                    >
+                        <div className="h-[12px] w-[16px] animate-pulse rounded-full bg-white/5" />
+                        <div className="h-[9px] w-[9px] animate-pulse rounded-full bg-white/10" />
+                        <div className="min-w-0 flex-1">
+                            <div className="h-[14px] w-[150px] animate-pulse rounded-full bg-white/5" />
+                            <div className="mt-1.5 h-[10px] w-[210px] animate-pulse rounded-full bg-white/5" />
+                        </div>
+                        <div className="h-[14px] w-[44px] animate-pulse rounded-full bg-white/5" />
+                    </div>
                 ))}
             </div>
             <div className="flex flex-col gap-3 border-t border-white/8 pt-5 lg:border-l lg:border-t-0 lg:pl-7">
@@ -55,70 +67,85 @@ function LadderSkeleton() {
 export default function Hotspots() {
     const { selected: activeCity, setSelected: setActiveCity } = useCity();
     const snapshot = useApiData(api.getHotspotSnapshot);
-    const allHotspots = snapshot?.items ?? null;
-    // The real 8-day run has 82 above-median barangays; the ladder is legible
-    // with the top 17. The meta still reports the full detected set.
-    const hotspots = useMemo(
-        () => (allHotspots ? allHotspots.slice(0, 17) : null),
-        [allHotspots],
-    );
+    // The real 8-day run detects 82 above-median barangays; the list shows
+    // all of them, ranked, under an internal scroll.
+    const pool = snapshot?.items ?? null;
     const [searchParams, setSearchParams] = useSearchParams();
-    const query = (searchParams.get('q') ?? '').trim();
+    // The search box owns the term; the ?q= deep link seeds it and stays in
+    // sync (replace, so typing never spams browser history).
+    const urlQuery = searchParams.get('q') ?? '';
+    const [search, setSearch] = useState(urlQuery);
+    const query = search.trim();
     const [filter, setFilter] = useState<HotspotFilterValue>('all');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [selected, setSelected] = useState<string | null>(null);
 
     const counts = useMemo(() => {
         const c = { critical: 0, high: 0, moderate: 0 };
-        (hotspots ?? []).forEach((b) => {
+        (pool ?? []).forEach((b) => {
             if (b.severity === 'critical' || b.severity === 'high' || b.severity === 'moderate') {
                 c[b.severity] += 1;
             }
         });
-        return { all: hotspots?.length ?? 0, ...c };
-    }, [hotspots]);
+        return { all: pool?.length ?? 0, ...c };
+    }, [pool]);
 
     const visible = useMemo(
-        () => (hotspots ?? []).filter((b) => filter === 'all' || b.severity === filter),
-        [hotspots, filter],
+        () =>
+            (pool ?? []).filter(
+                (b) =>
+                    (filter === 'all' || b.severity === filter) &&
+                    matchesQuery(b, query),
+            ),
+        [pool, filter, query],
     );
-    const ladderRows = useMemo(
+    const rows = useMemo(
         () => [...visible].sort((a, b) => (order === 'desc' ? b.temp - a.temp : a.temp - b.temp)),
         [visible, order],
     );
 
+    // Thermal neighbours and true ranks come from the full city ranking,
+    // not the severity filter or the search.
+    const cityRanking = useMemo(
+        () => (pool ? [...pool].sort((a, b) => b.temp - a.temp) : []),
+        [pool],
+    );
+
+    // Deep links and back/forward navigation drive the search box.
+    useEffect(() => {
+        setSearch(urlQuery);
+    }, [urlQuery]);
+
     // Deep links pre-select their barangay; anything else opens on the
     // hottest reading so the rail is never empty.
     useEffect(() => {
-        if (!hotspots) return;
-        const hottest = [...hotspots].sort((a, b) => b.temp - a.temp)[0]?.name ?? null;
+        if (!pool) return;
+        const hottest = cityRanking[0]?.name ?? null;
         if (query) {
-            const match = [...hotspots]
-                .sort((a, b) => b.temp - a.temp)
-                .find((b) => matchesQuery(b, query));
+            const match = cityRanking.find((b) => matchesQuery(b, query));
             setSelected((current) => match?.name ?? current ?? hottest);
         } else {
             setSelected((current) => current ?? hottest);
         }
-    }, [hotspots, query]);
+    }, [pool, cityRanking, query]);
 
-    // A severity change can strand the selection on a hidden reading.
+    // A severity change or a search can strand the selection on a hidden
+    // reading; fall back to the hottest one still visible.
     useEffect(() => {
-        if (!hotspots || !selected) return;
+        if (!pool || !selected) return;
         if (visible.some((b) => b.name === selected)) return;
         setSelected(
             [...visible].sort((a, b) => b.temp - a.temp)[0]?.name ?? null,
         );
-    }, [hotspots, selected, visible]);
+    }, [pool, selected, visible]);
 
-    const qMiss = !!hotspots && !!query && !hotspots.some((b) => matchesQuery(b, query));
-    const selectedBarangay = hotspots?.find((b) => b.name === selected) ?? null;
+    function handleSearchChange(value: string) {
+        setSearch(value);
+        setSearchParams(value ? { q: value } : {}, { replace: true });
+    }
 
-    // Thermal neighbours come from the full city ranking, not the filter.
-    const cityRanking = useMemo(
-        () => (hotspots ? [...hotspots].sort((a, b) => b.temp - a.temp) : []),
-        [hotspots],
-    );
+    const selectedBarangay = pool?.find((b) => b.name === selected) ?? null;
+
     const rankIndex = selectedBarangay
         ? cityRanking.findIndex((b) => b.name === selectedBarangay.name)
         : -1;
@@ -181,26 +208,36 @@ export default function Hotspots() {
                     }
                 />
 
-                {qMiss ? (
-                    <div className="mb-4 flex flex-wrap items-center gap-2 text-[12.5px] text-[#bbb]">
-                        <i className="fa-solid fa-magnifying-glass text-[11px] text-accent"></i>
-                        No hotspot matches
-                        <strong className="text-white">&ldquo;{query}&rdquo;</strong>
+                <div className="relative mb-4 w-full sm:max-w-[420px]">
+                    <i
+                        className="fa-solid fa-magnifying-glass pointer-events-none absolute left-[14px] top-1/2 -translate-y-1/2 text-[12px] text-[#888]"
+                        aria-hidden="true"
+                    ></i>
+                    <input
+                        type="search"
+                        value={search}
+                        onChange={(event) => handleSearchChange(event.target.value)}
+                        placeholder="Search barangay or driver…"
+                        aria-label="Search hotspots"
+                        className={SEARCH_INPUT_CLASSES}
+                    />
+                    {search ? (
                         <button
                             type="button"
-                            onClick={() => setSearchParams({})}
-                            className="cursor-pointer rounded-full border border-white/12 bg-white/[.05] px-2.5 py-1 text-[11.5px] font-semibold text-white transition hover:bg-white/10"
+                            onClick={() => handleSearchChange('')}
+                            aria-label="Clear search"
+                            className="absolute right-[8px] top-1/2 flex h-[26px] w-[26px] -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-[#bbb] transition duration-200 hover:bg-white/10 hover:text-white"
                         >
-                            Clear
+                            <i className="fa-solid fa-xmark text-[11.5px]" aria-hidden="true"></i>
                         </button>
-                    </div>
-                ) : null}
+                    ) : null}
+                </div>
 
-                {hotspots ? (
+                {pool ? (
                     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_372px] lg:gap-7">
-                        <ThermalLadder
-                            barangays={ladderRows}
-                            order={order}
+                        <HotspotList
+                            rows={rows}
+                            cityRanking={cityRanking}
                             selected={selected}
                             onSelect={setSelected}
                         />
@@ -214,11 +251,15 @@ export default function Hotspots() {
                                     cooler={cooler}
                                     onSelect={setSelected}
                                 />
-                            ) : null}
+                            ) : (
+                                <p className="text-[13px] text-[#999]">
+                                    Select a reading to inspect it here.
+                                </p>
+                            )}
                         </div>
                     </div>
                 ) : (
-                    <LadderSkeleton />
+                    <ListSkeleton />
                 )}
 
                 <p className="mt-5 flex items-center gap-2 border-t border-white/6 pt-4 text-[12px] text-[#888]">
@@ -227,7 +268,7 @@ export default function Hotspots() {
                         <>
                             Real 8-day snapshot · {snapshot.meta.period_start} to{' '}
                             {snapshot.meta.period_end} · {snapshot.meta.hotspot_count} above
-                            median, showing top {hotspots?.length ?? 0}
+                            median, all shown
                             {snapshot.meta.no_data_count > 0
                                 ? ` · ${snapshot.meta.no_data_count} without clear-sky data`
                                 : ''}

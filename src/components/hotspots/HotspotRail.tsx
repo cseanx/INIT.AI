@@ -65,7 +65,7 @@ export default function HotspotRail({
                     </span>
                 </p>
                 <p className="mt-2 text-[12.5px] text-[#999]">
-                    p90 surface reading · rank {rank} of {total} on the ladder
+                    p90 surface reading · rank {rank} of {total} in the city ranking
                 </p>
 
                 <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 border-y border-white/8 py-4">
